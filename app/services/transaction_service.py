@@ -1,6 +1,14 @@
+from sqlalchemy.orm import Session
+
 from app.models.transaction import Transaction
+
 from app.repositories.transaction_repository import (
     TransactionRepository,
+)
+
+from app.schemas.transaction import (
+    TransactionCreate,
+    TransactionUpdate,
 )
 
 
@@ -11,9 +19,9 @@ class TransactionService:
 
     def create_transaction(
         self,
-        db,
-        transaction_data,
-    ):
+        db: Session,
+        transaction_data: TransactionCreate,
+    ) -> Transaction:
 
         transaction = Transaction(
             type=transaction_data.type,
@@ -31,9 +39,9 @@ class TransactionService:
 
     def get_transaction(
         self,
-        db,
-        transaction_id,
-    ):
+        db: Session,
+        transaction_id: int,
+    ) -> Transaction | None:
 
         return self.repository.get_by_id(
             db,
@@ -42,17 +50,16 @@ class TransactionService:
 
     def get_all_transactions(
         self,
-        db,
+        db: Session,
     ):
-
         return self.repository.get_all(db)
 
     def update_transaction(
         self,
-        db,
-        transaction_id,
-        update_data,
-    ):
+        db: Session,
+        transaction_id: int,
+        update_data: TransactionUpdate,
+    ) -> Transaction | None:
 
         transaction = self.repository.get_by_id(
             db,
@@ -62,10 +69,14 @@ class TransactionService:
         if not transaction:
             return None
 
-        for field, value in update_data.dict(
+        for field, value in update_data.model_dump(
             exclude_unset=True
         ).items():
-            setattr(transaction, field, value)
+            setattr(
+                transaction,
+                field,
+                value,
+            )
 
         return self.repository.update(
             db,
@@ -74,9 +85,9 @@ class TransactionService:
 
     def delete_transaction(
         self,
-        db,
-        transaction_id,
-    ):
+        db: Session,
+        transaction_id: int,
+    ) -> bool:
 
         transaction = self.repository.get_by_id(
             db,
@@ -95,8 +106,8 @@ class TransactionService:
 
     def get_balance(
         self,
-        db,
-    ):
+        db: Session,
+    ) -> float:
 
         total_income = self.repository.get_total_income(
             db
@@ -106,4 +117,6 @@ class TransactionService:
             db
         )
 
-        return total_income - total_expense
+        return float(
+            total_income - total_expense
+        )

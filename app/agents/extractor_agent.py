@@ -1,10 +1,6 @@
-# chain de extracao LangChain
-import os
 import json
 
-from langchain_google_genai import (
-    ChatGoogleGenerativeAI,
-)
+from langchain_groq import ChatGroq
 
 from langchain_core.prompts import (
     ChatPromptTemplate,
@@ -14,17 +10,19 @@ from app.prompts.extraction_prompt import (
     EXTRACTION_PROMPT,
 )
 
+from app.core.config import (
+    GROQ_API_KEY,
+)
+
 
 class ExtractorAgent:
 
     def __init__(self):
 
-        self.llm = ChatGoogleGenerativeAI(
-            model="gemini-2.5-flash",
+        self.llm = ChatGroq(
+            model="llama-3.3-70b-versatile",
+            api_key=str(GROQ_API_KEY),
             temperature=0,
-            google_api_key=os.getenv(
-                "GOOGLE_API_KEY"
-            ),
         )
 
         self.prompt = ChatPromptTemplate.from_messages(
@@ -47,6 +45,22 @@ class ExtractorAgent:
             }
         )
 
-        return json.loads(
-            result.content
+        content = str(result.content)
+
+        print("\n===== GROQ RESPONSE =====")
+        print(content)
+        print("=========================\n")
+
+        content = content.replace(
+            "```json",
+            ""
         )
+
+        content = content.replace(
+            "```",
+            ""
+        )
+
+        content = content.strip()
+
+        return json.loads(content)

@@ -1,5 +1,5 @@
-from sqlalchemy.orm import Session
 from sqlalchemy import func
+from sqlalchemy.orm import Session
 
 from app.models.transaction import Transaction
 
@@ -22,7 +22,7 @@ class TransactionRepository:
         self,
         db: Session,
         transaction_id: int,
-    ):
+    ) -> Transaction | None:
 
         return (
             db.query(Transaction)
@@ -45,7 +45,7 @@ class TransactionRepository:
         self,
         db: Session,
         transaction: Transaction,
-    ):
+    ) -> Transaction:
 
         db.commit()
         db.refresh(transaction)
@@ -56,7 +56,7 @@ class TransactionRepository:
         self,
         db: Session,
         transaction: Transaction,
-    ):
+    ) -> None:
 
         db.delete(transaction)
         db.commit()
@@ -64,7 +64,7 @@ class TransactionRepository:
     def get_total_income(
         self,
         db: Session,
-    ):
+    ) -> float:
 
         transactions = (
             db.query(Transaction)
@@ -80,7 +80,7 @@ class TransactionRepository:
     def get_total_expense(
         self,
         db: Session,
-    ):
+    ) -> float:
 
         transactions = (
             db.query(Transaction)
@@ -92,10 +92,10 @@ class TransactionRepository:
             transaction.amount
             for transaction in transactions
         )
-    
+
     def get_expenses_by_category(
         self,
-        db,
+        db: Session,
     ):
 
         return (
@@ -116,9 +116,10 @@ class TransactionRepository:
 
     def get_recent_transactions(
         self,
-        db,
+        db: Session,
         limit: int = 5,
     ):
+
         return (
             db.query(Transaction)
             .order_by(
