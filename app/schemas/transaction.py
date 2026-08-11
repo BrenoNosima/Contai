@@ -1,23 +1,71 @@
 from datetime import datetime
+from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class TransactionCreate(BaseModel):
-    type: str
-    description: str
-    category: str
-    amount: float
-    priority: str | None = None
-    source: str = "manual"
+    type: Literal["income", "expense"]
+
+    description: str = Field(
+        min_length=1,
+        max_length=255,
+    )
+
+    category: str = Field(
+        min_length=1,
+        max_length=100,
+    )
+
+    amount: float = Field(gt=0)
+
+    priority: (
+        Literal[
+            "essential",
+            "desirable",
+            "superfluous",
+        ]
+        | None
+    ) = None
+
+    source: Literal[
+        "manual",
+        "ai",
+        "recurring",
+    ] = "manual"
 
 
 class TransactionUpdate(BaseModel):
-    type: str | None = None
-    description: str | None = None
-    category: str | None = None
-    amount: float | None = None
-    priority: str | None = None
+    type: Literal[
+        "income",
+        "expense",
+    ] | None = None
+
+    description: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=255,
+    )
+
+    category: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=100,
+    )
+
+    amount: float | None = Field(
+        default=None,
+        gt=0,
+    )
+
+    priority: (
+        Literal[
+            "essential",
+            "desirable",
+            "superfluous",
+        ]
+        | None
+    ) = None
 
 
 class TransactionResponse(BaseModel):

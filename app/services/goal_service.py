@@ -1,8 +1,5 @@
 from app.models.goal import Goal
-
-from app.repositories.goal_repository import (
-    GoalRepository,
-)
+from app.repositories.goal_repository import GoalRepository
 
 
 class GoalService:
@@ -15,9 +12,8 @@ class GoalService:
         db,
         goal_data,
     ):
-
         goal = Goal(
-            name=goal_data.name,
+            name=goal_data.name.strip(),
             description=goal_data.description,
             target_amount=goal_data.target_amount,
             current_amount=goal_data.current_amount,
@@ -34,7 +30,6 @@ class GoalService:
         db,
         goal_id,
     ):
-
         return self.repository.get_by_id(
             db,
             goal_id,
@@ -44,10 +39,7 @@ class GoalService:
         self,
         db,
     ):
-
-        return self.repository.get_all(
-            db,
-        )
+        return self.repository.get_all(db)
 
     def update_goal(
         self,
@@ -55,7 +47,6 @@ class GoalService:
         goal_id,
         update_data,
     ):
-
         goal = self.repository.get_by_id(
             db,
             goal_id,
@@ -64,9 +55,31 @@ class GoalService:
         if not goal:
             return None
 
-        for field, value in update_data.dict(
+        values = update_data.model_dump(
             exclude_unset=True
-        ).items():
+        )
+
+        target_amount = values.get(
+            "target_amount",
+            goal.target_amount,
+        )
+
+        current_amount = values.get(
+            "current_amount",
+            goal.current_amount,
+        )
+
+        if current_amount > target_amount:
+            raise ValueError(
+                "O valor atual não pode ser maior "
+                "que o valor da meta."
+            )
+
+        for field, value in values.items():
+
+            if isinstance(value, str):
+                value = value.strip()
+
             setattr(
                 goal,
                 field,
@@ -83,7 +96,6 @@ class GoalService:
         db,
         goal_id,
     ):
-
         goal = self.repository.get_by_id(
             db,
             goal_id,
@@ -105,6 +117,11 @@ class GoalService:
         goal_id,
         amount,
     ):
+        if amount <= 0:
+            raise ValueError(
+                "O valor do progresso deve "
+                "ser maior que zero."
+            )
 
         goal = self.repository.get_by_id(
             db,
@@ -125,16 +142,17 @@ class GoalService:
         goal,
         months_remaining,
     ):
-
         if months_remaining <= 0:
             return 0
 
-        remaining_amount = (
+        remaining_amount = max(
             goal.target_amount
-            - goal.current_amount
+            - goal.current_amount,
+            0,
         )
 
         return round(
-            remaining_amount / months_remaining,
+            remaining_amount
+            / months_remaining,
             2,
         )

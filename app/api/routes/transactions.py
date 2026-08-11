@@ -131,13 +131,38 @@ def delete_transaction(
         "message": "Transaction deleted successfully"
     }
 
-@router.post("/text")
-def extract_transaction(
+@router.post(
+    "/text",
+    response_model=TransactionResponse,
+)
+def create_transaction_from_text(
     payload: NaturalLanguageRequest,
+    db: Session = Depends(get_db),
 ):
+    """
+    Extrai os dados de uma transação a partir de texto livre (via LLM)
+    e já salva o resultado no banco de dados.
+    """
 
-    extractor = ExtractorAgent()
+    try:
+        extracted = extractor.extract(payload.text)
 
-    return extractor.extract(
-        payload.text
+    except ValueError as error:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Não foi possível interpretar o texto: {error}",
+        )
+
+    transaction_data = TransactionCreate(
+        type=extracted.get("type"),
+        description=extracted.get("description"),
+        category=extracted.get("category"),
+        amount=extracted.get("amount"),
+        priority=extracted.get("priority"),
+        source="ai",
+    )
+
+    return service.create_transaction(
+        db=db,
+        transaction_data=transaction_data,
     )

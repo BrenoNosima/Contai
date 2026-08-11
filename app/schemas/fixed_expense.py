@@ -1,20 +1,51 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class FixedExpenseCreate(BaseModel):
-    name: str
-    category: str
-    amount: float
-    billing_day: int
+    name: str = Field(
+        min_length=1,
+        max_length=150,
+    )
+
+    category: str = Field(
+        min_length=1,
+        max_length=100,
+    )
+
+    amount: float = Field(gt=0)
+
+    billing_day: int = Field(
+        ge=1,
+        le=31,
+    )
 
 
 class FixedExpenseUpdate(BaseModel):
-    name: str | None = None
-    category: str | None = None
-    amount: float | None = None
-    billing_day: int | None = None
+    name: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=150,
+    )
+
+    category: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=100,
+    )
+
+    amount: float | None = Field(
+        default=None,
+        gt=0,
+    )
+
+    billing_day: int | None = Field(
+        default=None,
+        ge=1,
+        le=31,
+    )
+
     active: bool | None = None
 
 

@@ -47,10 +47,6 @@ class ExtractorAgent:
 
         content = str(result.content)
 
-        print("\n===== GROQ RESPONSE =====")
-        print(content)
-        print("=========================\n")
-
         content = content.replace(
             "```json",
             ""
@@ -63,4 +59,10 @@ class ExtractorAgent:
 
         content = content.strip()
 
-        return json.loads(content)
+        try:
+            return json.loads(content)
+
+        except json.JSONDecodeError as error:
+            raise ValueError(
+                f"Resposta do modelo não é um JSON válido: {content!r}"
+            ) from error

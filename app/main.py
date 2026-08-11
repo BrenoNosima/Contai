@@ -19,6 +19,10 @@ from app.api.routes.dashboard import (
     router as dashboard_router,
 )
 
+from app.api.routes.chat import (
+    router as chat_router,
+)
+
 # Criação automática das tabelas
 Base.metadata.create_all(bind=engine)
 
@@ -33,6 +37,7 @@ app.include_router(transactions_router)
 app.include_router(goals_router)
 app.include_router(fixed_expenses_router)
 app.include_router(dashboard_router)
+app.include_router(chat_router)
 
 
 @app.get("/")
