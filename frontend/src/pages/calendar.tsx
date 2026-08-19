@@ -15,10 +15,10 @@ import {
 } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react"
-import { transactionsApi } from "@/lib/api"
+import { fixedExpensesApi, transactionsApi } from "@/lib/api"
 import { qk } from "@/lib/query"
 import { useTransactionMutations } from "@/lib/hooks"
-import type { Transaction } from "@/lib/types"
+import type { FixedExpense, Transaction } from "@/lib/types"
 import { Button, Card, Money } from "@/components/ui/primitives"
 import { Dialog } from "@/components/ui/dialog"
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/states"
@@ -52,6 +52,10 @@ export default function CalendarPage() {
     queryFn: () =>
       transactionsApi.list({ start_date: startISO, end_date: endISO }),
   })
+  const fixedExpensesQuery = useQuery({
+    queryKey: qk.fixedExpenses,
+    queryFn: fixedExpensesApi.listActive,
+  })
 
   const byDay = useMemo(() => {
     const map = new Map<string, Transaction[]>()
@@ -64,8 +68,35 @@ export default function CalendarPage() {
     return map
   }, [txQuery.data])
 
+  const fixedByDay = useMemo(() => {
+    const map = new Map<string, FixedExpense[]>()
+    const months = new Map<string, Date>()
+
+    for (const day of days) {
+      months.set(format(day, "yyyy-MM"), day)
+    }
+
+    for (const month of months.values()) {
+      const lastDay = endOfMonth(month).getDate()
+      for (const expense of fixedExpensesQuery.data ?? []) {
+        const billingDate = new Date(
+          month.getFullYear(),
+          month.getMonth(),
+          Math.min(expense.billing_day, lastDay),
+        )
+        const key = format(billingDate, "yyyy-MM-dd")
+        const entries = map.get(key) ?? []
+        entries.push(expense)
+        map.set(key, entries)
+      }
+    }
+
+    return map
+  }, [days, fixedExpensesQuery.data])
+
   const selectedKey = selected ? format(selected, "yyyy-MM-dd") : null
   const selectedTx = selectedKey ? (byDay.get(selectedKey) ?? []) : []
+  const selectedFixed = selectedKey ? (fixedByDay.get(selectedKey) ?? []) : []
   const monthItems = (txQuery.data ?? []).filter((transaction) =>
     isSameMonth(parseDate(transaction.due_date), cursor),
   )
@@ -77,6 +108,15 @@ export default function CalendarPage() {
     (total, transaction) => total + transaction.amount,
     0,
   )
+  const monthlyFixed = fixedExpensesQuery.data ?? []
+  const monthlyFixedTotal = monthlyFixed.reduce(
+    (total, expense) => total + expense.amount,
+    0,
+  )
+  const totalDueCount = pendingExpenses.length + monthlyFixed.length
+  const totalDueAmount = pendingTotal + monthlyFixedTotal
+  const calendarLoading = txQuery.isLoading || fixedExpensesQuery.isLoading
+  const calendarError = txQuery.isError || fixedExpensesQuery.isError
 
   return (
     <div className="animate-in">
@@ -88,10 +128,10 @@ export default function CalendarPage() {
           <h1 className="mt-1 font-sans text-3xl font-semibold capitalize text-foreground">
             {format(cursor, "MMMM 'de' yyyy", { locale: ptBR })}
           </h1>
-          {!txQuery.isLoading && !txQuery.isError && (
+          {!calendarLoading && !calendarError && (
             <p className="mt-1.5 text-sm text-muted">
-              {pendingExpenses.length
-                ? `${pendingExpenses.length} conta${pendingExpenses.length > 1 ? "s" : ""} a pagar · ${formatMoney(pendingTotal)}`
+              {totalDueCount
+                ? `${totalDueCount} conta${totalDueCount > 1 ? "s" : ""} a pagar · ${formatMoney(totalDueAmount)}`
                 : "Nenhuma conta pendente neste mês"}
             </p>
           )}
@@ -124,13 +164,18 @@ export default function CalendarPage() {
       </div>
 
       <Card elevated className="overflow-hidden border-[color:var(--color-calendar-border)] bg-[color:var(--color-calendar-surface)] p-0">
-        {txQuery.isLoading ? (
+        {calendarLoading ? (
           <LoadingState label="Carregando o mês…" />
-        ) : txQuery.isError ? (
-          <ErrorState onRetry={() => txQuery.refetch()} />
+        ) : calendarError ? (
+          <ErrorState
+            onRetry={() => {
+              txQuery.refetch()
+              fixedExpensesQuery.refetch()
+            }}
+          />
         ) : (
           <div className="overflow-x-auto">
-            <div className="min-w-[700px]">
+            <div className="min-w-[620px] sm:min-w-0">
               <div className="grid grid-cols-7 border-b border-[color:var(--color-calendar-border)] bg-[color:var(--color-calendar-header)]">
                 {WEEKDAYS.map((d) => (
                   <div
@@ -145,16 +190,21 @@ export default function CalendarPage() {
               {days.map((day) => {
                 const key = format(day, "yyyy-MM-dd")
                 const items = byDay.get(key) ?? []
+                const fixedItems = fixedByDay.get(key) ?? []
+                const allItems = [
+                  ...fixedItems.map((item) => ({ kind: "fixed" as const, item })),
+                  ...items.map((item) => ({ kind: "transaction" as const, item })),
+                ]
                 const hasPending = items.some((t) => t.status === "pending")
                 const inMonth = isSameMonth(day, cursor)
                 const isSel = selected && isSameDay(day, selected)
-                const visibleItems = items.slice(0, 2)
+                const visibleItems = allItems.slice(0, 3)
                 return (
                   <button
                     key={key}
                     onClick={() => setSelected(day)}
                     aria-label={`${format(day, "dd 'de' MMMM", { locale: ptBR })}${
-                      items.length ? `, ${items.length} lançamentos` : ""
+                      allItems.length ? `, ${allItems.length} lançamentos` : ""
                     }`}
                     aria-pressed={!!isSel}
                     className={cn(
@@ -177,23 +227,26 @@ export default function CalendarPage() {
                       >
                         {format(day, "d")}
                       </span>
-                      {items.length > 0 && (
+                      {allItems.length > 0 && (
                         <span className="text-[10px] text-subtle">
-                          {items.length} {items.length === 1 ? "item" : "itens"}
+                          {allItems.length} {allItems.length === 1 ? "item" : "itens"}
                         </span>
                       )}
                     </span>
                     <span className="flex flex-col gap-1">
-                      {visibleItems.map((transaction) => (
-                        <CalendarItem key={transaction.id} transaction={transaction} />
+                      {visibleItems.map((entry) => (
+                        <CalendarItem
+                          key={`${entry.kind}-${entry.item.id}`}
+                          entry={entry}
+                        />
                       ))}
-                      {items.length > visibleItems.length && (
+                      {allItems.length > visibleItems.length && (
                         <span className="px-1 text-[10px] font-medium text-muted">
-                          +{items.length - visibleItems.length} outro{items.length - visibleItems.length > 1 ? "s" : ""}
+                          +{allItems.length - visibleItems.length} outro{allItems.length - visibleItems.length > 1 ? "s" : ""}
                         </span>
                       )}
                     </span>
-                    {items.length > 0 && (
+                    {allItems.length > 0 && (
                       <span className="sr-only">
                         {hasPending ? "pendente" : "pago"}
                       </span>
@@ -221,25 +274,27 @@ export default function CalendarPage() {
         onClose={() => setSelected(null)}
         title={selected ? fmtLongDate(format(selected, "yyyy-MM-dd")) : ""}
         description={
-          selectedTx.length
-            ? `${selectedTx.length} lançamento${selectedTx.length > 1 ? "s" : ""}`
+          selectedTx.length + selectedFixed.length
+            ? `${selectedTx.length + selectedFixed.length} lançamento${selectedTx.length + selectedFixed.length > 1 ? "s" : ""}`
             : "Nenhum lançamento neste dia."
         }
       >
         <div className="space-y-3">
-          {selectedTx.length > 0 && (
+          {selectedTx.length + selectedFixed.length > 0 && (
             <div className="flex items-center justify-between rounded-xl bg-surface-2 px-4 py-3">
-              <span className="text-xs text-muted">Saldo do dia</span>
+              <span className="text-xs text-muted">Total previsto do dia</span>
               <Money
-                value={selectedTx.reduce(
-                  (acc, t) => acc + (t.type === "income" ? t.amount : -t.amount),
-                  0,
-                )}
+                value={
+                  selectedTx.reduce(
+                    (acc, t) => acc + (t.type === "income" ? t.amount : -t.amount),
+                    0,
+                  ) - selectedFixed.reduce((acc, expense) => acc + expense.amount, 0)
+                }
                 type={
                   selectedTx.reduce(
                     (a, t) => a + (t.type === "income" ? t.amount : -t.amount),
                     0,
-                  ) < 0
+                  ) - selectedFixed.reduce((acc, expense) => acc + expense.amount, 0) < 0
                     ? "expense"
                     : "income"
                 }
@@ -247,13 +302,16 @@ export default function CalendarPage() {
             </div>
           )}
 
-          {selectedTx.length === 0 ? (
+          {selectedTx.length === 0 && selectedFixed.length === 0 ? (
             <EmptyState
               title="Dia livre"
               description="Adicione um lançamento para esta data."
             />
           ) : (
             <div className="space-y-2">
+              {selectedFixed.map((expense) => (
+                <FixedExpenseDetail key={expense.id} expense={expense} />
+              ))}
               {selectedTx.map((tx) => (
                 <TransactionCard
                   key={tx.id}
@@ -297,9 +355,15 @@ export default function CalendarPage() {
   )
 }
 
-function CalendarItem({ transaction }: { transaction: Transaction }) {
-  const isExpense = transaction.type === "expense"
-  const pending = transaction.status === "pending"
+type CalendarEntry =
+  | { kind: "transaction"; item: Transaction }
+  | { kind: "fixed"; item: FixedExpense }
+
+function CalendarItem({ entry }: { entry: CalendarEntry }) {
+  const isFixed = entry.kind === "fixed"
+  const isExpense = isFixed || entry.item.type === "expense"
+  const pending = isFixed || entry.item.status === "pending"
+  const description = isFixed ? entry.item.name : entry.item.description
 
   return (
     <span
@@ -319,12 +383,27 @@ function CalendarItem({ transaction }: { transaction: Transaction }) {
         aria-hidden
       />
       <span className={cn("min-w-0 flex-1 truncate", !pending && "line-through")}>
-        {transaction.description}
+        {description}
       </span>
       <span className="tnum shrink-0 font-semibold">
-        {formatMoney(transaction.amount).replace(/\s/g, "")}
+        {formatMoney(entry.item.amount).replace(/\s/g, "")}
       </span>
     </span>
+  )
+}
+
+function FixedExpenseDetail({ expense }: { expense: FixedExpense }) {
+  return (
+    <div className="flex items-center gap-3 rounded-xl border border-[color:var(--color-calendar-expense)]/25 bg-[color:var(--color-calendar-expense-soft)] p-3">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-expense-soft text-expense">
+        <span className="text-lg leading-none" aria-hidden>↻</span>
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium text-foreground">{expense.name}</p>
+        <p className="mt-0.5 text-xs text-muted">Gasto fixo · {expense.category}</p>
+      </div>
+      <Money value={expense.amount} type="expense" />
+    </div>
   )
 }
 
