@@ -1,15 +1,19 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import (
     Column,
     Integer,
     String,
-    Float,
+    Numeric,
     Boolean,
     DateTime,
 )
 
 from app.core.database import Base
+
+
+def utc_now() -> datetime:
+    return datetime.now(UTC).replace(tzinfo=None)
 
 
 class FixedExpense(Base):
@@ -41,7 +45,7 @@ class FixedExpense(Base):
 
     # Valor da cobrança
     amount = Column(
-        Float,
+        Numeric(14, 2),
         nullable=False,
     )
 
@@ -70,14 +74,14 @@ class FixedExpense(Base):
 
     created_at = Column(
         DateTime,
-        default=datetime.utcnow,
+        default=utc_now,
         nullable=False,
     )
 
     updated_at = Column(
         DateTime,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
+        default=utc_now,
+        onupdate=utc_now,
         nullable=False,
     )
 

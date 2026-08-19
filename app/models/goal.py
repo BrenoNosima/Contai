@@ -1,16 +1,20 @@
 # app/models/goal.py
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import (
     Column,
     Integer,
     String,
-    Float,
+    Numeric,
     DateTime,
 )
 
 from app.core.database import Base
+
+
+def utc_now() -> datetime:
+    return datetime.now(UTC).replace(tzinfo=None)
 
 
 class Goal(Base):
@@ -35,13 +39,13 @@ class Goal(Base):
 
     # Quanto deseja atingir
     target_amount = Column(
-        Float,
+        Numeric(14, 2),
         nullable=False,
     )
 
     # Quanto já possui guardado
     current_amount = Column(
-        Float,
+        Numeric(14, 2),
         nullable=False,
         default=0.0,
     )
@@ -60,14 +64,14 @@ class Goal(Base):
 
     created_at = Column(
         DateTime,
-        default=datetime.utcnow,
+        default=utc_now,
         nullable=False,
     )
 
     updated_at = Column(
         DateTime,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
+        default=utc_now,
+        onupdate=utc_now,
         nullable=False,
     )
 
@@ -95,6 +99,24 @@ class Goal(Base):
             self.target_amount - self.current_amount,
             2,
         )
+
+    @property
+    def status(self):
+        """
+        Status calculado da meta — não precisa de coluna/migração:
+
+        - "completed": já atingiu o valor alvo.
+        - "overdue": passou do prazo sem atingir o valor alvo.
+        - "active": em andamento dentro do prazo (ou sem prazo definido).
+        """
+
+        if self.current_amount >= self.target_amount:
+            return "completed"
+
+        if self.deadline and utc_now() > self.deadline:
+            return "overdue"
+
+        return "active"
 
     def __repr__(self):
         return (

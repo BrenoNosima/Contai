@@ -1,52 +1,28 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class FixedExpenseCreate(BaseModel):
-    name: str = Field(
-        min_length=1,
-        max_length=150,
-    )
-
-    category: str = Field(
-        min_length=1,
-        max_length=100,
-    )
-
+    name: str = Field(min_length=1, max_length=150)
+    category: str = Field(min_length=1, max_length=100)
     amount: float = Field(gt=0)
-
-    billing_day: int = Field(
-        ge=1,
-        le=31,
-    )
+    billing_day: int = Field(ge=1, le=31)
 
 
 class FixedExpenseUpdate(BaseModel):
-    name: str | None = Field(
-        default=None,
-        min_length=1,
-        max_length=150,
-    )
-
-    category: str | None = Field(
-        default=None,
-        min_length=1,
-        max_length=100,
-    )
-
-    amount: float | None = Field(
-        default=None,
-        gt=0,
-    )
-
-    billing_day: int | None = Field(
-        default=None,
-        ge=1,
-        le=31,
-    )
-
+    name: str | None = Field(default=None, min_length=1, max_length=150)
+    category: str | None = Field(default=None, min_length=1, max_length=100)
+    amount: float | None = Field(default=None, gt=0)
+    billing_day: int | None = Field(default=None, ge=1, le=31)
     active: bool | None = None
+
+    @model_validator(mode="after")
+    def reject_null_fields(self):
+        for field in self.model_fields_set:
+            if getattr(self, field) is None:
+                raise ValueError(f"{field} não pode ser nulo.")
+        return self
 
 
 class FixedExpenseResponse(BaseModel):
@@ -60,5 +36,4 @@ class FixedExpenseResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

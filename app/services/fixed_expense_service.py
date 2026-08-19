@@ -72,7 +72,7 @@ class FixedExpenseService:
         if not expense:
             return None
 
-        for field, value in update_data.dict(
+        for field, value in update_data.model_dump(
             exclude_unset=True
         ).items():
             setattr(

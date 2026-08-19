@@ -1,6 +1,14 @@
 # Python
 __pycache__/
 *.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
 
 # Virtual Environment
 .venv/
@@ -8,12 +16,24 @@ venv/
 
 # Env
 .env
+.env.*
+!.env.example
 
 # Database
 *.db
+*.sqlite
+*.sqlite3
 
 # VS Code
 .vscode/
+.idea/
 
 # Logs
 *.log
+
+# Build e sistema operacional
+build/
+dist/
+*.egg-info/
+.DS_Store
+Thumbs.db

@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from sqlalchemy.orm import Session
 
 from app.models.goal import Goal
@@ -67,7 +69,10 @@ class GoalRepository:
         amount: float,
     ):
 
-        goal.current_amount += amount
+        goal.current_amount = min(
+            goal.target_amount,
+            goal.current_amount + Decimal(str(amount)),
+        )
 
         db.commit()
         db.refresh(goal)

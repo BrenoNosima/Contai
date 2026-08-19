@@ -1,154 +1,162 @@
-# Breno Finance AI Backend
+# Breno Finance — Backend
 
-Arquitetura FastAPI + SQLAlchemy + LangChain + SQLite.
+API de finanças pessoais feita com FastAPI, PostgreSQL e SQLAlchemy. Além do
+CRUD tradicional, o projeto tem um assistente que consulta e registra dados por
+meio de ferramentas do LangChain e do modelo `openai/gpt-oss-20b` na Groq.
 
-Sistema financeiro pessoal com um agente de IA capaz de registrar
-transações a partir de texto livre e consultar/atualizar o banco de
-dados em tempo real através de tools.
+O sistema foi pensado para uso pessoal. Ainda não há autenticação nem separação
+de dados entre usuários.
 
-## Stack
+## Tecnologias
 
-- **FastAPI** — API REST
-- **SQLAlchemy** — ORM
-- **SQLite** — banco de dados
-- **LangChain** + **LangGraph** — orquestração do agente e das tools
-- **Groq** (`llama-3.3-70b-versatile`) — LLM usado pelo agente e pela extração de texto
-- **Pydantic** — validação de schemas
-- **React** (futuro) — frontend
+- Python 3.11 ou mais recente
+- FastAPI e Uvicorn
+- SQLAlchemy e PostgreSQL
+- Alembic
+- Pydantic
+- LangChain e Groq
 
-## Funcionalidades
+## Como executar
 
-- Controle de receitas e despesas (CRUD completo)
-- Gastos fixos recorrentes (com dia de vencimento e ativação/desativação)
-- Metas financeiras (com progresso e cálculo do valor restante)
-- Dashboard com saldo, gastos por categoria e transações recentes
-- Registro automático de transações a partir de texto livre (ex:
-  "gastei 45 reais no Uber") via LLM
-- Agente de chat com **tool-calling**: conversa em linguagem natural e
-  executa ações reais no banco (criar transação, consultar saldo, criar
-  meta, adicionar progresso, cadastrar gasto fixo, gerar resumo, etc.)
-
-## Estrutura do projeto
-
-```
-app/
-├── main.py                     # instancia o FastAPI e registra as rotas
-├── core/
-│   ├── config.py                # variáveis de ambiente (GROQ_API_KEY)
-│   ├── database.py              # engine, SessionLocal, Base
-│   └── dependencies.py          # get_db (dependency injection)
-├── models/                      # modelos SQLAlchemy
-│   ├── transaction.py
-│   ├── goal.py
-│   └── fixed_expense.py
-├── schemas/                     # schemas Pydantic (request/response)
-│   ├── transaction.py
-│   ├── goal.py
-│   ├── fixed_expense.py
-│   ├── chat.py
-│   └── natural_language.py
-├── repositories/                # acesso direto ao banco (queries)
-│   ├── transaction_repository.py
-│   ├── goal_repository.py
-│   └── fixed_expense_repository.py
-├── services/                    # regras de negócio, usados pelas rotas e pelas tools
-│   ├── transaction_service.py
-│   ├── goal_service.py
-│   ├── fixed_expense_service.py
-│   └── dashboard_service.py
-├── agents/
-│   ├── extractor_agent.py       # extrai type/categoria/valor/prioridade de um texto
-│   └── financial_agent.py       # agente de chat com tool-calling (LangGraph)
-├── tools/
-│   └── finance_tools.py         # tools do agente, conectadas ao banco via services
-├── prompts/
-│   └── extraction_prompt.py     # prompt usado pelo extractor_agent
-└── api/routes/
-    ├── transactions.py
-    ├── goals.py
-    ├── fixed_expenses.py
-    ├── dashboard.py
-    └── chat.py
-```
-
-## Configuração
-
-Crie um arquivo `.env` na raiz do projeto:
+1. Crie o arquivo de configuração:
 
 ```bash
-GROQ_API_KEY=sua_chave_aqui
+cp .env.example .env
 ```
 
-A chave é obtida em https://console.groq.com.
+No Windows PowerShell, use:
 
-## Executar
+```powershell
+Copy-Item .env.example .env
+```
+
+Preencha `GROQ_API_KEY` no `.env`. Se o frontend estiver em outro endereço,
+ajuste também `CORS_ORIGINS`.
+
+2. Inicie o PostgreSQL:
 
 ```bash
+docker compose up -d
+```
+
+3. Crie um ambiente virtual e instale as dependências:
+
+```bash
+python -m venv .venv
+```
+
+Linux/macOS:
+
+```bash
+source .venv/bin/activate
 pip install -r requirements.txt
+```
 
+Windows PowerShell:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+4. Aplique as migrações e inicie a API:
+
+```bash
+python -m alembic upgrade head
 python -m uvicorn app.main:app --reload
 ```
 
-A documentação interativa fica disponível em `http://localhost:8000/docs`.
+A API ficará disponível em `http://localhost:8000`. A documentação interativa
+fica em `http://localhost:8000/docs`.
 
-## Endpoints
+## Variáveis de ambiente
+
+| Variável | Uso |
+|---|---|
+| `DATABASE_URL` | Conexão do SQLAlchemy com o PostgreSQL |
+| `GROQ_API_KEY` | Chave usada pelo assistente e pela extração de texto |
+| `GROQ_MODEL` | Modelo da Groq; o padrão é `openai/gpt-oss-20b` |
+| `CORS_ORIGINS` | Origens permitidas, separadas por vírgula |
+
+O `.env` real não deve ser enviado ao Git. O arquivo `.env.example` contém
+apenas valores de desenvolvimento.
+
+## Organização do código
+
+```text
+app/
+├── agents/          integração com o modelo de linguagem
+├── api/routes/      endpoints FastAPI
+├── core/            configuração e sessão do banco
+├── models/          tabelas SQLAlchemy
+├── prompts/         instruções de extração
+├── repositories/    consultas ao banco
+├── schemas/         validação de entrada e saída
+├── services/        regras de negócio
+└── tools/           operações disponíveis para o assistente
+
+alembic/             migrações do banco
+tests/               testes automatizados
+docker-compose.yml   PostgreSQL para desenvolvimento
+```
+
+As rotas chamam os services, que concentram as regras de negócio. Os services
+usam repositories para ler e gravar dados. O Alembic é o responsável por criar
+e atualizar o schema do banco.
+
+## Recursos disponíveis
 
 ### Transações — `/transactions`
-| Método | Rota | Descrição |
-|---|---|---|
-| POST | `/transactions/` | Cria uma transação manualmente |
-| GET | `/transactions/` | Lista todas as transações |
-| GET | `/transactions/{id}` | Busca uma transação por id |
-| PUT | `/transactions/{id}` | Atualiza uma transação |
-| DELETE | `/transactions/{id}` | Remove uma transação |
-| POST | `/transactions/text` | Extrai uma transação de texto livre (LLM) e já salva no banco |
+
+- cadastro, edição e exclusão;
+- filtros por tipo, categoria, status e período;
+- atualização entre `paid` e `pending`;
+- recorrência semanal ou mensal;
+- criação a partir de texto livre.
 
 ### Metas — `/goals`
-| Método | Rota | Descrição |
-|---|---|---|
-| POST | `/goals/` | Cria uma meta |
-| GET | `/goals/` | Lista todas as metas |
-| GET | `/goals/{id}` | Busca uma meta por id |
-| PUT | `/goals/{id}` | Atualiza uma meta |
-| DELETE | `/goals/{id}` | Remove uma meta |
-| POST | `/goals/{id}/progress` | Adiciona valor ao progresso da meta |
+
+- cadastro, edição e exclusão;
+- prazo e progresso acumulado;
+- status calculado como `active`, `completed` ou `overdue`.
 
 ### Gastos fixos — `/fixed-expenses`
-| Método | Rota | Descrição |
-|---|---|---|
-| POST | `/fixed-expenses/` | Cadastra um gasto fixo |
-| GET | `/fixed-expenses/` | Lista todos os gastos fixos |
-| GET | `/fixed-expenses/active` | Lista apenas os ativos |
-| PUT | `/fixed-expenses/{id}` | Atualiza um gasto fixo |
-| DELETE | `/fixed-expenses/{id}` | Remove um gasto fixo |
 
-### Dashboard — `/dashboard`
-| Método | Rota | Descrição |
-|---|---|---|
-| GET | `/dashboard/` | Resumo geral: saldo, gastos por categoria, transações recentes |
-| GET | `/dashboard/top-category` | Categoria com maior gasto |
-| GET | `/dashboard/insights` | Insight textual gerado a partir dos dados |
+- cadastro, edição, listagem e exclusão de cobranças mensais.
 
-### Chat — `/chat`
-| Método | Rota | Descrição |
-|---|---|---|
-| POST | `/chat/` | Conversa com o agente financeiro (tool-calling sobre o banco) |
+### Dashboard e relatórios
 
-## Agente financeiro
+- resumo de receitas, despesas e saldo;
+- despesas por categoria;
+- evolução e saldo mensal;
+- detalhamento por categoria e período.
 
-O `FinancialAgent` (`app/agents/financial_agent.py`) usa o modelo da Groq
-com acesso às tools de `app/tools/finance_tools.py`. Cada tool abre sua
-própria sessão de banco e reaproveita os `services` já existentes, então
-qualquer ação feita pelo agente (criar transação, consultar saldo, criar
-meta, etc.) fica imediatamente refletida nas rotas REST e vice-versa —
-tudo lê e escreve no mesmo `finance.db`.
+Somente transações pagas entram nos valores realizados do dashboard e dos
+relatórios.
 
-Exemplo de conversa:
+### Assistente — `/chat`
 
-```
-POST /chat/
-{ "message": "gastei 45 reais no Uber hoje" }
+O assistente possui 15 ferramentas para consultar saldo e lançamentos, criar
+transações, metas e gastos fixos, atualizar status e gerar relatórios. Cada
+ferramenta abre sua própria sessão do banco. O histórico recente da conversa é
+enviado junto com a mensagem para preservar contexto.
+
+Exemplos:
+
+```text
+Gastei 45 reais no mercado hoje.
+Quais contas estão pendentes este mês?
+Marque a conta de internet como paga.
+Mostre meus gastos por categoria em agosto.
 ```
 
-O agente identifica a intenção, chama a tool `create_transaction` com os
-dados extraídos e responde confirmando o que foi salvo.
+## Testes
+
+```bash
+pip install -r requirements-dev.txt
+python -m pytest -q
+```
+
+Os testes atuais cobrem validação financeira, relatórios, precisão das regras e
+projeção de recorrências. As chamadas reais à Groq dependem de uma chave válida
+e não fazem parte da suíte automática.

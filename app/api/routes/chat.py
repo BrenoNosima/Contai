@@ -1,3 +1,6 @@
+import logging
+from functools import lru_cache
+
 from fastapi import APIRouter
 from fastapi import HTTPException
 
@@ -12,10 +15,13 @@ router = APIRouter(
     prefix="/chat",
     tags=["Chat"],
 )
+logger = logging.getLogger(__name__)
 
 # Instância única do agente: o LLM e as tools não guardam estado entre
 # chamadas, cada tool abre sua própria sessão de banco.
-agent = FinancialAgent()
+@lru_cache
+def get_agent() -> FinancialAgent:
+    return FinancialAgent()
 
 
 @router.post(
@@ -24,12 +30,14 @@ agent = FinancialAgent()
 )
 def chat(payload: ChatRequest):
     try:
-        response = agent.ask(payload.message)
+        history = [message.model_dump() for message in payload.chat_history]
+        response = get_agent().ask(payload.message, history)
 
-    except Exception as error:
+    except Exception:
+        logger.exception("Erro inesperado ao consultar o agente financeiro")
         raise HTTPException(
             status_code=502,
-            detail=f"Erro ao consultar o agente financeiro: {error}",
+            detail="Não foi possível falar com o assistente agora. Tente novamente em instantes.",
         )
 
     return ChatResponse(

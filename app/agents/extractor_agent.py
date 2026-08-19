@@ -12,6 +12,7 @@ from app.prompts.extraction_prompt import (
 
 from app.core.config import (
     GROQ_API_KEY,
+    GROQ_MODEL,
 )
 
 
@@ -20,7 +21,7 @@ class ExtractorAgent:
     def __init__(self):
 
         self.llm = ChatGroq(
-            model="llama-3.3-70b-versatile",
+            model=GROQ_MODEL,
             api_key=str(GROQ_API_KEY),
             temperature=0,
         )

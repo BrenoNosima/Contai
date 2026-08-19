@@ -1,14 +1,21 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter
+from fastapi import Depends
+from fastapi import HTTPException
+from fastapi import Query
+
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_db
+
 from app.schemas.goal import (
     GoalCreate,
-    GoalResponse,
     GoalUpdate,
+    GoalResponse,
 )
-from app.services.goal_service import GoalService
 
+from app.services.goal_service import (
+    GoalService,
+)
 
 router = APIRouter(
     prefix="/goals",
@@ -73,18 +80,11 @@ def update_goal(
     payload: GoalUpdate,
     db: Session = Depends(get_db),
 ):
-    try:
-        goal = service.update_goal(
-            db,
-            goal_id,
-            payload,
-        )
-
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=400,
-            detail=str(exc),
-        ) from exc
+    goal = service.update_goal(
+        db,
+        goal_id,
+        payload,
+    )
 
     if not goal:
         raise HTTPException(
@@ -102,10 +102,12 @@ def delete_goal(
     goal_id: int,
     db: Session = Depends(get_db),
 ):
-    if not service.delete_goal(
+    success = service.delete_goal(
         db,
         goal_id,
-    ):
+    )
+
+    if not success:
         raise HTTPException(
             status_code=404,
             detail="Goal not found",
@@ -117,26 +119,18 @@ def delete_goal(
 
 
 @router.post(
-    "/{goal_id}/progress",
-    response_model=GoalResponse,
+    "/{goal_id}/progress"
 )
 def add_progress(
     goal_id: int,
-    amount: float,
+    amount: float = Query(gt=0),
     db: Session = Depends(get_db),
 ):
-    try:
-        goal = service.add_progress(
-            db,
-            goal_id,
-            amount,
-        )
-
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=400,
-            detail=str(exc),
-        ) from exc
+    goal = service.add_progress(
+        db,
+        goal_id,
+        amount,
+    )
 
     if not goal:
         raise HTTPException(

@@ -1,1 +1,5 @@
-Alembic placeholder
+Migrações do banco de dados do Breno Finance.
+
+Use `python -m alembic upgrade head` a partir da pasta `backend` para aplicar
+as revisões pendentes. Novas alterações de schema devem ser registradas em uma
+revisão, sem usar `Base.metadata.create_all()` na inicialização da aplicação.

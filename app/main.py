@@ -1,7 +1,7 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-from app.core.database import Base
-from app.core.database import engine
+from app.core.config import CORS_ORIGINS
 
 from app.api.routes.transactions import (
     router as transactions_router,
@@ -23,13 +23,22 @@ from app.api.routes.chat import (
     router as chat_router,
 )
 
-# Criação automática das tabelas
-Base.metadata.create_all(bind=engine)
+from app.api.routes.reports import (
+    router as reports_router,
+)
 
 app = FastAPI(
     title="Breno Finance AI",
     description="Sistema financeiro pessoal com IA",
     version="0.1.0",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Rotas
@@ -38,6 +47,7 @@ app.include_router(goals_router)
 app.include_router(fixed_expenses_router)
 app.include_router(dashboard_router)
 app.include_router(chat_router)
+app.include_router(reports_router)
 
 
 @app.get("/")
