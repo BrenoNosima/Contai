@@ -25,7 +25,7 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/ui/states"
 import { TransactionCard } from "@/components/transaction-card"
 import { TransactionForm } from "@/components/transaction-form"
 import { fmtLongDate, parseDate } from "@/lib/dates"
-import { cn } from "@/lib/utils"
+import { cn, formatMoney } from "@/lib/utils"
 
 const WEEKDAYS = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"]
 
@@ -66,15 +66,35 @@ export default function CalendarPage() {
 
   const selectedKey = selected ? format(selected, "yyyy-MM-dd") : null
   const selectedTx = selectedKey ? (byDay.get(selectedKey) ?? []) : []
+  const monthItems = (txQuery.data ?? []).filter((transaction) =>
+    isSameMonth(parseDate(transaction.due_date), cursor),
+  )
+  const pendingExpenses = monthItems.filter(
+    (transaction) =>
+      transaction.type === "expense" && transaction.status === "pending",
+  )
+  const pendingTotal = pendingExpenses.reduce(
+    (total, transaction) => total + transaction.amount,
+    0,
+  )
 
   return (
     <div className="animate-in">
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm font-medium text-muted">Calendário</p>
+          <p className="text-sm font-medium text-[color:var(--color-calendar-accent)]">
+            Agenda financeira
+          </p>
           <h1 className="mt-1 font-sans text-3xl font-semibold capitalize text-foreground">
             {format(cursor, "MMMM 'de' yyyy", { locale: ptBR })}
           </h1>
+          {!txQuery.isLoading && !txQuery.isError && (
+            <p className="mt-1.5 text-sm text-muted">
+              {pendingExpenses.length
+                ? `${pendingExpenses.length} conta${pendingExpenses.length > 1 ? "s" : ""} a pagar · ${formatMoney(pendingTotal)}`
+                : "Nenhuma conta pendente neste mês"}
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-1.5">
           <Button
@@ -103,32 +123,32 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      <Card elevated className="p-3 sm:p-4">
+      <Card elevated className="overflow-hidden border-[color:var(--color-calendar-border)] bg-[color:var(--color-calendar-surface)] p-0">
         {txQuery.isLoading ? (
           <LoadingState label="Carregando o mês…" />
         ) : txQuery.isError ? (
           <ErrorState onRetry={() => txQuery.refetch()} />
         ) : (
-          <>
-            <div className="mb-2 grid grid-cols-7 gap-1">
-              {WEEKDAYS.map((d) => (
-                <div
-                  key={d}
-                  className="py-1 text-center text-[11px] font-medium uppercase tracking-wide text-subtle"
-                >
-                  {d}
-                </div>
-              ))}
-            </div>
-            <div className="grid grid-cols-7 gap-1">
+          <div className="overflow-x-auto">
+            <div className="min-w-[700px]">
+              <div className="grid grid-cols-7 border-b border-[color:var(--color-calendar-border)] bg-[color:var(--color-calendar-header)]">
+                {WEEKDAYS.map((d) => (
+                  <div
+                    key={d}
+                    className="border-r border-[color:var(--color-calendar-border)] py-3 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-muted last:border-r-0"
+                  >
+                    {d}
+                  </div>
+                ))}
+              </div>
+              <div className="grid grid-cols-7">
               {days.map((day) => {
                 const key = format(day, "yyyy-MM-dd")
                 const items = byDay.get(key) ?? []
-                const hasIncome = items.some((t) => t.type === "income")
-                const hasExpense = items.some((t) => t.type === "expense")
                 const hasPending = items.some((t) => t.status === "pending")
                 const inMonth = isSameMonth(day, cursor)
                 const isSel = selected && isSameDay(day, selected)
+                const visibleItems = items.slice(0, 2)
                 return (
                   <button
                     key={key}
@@ -138,33 +158,41 @@ export default function CalendarPage() {
                     }`}
                     aria-pressed={!!isSel}
                     className={cn(
-                      "relative flex min-h-[52px] flex-col items-center justify-start gap-1 rounded-lg border p-1.5 text-sm transition-colors sm:min-h-[64px]",
-                      inMonth ? "text-foreground" : "text-subtle/60",
+                      "group relative min-h-[118px] border-b border-r border-[color:var(--color-calendar-border)] p-2 text-left text-sm transition-colors [@media(min-width:900px)]:min-h-[132px] [&:nth-child(7n)]:border-r-0",
+                      inMonth
+                        ? "bg-[color:var(--color-calendar-surface)] text-foreground"
+                        : "bg-[color:var(--color-calendar-outside)] text-subtle/50",
                       isSel
-                        ? "border-primary bg-surface-3"
-                        : "border-transparent hover:border-border hover:bg-surface-2",
-                      isToday(day) && !isSel && "border-border-strong",
+                        ? "z-10 bg-[color:var(--color-calendar-selected)] shadow-[inset_0_0_0_2px_var(--color-calendar-accent)]"
+                        : "hover:bg-[color:var(--color-calendar-hover)]",
                     )}
                   >
-                    <span
-                      className={cn(
-                        "tnum flex h-6 w-6 items-center justify-center rounded-full text-xs",
-                        isToday(day) &&
-                          "bg-primary font-semibold text-primary-foreground",
-                      )}
-                    >
-                      {format(day, "d")}
-                    </span>
-                    {(hasIncome || hasExpense) && (
-                      <span className="flex items-center gap-0.5">
-                        {hasIncome && (
-                          <Dot tone="income" hollow={!items.some((t) => t.type === "income" && t.status === "pending")} />
+                    <span className="mb-2 flex items-center justify-between">
+                      <span
+                        className={cn(
+                          "tnum flex h-7 min-w-7 items-center justify-center rounded-full px-1.5 text-xs font-medium",
+                          isToday(day) &&
+                            "bg-[color:var(--color-calendar-accent)] font-semibold text-white shadow-sm",
                         )}
-                        {hasExpense && (
-                          <Dot tone="expense" hollow={!items.some((t) => t.type === "expense" && t.status === "pending")} />
-                        )}
+                      >
+                        {format(day, "d")}
                       </span>
-                    )}
+                      {items.length > 0 && (
+                        <span className="text-[10px] text-subtle">
+                          {items.length} {items.length === 1 ? "item" : "itens"}
+                        </span>
+                      )}
+                    </span>
+                    <span className="flex flex-col gap-1">
+                      {visibleItems.map((transaction) => (
+                        <CalendarItem key={transaction.id} transaction={transaction} />
+                      ))}
+                      {items.length > visibleItems.length && (
+                        <span className="px-1 text-[10px] font-medium text-muted">
+                          +{items.length - visibleItems.length} outro{items.length - visibleItems.length > 1 ? "s" : ""}
+                        </span>
+                      )}
+                    </span>
                     {items.length > 0 && (
                       <span className="sr-only">
                         {hasPending ? "pendente" : "pago"}
@@ -173,20 +201,17 @@ export default function CalendarPage() {
                   </button>
                 )
               })}
+              </div>
             </div>
-            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border pt-3 text-[11px] text-muted">
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 bg-[color:var(--color-calendar-header)] px-4 py-3 text-[11px] text-muted">
               <Legend tone="income" label="Receita" />
               <Legend tone="expense" label="Despesa" />
               <span className="flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-full border-2 border-neutral" />
-                Contorno = pago
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-full bg-neutral" />
-                Preenchido = pendente
+                <span className="h-2 w-2 rounded-full bg-warning" />
+                Pendente
               </span>
             </div>
-          </>
+          </div>
         )}
       </Card>
 
@@ -272,21 +297,34 @@ export default function CalendarPage() {
   )
 }
 
-function Dot({ tone, hollow }: { tone: "income" | "expense"; hollow?: boolean }) {
+function CalendarItem({ transaction }: { transaction: Transaction }) {
+  const isExpense = transaction.type === "expense"
+  const pending = transaction.status === "pending"
+
   return (
     <span
       className={cn(
-        "h-2 w-2 rounded-full",
-        tone === "income"
-          ? hollow
-            ? "border-2 border-income"
-            : "bg-income"
-          : hollow
-            ? "border-2 border-expense"
-            : "bg-expense",
+        "flex min-w-0 items-center gap-1.5 rounded-md border-l-2 px-1.5 py-1 text-[10px] leading-tight",
+        isExpense
+          ? "border-l-[color:var(--color-calendar-expense)] bg-[color:var(--color-calendar-expense-soft)] text-[color:var(--color-calendar-expense-text)]"
+          : "border-l-[color:var(--color-calendar-income)] bg-[color:var(--color-calendar-income-soft)] text-[color:var(--color-calendar-income-text)]",
+        !pending && "opacity-55",
       )}
-      aria-hidden
-    />
+    >
+      <span
+        className={cn(
+          "h-1.5 w-1.5 shrink-0 rounded-full",
+          pending ? "bg-warning" : "border border-current bg-transparent",
+        )}
+        aria-hidden
+      />
+      <span className={cn("min-w-0 flex-1 truncate", !pending && "line-through")}>
+        {transaction.description}
+      </span>
+      <span className="tnum shrink-0 font-semibold">
+        {formatMoney(transaction.amount).replace(/\s/g, "")}
+      </span>
+    </span>
   )
 }
 
@@ -296,7 +334,9 @@ function Legend({ tone, label }: { tone: "income" | "expense"; label: string }) 
       <span
         className={cn(
           "h-2.5 w-2.5 rounded-full",
-          tone === "income" ? "bg-income" : "bg-expense",
+          tone === "income"
+            ? "bg-[color:var(--color-calendar-income)]"
+            : "bg-[color:var(--color-calendar-expense)]",
         )}
       />
       {label}

@@ -28,6 +28,21 @@
   --color-danger: #f2666b;
   --color-accent: #f59f45;
 
+  /* Calendar — cooler surfaces inspired by agenda applications */
+  --color-calendar-surface: #121916;
+  --color-calendar-header: #18211d;
+  --color-calendar-outside: #0f1512;
+  --color-calendar-hover: #1b2722;
+  --color-calendar-selected: #203029;
+  --color-calendar-border: #2a3b34;
+  --color-calendar-accent: #5b9cf6;
+  --color-calendar-income: #38c987;
+  --color-calendar-income-soft: #183328;
+  --color-calendar-income-text: #8ee8bb;
+  --color-calendar-expense: #f07178;
+  --color-calendar-expense-soft: #351f22;
+  --color-calendar-expense-text: #f7a3a8;
+
   /* Categorical chart palette */
   --color-chart-1: #2dd4bf;
   --color-chart-2: #a78bfa;
