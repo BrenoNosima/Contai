@@ -1,0 +1,130 @@
+import { Check, Repeat2, Pencil, Trash2, Undo2 } from "lucide-react"
+import type { Transaction } from "@/lib/types"
+import { categoryMeta } from "@/lib/categories"
+import { Money, Badge } from "@/components/ui/primitives"
+import { dueLabel } from "@/lib/dates"
+import { cn } from "@/lib/utils"
+
+const PRIORITY_LABEL: Record<string, string> = {
+  essential: "Essencial",
+  desirable: "Desejável",
+  superfluous: "Supérfluo",
+}
+
+export function TransactionCard({
+  tx,
+  onToggleStatus,
+  onEdit,
+  onDelete,
+  busy,
+  showDue = true,
+}: {
+  tx: Transaction
+  onToggleStatus?: (tx: Transaction) => void
+  onEdit?: (tx: Transaction) => void
+  onDelete?: (tx: Transaction) => void
+  busy?: boolean
+  showDue?: boolean
+}) {
+  const meta = categoryMeta(tx.category)
+  const Icon = meta.icon
+  const isIncome = tx.type === "income"
+  const paid = tx.status === "paid"
+  const due = dueLabel(tx.due_date)
+
+  return (
+    <div
+      className={cn(
+        "group flex items-center gap-3 rounded-xl border border-border bg-surface-2 p-3 transition-colors hover:border-border-strong",
+        !paid && !isIncome && due.tone === "expense" && "border-[color:var(--color-expense)]/40",
+      )}
+    >
+      <div
+        className={cn(
+          "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl",
+          isIncome ? "bg-income-soft text-income" : "bg-surface-3 text-muted",
+        )}
+      >
+        <Icon className="h-5 w-5" aria-hidden />
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-1.5">
+          <p className="truncate text-sm font-medium text-foreground">
+            {tx.description}
+          </p>
+          {tx.parent_id != null && (
+            <span title="Ocorrência recorrente" className="text-subtle">
+              <Repeat2 className="h-3.5 w-3.5" aria-hidden />
+              <span className="sr-only">Ocorrência recorrente</span>
+            </span>
+          )}
+        </div>
+        <div className="mt-1 flex flex-wrap items-center gap-1.5">
+          <span className="text-xs text-muted">{meta.label}</span>
+          {showDue && (
+            <>
+              <span className="text-subtle" aria-hidden>·</span>
+              <span
+                className={cn(
+                  "text-xs",
+                  !paid && due.tone === "expense" && "text-expense",
+                  !paid && due.tone === "warning" && "text-warning",
+                  (paid || due.tone === "neutral") && "text-subtle",
+                )}
+              >
+                {paid ? "Pago" : due.text}
+              </span>
+            </>
+          )}
+          {tx.priority && !isIncome && (
+            <Badge tone="muted">{PRIORITY_LABEL[tx.priority]}</Badge>
+          )}
+        </div>
+      </div>
+
+      <div className="flex shrink-0 flex-col items-end gap-1.5">
+        <Money value={tx.amount} type={tx.type} signed />
+        <div className="flex items-center gap-1">
+          {onToggleStatus && (
+            <button
+              onClick={() => onToggleStatus(tx)}
+              disabled={busy}
+              aria-label={paid ? "Marcar como pendente" : "Marcar como pago"}
+              title={paid ? "Marcar como pendente" : "Marcar como pago"}
+              className={cn(
+                "flex h-8 w-8 items-center justify-center rounded-lg border transition-colors disabled:opacity-50",
+                paid
+                  ? "border-[color:var(--color-income)]/40 bg-income-soft text-income"
+                  : "border-border bg-surface-3 text-muted hover:text-foreground",
+              )}
+            >
+              {paid ? <Check className="h-4 w-4" aria-hidden /> : <span className="h-3.5 w-3.5 rounded-full border-2 border-current" aria-hidden />}
+            </button>
+          )}
+          {onEdit && (
+            <button
+              onClick={() => onEdit(tx)}
+              aria-label="Editar lançamento"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted opacity-0 transition-opacity hover:bg-surface-3 hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
+            >
+              <Pencil className="h-4 w-4" aria-hidden />
+            </button>
+          )}
+          {onDelete && (
+            <button
+              onClick={() => onDelete(tx)}
+              aria-label="Excluir lançamento"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted opacity-0 transition-opacity hover:bg-expense-soft hover:text-expense focus-visible:opacity-100 group-hover:opacity-100"
+            >
+              <Trash2 className="h-4 w-4" aria-hidden />
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** Compact status toggle re-export for contexts needing "undo" affordance. */
+export { Undo2 }
