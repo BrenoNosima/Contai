@@ -1,6 +1,7 @@
 from datetime import date
 
 from sqlalchemy import func, extract
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.transaction import Transaction
@@ -26,6 +27,30 @@ class TransactionRepository:
         db.refresh(transaction)
 
         return transaction
+
+    def create_many(
+        self,
+        db: Session,
+        transactions: list[Transaction],
+    ) -> list[Transaction]:
+        """Persiste um lote inteiro ou não persiste nenhuma ocorrência."""
+
+        if not transactions:
+            return []
+
+        db.add_all(transactions)
+        try:
+            db.commit()
+        except IntegrityError:
+            # Outra geração concorrente pode ter criado a mesma ocorrência
+            # entre a consulta de existência e o commit do lote.
+            db.rollback()
+            return []
+
+        for transaction in transactions:
+            db.refresh(transaction)
+
+        return transactions
 
     def get_by_id(
         self,

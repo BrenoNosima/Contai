@@ -251,11 +251,9 @@ class TransactionService:
                     parent_id=template.id,
                 )
 
-                created.append(
-                    self.repository.create(db, occurrence)
-                )
+                created.append(occurrence)
 
-        return created
+        return self.repository.create_many(db, created)
 
     @staticmethod
     def _project_dates(

@@ -1,5 +1,7 @@
 from datetime import date
 
+from app.models.transaction import Transaction
+from app.repositories.transaction_repository import TransactionRepository
 from app.schemas.transaction import TransactionCreate
 from app.services.transaction_service import TransactionService
 
@@ -81,6 +83,40 @@ def test_recurring_occurrence_generation_is_idempotent(client, db_session):
     second = client.post("/transactions/generate-occurrences", params={"months_ahead": 3})
     assert second.status_code == 200
     assert second.json() == []
+
+
+def test_recurring_batch_rolls_back_on_duplicate(db_session):
+    template = create_transaction(
+        db_session,
+        description="Template",
+        is_recurring=True,
+        recurrence="monthly",
+    )
+    occurrence_date = date(date.today().year + 1, 1, 10)
+    duplicates = [
+        Transaction(
+            type="expense",
+            description="Duplicada",
+            category="Moradia",
+            amount=100,
+            source="recurring",
+            due_date=occurrence_date,
+            status="pending",
+            is_recurring=False,
+            parent_id=template.id,
+        )
+        for _ in range(2)
+    ]
+
+    created = TransactionRepository().create_many(db_session, duplicates)
+
+    assert created == []
+    assert (
+        db_session.query(Transaction)
+        .filter(Transaction.parent_id == template.id)
+        .count()
+        == 0
+    )
 
 
 def test_report_query_validation(client):
