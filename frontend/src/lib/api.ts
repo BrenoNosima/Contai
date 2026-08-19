@@ -96,11 +96,6 @@ export const transactionsApi = {
     request<Transaction[]>(`/transactions/generate-occurrences?months_ahead=${monthsAhead}`, {
       method: "POST",
     }),
-  fromText: (text: string) =>
-    request<Transaction>(`/transactions/text`, {
-      method: "POST",
-      body: JSON.stringify({ text }),
-    }),
 }
 
 // ---------- Goals ----------

@@ -12,7 +12,6 @@ import {
   Input,
   Label,
   Select,
-  Textarea,
 } from "@/components/ui/primitives"
 import { CATEGORY_SUGGESTIONS } from "@/lib/categories"
 import { todayISO } from "@/lib/dates"
@@ -221,41 +220,6 @@ export function TransactionForm({
           {submitting ? "Salvando…" : initial ? "Salvar" : "Adicionar"}
         </Button>
       </div>
-    </form>
-  )
-}
-
-// Kept for callers that only need a quick natural-language entry.
-export function QuickTextForm({
-  onSubmit,
-  submitting,
-}: {
-  onSubmit: (text: string) => void
-  submitting?: boolean
-}) {
-  const [text, setText] = useState("")
-  return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault()
-        if (text.trim()) onSubmit(text.trim())
-      }}
-      className="space-y-3"
-    >
-      <Textarea
-        rows={2}
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder='Escreva naturalmente: "gastei 45 no Uber ontem"'
-      />
-      <Button
-        type="submit"
-        variant="primary"
-        className="w-full"
-        disabled={!text.trim() || submitting}
-      >
-        {submitting ? "Interpretando…" : "Adicionar com IA"}
-      </Button>
     </form>
   )
 }

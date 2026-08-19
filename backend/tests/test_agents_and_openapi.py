@@ -1,5 +1,7 @@
 from app.api.routes import chat as chat_route
 from app.api.routes import transactions as transaction_routes
+from app.agents.extractor_agent import ExtractorAgent
+from app.schemas.natural_language import NaturalLanguageResponse
 
 
 class FakeExtractor:
@@ -19,6 +21,32 @@ class FakeAgent:
         assert message == "Qual meu saldo?"
         assert history == [{"role": "user", "content": "Oi"}]
         return "Seu saldo é R$ 100,00."
+
+
+class FakeExtractionChain:
+    def invoke(self, payload):
+        assert payload == {"text": "recebi 500"}
+        return NaturalLanguageResponse(
+            type="income",
+            description="Freelancer",
+            category="Freelancer",
+            amount=500,
+        )
+
+
+def test_extractor_returns_validated_structured_data():
+    extractor = ExtractorAgent.__new__(ExtractorAgent)
+    extractor.chain = FakeExtractionChain()
+
+    result = extractor.extract("recebi 500")
+
+    assert result == {
+        "type": "income",
+        "description": "Freelancer",
+        "category": "Freelancer",
+        "amount": 500.0,
+        "priority": None,
+    }
 
 
 def test_create_transaction_from_text_without_calling_llm(client, monkeypatch):

@@ -7,6 +7,7 @@ from sqlalchemy.orm import sessionmaker
 
 from app.core.database import Base
 from app.schemas.fixed_expense import FixedExpenseCreate
+from app.schemas.natural_language import NaturalLanguageResponse
 from app.schemas.transaction import TransactionCreate
 from app.services.report_service import ReportService
 from app.services.transaction_service import TransactionService, _add_months
@@ -37,6 +38,14 @@ def test_rejects_invalid_financial_input():
         )
     with pytest.raises(ValidationError):
         FixedExpenseCreate(name="Conta", category="Moradia", amount=10, billing_day=32)
+    with pytest.raises(ValidationError):
+        NaturalLanguageResponse(
+            type="income",
+            description="Salário",
+            category="Salário",
+            amount=100,
+            priority="essential",
+        )
 
 
 def test_monthly_recurrence_preserves_last_valid_day():

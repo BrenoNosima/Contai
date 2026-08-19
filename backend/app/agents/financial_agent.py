@@ -1,9 +1,8 @@
 from langchain.agents import create_agent
 
-from langchain_groq import ChatGroq
 from pydantic import ValidationError
 
-from app.core.config import GROQ_API_KEY, GROQ_MODEL
+from app.agents.llm import create_chat_model
 from app.tools.finance_tools import FINANCE_TOOLS
 
 
@@ -59,11 +58,7 @@ class FinancialAgent:
 
     def __init__(self):
 
-        self.llm = ChatGroq(
-            model=GROQ_MODEL,
-            api_key=str(GROQ_API_KEY),
-            temperature=0,
-        )
+        self.llm = create_chat_model()
 
         self.tools = FINANCE_TOOLS
 
