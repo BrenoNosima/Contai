@@ -185,17 +185,29 @@ class TransactionService:
         db: Session,
     ) -> float:
 
-        total_income = self.repository.get_total_income(
-            db
-        )
-
-        total_expense = self.repository.get_total_expense(
-            db
-        )
+        total_income, total_expense = self.get_totals(db)
 
         return float(
             total_income - total_expense
         )
+
+    def get_totals(self, db: Session) -> tuple[float, float]:
+        """Retorna os totais pagos de receitas e despesas."""
+
+        return (
+            self.repository.get_total_income(db),
+            self.repository.get_total_expense(db),
+        )
+
+    def get_recent_transactions(
+        self,
+        db: Session,
+        limit: int = 5,
+    ) -> list[Transaction]:
+        return self.repository.get_recent_transactions(db, limit)
+
+    def get_expenses_by_category(self, db: Session):
+        return self.repository.get_expenses_by_category(db)
 
     def generate_recurring_occurrences(
         self,

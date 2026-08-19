@@ -244,8 +244,7 @@ def get_balance() -> dict:
     db = SessionLocal()
 
     try:
-        total_income = transaction_service.repository.get_total_income(db)
-        total_expense = transaction_service.repository.get_total_expense(db)
+        total_income, total_expense = transaction_service.get_totals(db)
 
         return {
             "total_income": total_income,
@@ -270,7 +269,7 @@ def list_recent_transactions(
     db = SessionLocal()
 
     try:
-        transactions = transaction_service.repository.get_recent_transactions(
+        transactions = transaction_service.get_recent_transactions(
             db,
             limit,
         )
@@ -301,7 +300,7 @@ def get_expenses_by_category() -> list:
     db = SessionLocal()
 
     try:
-        categories = transaction_service.repository.get_expenses_by_category(db)
+        categories = transaction_service.get_expenses_by_category(db)
 
         return [
             {

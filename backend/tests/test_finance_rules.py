@@ -70,6 +70,28 @@ def test_balance_and_reports_ignore_pending_transactions(db):
     assert trend[0]["expense"] == 0
 
 
+def test_transaction_service_exposes_queries_used_by_agent_tools(db):
+    service = TransactionService()
+    service.create_transaction(
+        db,
+        TransactionCreate(
+            type="expense",
+            description="Mercado",
+            category="Alimentação",
+            amount=75,
+            status="paid",
+            due_date=date.today(),
+        ),
+    )
+
+    income, expense = service.get_totals(db)
+    assert float(income) == 0
+    assert float(expense) == 75
+    assert service.get_balance(db) == -75
+    assert service.get_recent_transactions(db, limit=1)[0].description == "Mercado"
+    assert service.get_expenses_by_category(db)[0][0] == "Alimentação"
+
+
 def test_tool_schemas_expose_domain_constraints():
     tools = {tool.name: tool for tool in FINANCE_TOOLS}
     create_schema = tools["create_transaction"].args_schema.model_json_schema()
