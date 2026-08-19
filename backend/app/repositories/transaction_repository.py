@@ -6,6 +6,13 @@ from sqlalchemy.orm import Session
 from app.models.transaction import Transaction
 
 
+def _period_start(months: int) -> date:
+    today = date.today()
+    month_index = today.year * 12 + today.month - months
+    year, zero_month = divmod(month_index, 12)
+    return date(year, zero_month + 1, 1)
+
+
 class TransactionRepository:
 
     def create(
@@ -237,7 +244,10 @@ class TransactionRepository:
                 Transaction.type,
                 func.sum(Transaction.amount).label("total"),
             )
-            .filter(Transaction.status == "paid")
+            .filter(
+                Transaction.status == "paid",
+                Transaction.due_date >= _period_start(months),
+            )
             .group_by(
                 extract("year", Transaction.due_date),
                 extract("month", Transaction.due_date),
@@ -251,6 +261,28 @@ class TransactionRepository:
         )
 
         return rows
+
+    def get_expense_totals_since(
+        self,
+        db: Session,
+        months: int,
+    ):
+        """Agrupa despesas pagas por categoria dentro dos últimos N meses."""
+
+        return (
+            db.query(
+                Transaction.category,
+                func.sum(Transaction.amount).label("total"),
+            )
+            .filter(
+                Transaction.type == "expense",
+                Transaction.status == "paid",
+                Transaction.due_date >= _period_start(months),
+            )
+            .group_by(Transaction.category)
+            .order_by(func.sum(Transaction.amount).desc())
+            .all()
+        )
 
     def get_category_breakdown(
         self,

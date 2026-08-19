@@ -16,7 +16,8 @@ export const qk = {
     filters ? (["transactions", filters] as const) : (["transactions"] as const),
   goals: ["goals"] as const,
   fixedExpenses: ["fixed-expenses"] as const,
-  reports: ["reports"] as const,
+  reports: (months?: number) =>
+    months ? (["reports", months] as const) : (["reports"] as const),
 }
 
 /**

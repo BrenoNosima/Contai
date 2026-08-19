@@ -43,6 +43,25 @@ def test_dashboard_and_reports_ignore_pending_transactions(client, db_session):
     assert breakdown.status_code == 200
     assert breakdown.json()["expenses"] == [{"category": "Moradia", "amount": 250.0}]
 
+    create_transaction(
+        db_session,
+        description="Despesa antiga",
+        category="Outros",
+        amount=5000,
+        due_date=date(date.today().year - 1, date.today().month, 1),
+    )
+
+    summary_response = client.get("/reports/summary", params={"months": 1})
+    assert summary_response.status_code == 200
+    summary = summary_response.json()
+    assert summary["totals"] == {
+        "income": 1000.0,
+        "expense": 250.0,
+        "net": 750.0,
+    }
+    assert summary["categories"] == [{"category": "Moradia", "amount": 250.0}]
+    assert summary["monthly"][0]["balance"] == 750
+
 
 def test_recurring_occurrence_generation_is_idempotent(client, db_session):
     template = create_transaction(
@@ -67,3 +86,4 @@ def test_recurring_occurrence_generation_is_idempotent(client, db_session):
 def test_report_query_validation(client):
     assert client.get("/reports/monthly-trend", params={"months": 0}).status_code == 422
     assert client.get("/reports/category-breakdown", params={"month": 13}).status_code == 422
+    assert client.get("/reports/summary", params={"months": 25}).status_code == 422

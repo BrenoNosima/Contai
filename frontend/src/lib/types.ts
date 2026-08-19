@@ -126,6 +126,16 @@ export interface CategoryBreakdown {
   income: { category: string; amount: number }[]
 }
 
+export interface ReportSummary {
+  monthly: (MonthlyTrendPoint & { balance: number })[]
+  categories: { category: string; amount: number }[]
+  totals: {
+    income: number
+    expense: number
+    net: number
+  }
+}
+
 // ---- Chat ----
 export interface ChatResponse {
   response: string

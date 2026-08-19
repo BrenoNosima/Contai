@@ -7,6 +7,7 @@ import type {
   Goal,
   GoalCreate,
   MonthlyTrendPoint,
+  ReportSummary,
   Transaction,
   TransactionCreate,
   TransactionFilters,
@@ -145,6 +146,8 @@ export const dashboardApi = {
 
 // ---------- Reports ----------
 export const reportsApi = {
+  summary: (months = 6) =>
+    request<ReportSummary>(`/reports/summary?months=${months}`),
   monthlyTrend: (months = 6) =>
     request<MonthlyTrendPoint[]>(`/reports/monthly-trend?months=${months}`),
   monthlyBalance: (months = 6) =>

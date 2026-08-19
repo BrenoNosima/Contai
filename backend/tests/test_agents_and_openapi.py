@@ -59,6 +59,7 @@ def test_openapi_exposes_core_contracts(client):
         "/fixed-expenses/",
         "/dashboard/",
         "/reports/monthly-trend",
+        "/reports/summary",
         "/chat/",
     }
     assert expected <= set(schema["paths"])

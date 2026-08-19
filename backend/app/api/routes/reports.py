@@ -5,6 +5,7 @@ from fastapi import Query
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_db
+from app.schemas.report import ReportSummary
 
 from app.services.report_service import (
     ReportService,
@@ -16,6 +17,16 @@ router = APIRouter(
 )
 
 service = ReportService()
+
+
+@router.get("/summary", response_model=ReportSummary)
+def report_summary(
+    db: Session = Depends(get_db),
+    months: int = Query(default=6, ge=1, le=24),
+):
+    """Resumo agregado dos últimos N meses para a tela de relatórios."""
+
+    return service.summary(db, months=months)
 
 
 @router.get("/monthly-trend")

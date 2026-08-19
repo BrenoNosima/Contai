@@ -81,6 +81,27 @@ class ReportService:
             for item in trend
         ]
 
+    def summary(self, db, months: int = 6) -> dict:
+        """Resumo completo do período consumido pela tela de relatórios."""
+
+        monthly = self.monthly_balance_table(db, months)
+        income = round(sum(item["income"] for item in monthly), 2)
+        expense = round(sum(item["expense"] for item in monthly), 2)
+        categories = [
+            {"category": category, "amount": float(total)}
+            for category, total in self.repository.get_expense_totals_since(db, months)
+        ]
+
+        return {
+            "monthly": monthly,
+            "categories": categories,
+            "totals": {
+                "income": income,
+                "expense": expense,
+                "net": round(income - expense, 2),
+            },
+        }
+
     def category_breakdown(
         self,
         db,

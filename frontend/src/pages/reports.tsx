@@ -16,16 +16,12 @@ import {
 } from "recharts"
 import { useQuery } from "@tanstack/react-query"
 import { qk } from "@/lib/query"
-import { transactionsApi } from "@/lib/api"
+import { reportsApi } from "@/lib/api"
 import { PageHeader } from "@/components/page-header"
 import { Card } from "@/components/ui/primitives"
 import { ErrorState, LoadingState } from "@/components/ui/states"
 import { formatMoney } from "@/lib/utils"
 import { categoryMeta } from "@/lib/categories"
-import type { Transaction } from "@/lib/types"
-import { parseDate } from "@/lib/dates"
-
-const MONTH_ABBR = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"]
 
 const RANGE_OPTIONS = [
   { value: 3, label: "3 meses" },
@@ -43,64 +39,37 @@ const PIE_COLORS = [
   "var(--color-accent)",
 ]
 
-function monthKey(date: Date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
-}
-
 export default function ReportsPage() {
   const [range, setRange] = useState(6)
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: qk.transactions(),
-    queryFn: () => transactionsApi.list(),
+    queryKey: qk.reports(range),
+    queryFn: () => reportsApi.summary(range),
   })
 
-  const transactions = data ?? []
-
   const { monthly, categories, totals, trend } = useMemo(() => {
-    const now = new Date()
-    const buckets: { key: string; label: string; income: number; expense: number }[] = []
-    for (let i = range - 1; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-      buckets.push({ key: monthKey(d), label: MONTH_ABBR[d.getMonth()], income: 0, expense: 0 })
-    }
-    const bucketMap = new Map(buckets.map((b) => [b.key, b]))
-    const categoryMap = new Map<string, number>()
-    let income = 0
-    let expense = 0
-
-    transactions.forEach((t: Transaction) => {
-      if (t.status !== "paid") return
-      const d = parseDate(t.due_date)
-      const b = bucketMap.get(monthKey(d))
-      if (!b) return
-      if (t.type === "income") {
-        b.income += t.amount
-        income += t.amount
-      } else {
-        b.expense += t.amount
-        expense += t.amount
-        categoryMap.set(t.category, (categoryMap.get(t.category) ?? 0) + t.amount)
-      }
-    })
-
-    const categories = Array.from(categoryMap.entries())
-      .map(([category, value]) => ({ category, value, label: categoryMeta(category).label }))
-      .sort((a, b) => b.value - a.value)
-
+    const monthly = (data?.monthly ?? []).map((item) => ({
+      ...item,
+      label: item.month.toLowerCase(),
+    }))
+    const categories = (data?.categories ?? []).map((item) => ({
+      category: item.category,
+      value: item.amount,
+      label: categoryMeta(item.category).label,
+    }))
     let running = 0
-    const trend = buckets.map((b) => {
-      running += b.income - b.expense
-      return { label: b.label, balance: running }
+    const trend = monthly.map((item) => {
+      running += item.balance
+      return { label: item.label, balance: running }
     })
 
     return {
-      monthly: buckets,
+      monthly,
       categories,
-      totals: { income, expense, net: income - expense },
+      totals: data?.totals ?? { income: 0, expense: 0, net: 0 },
       trend,
     }
-  }, [transactions, range])
+  }, [data])
 
   if (isLoading) {
     return (
