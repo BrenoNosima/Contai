@@ -58,9 +58,13 @@ export function useTransactionMutations() {
   const setStatus = useMutation({
     mutationFn: ({ id, status }: { id: number; status: TransactionStatus }) =>
       transactionsApi.setStatus(id, status),
-    onSuccess: (_data, vars) => {
+    onSuccess: (data, vars) => {
       invalidate()
-      toast(vars.status === "paid" ? "Marcado como pago." : "Marcado como pendente.")
+      toast(
+        data.type === "income"
+          ? vars.status === "paid" ? "Receita recebida." : "Receita marcada como a receber."
+          : vars.status === "paid" ? "Despesa paga." : "Despesa marcada como pendente.",
+      )
     },
     onError: (e) => toast(errMsg(e), "error"),
   })

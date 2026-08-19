@@ -1,5 +1,13 @@
-import { useMemo, useState } from "react"
-import { Plus, Filter, X } from "lucide-react"
+import { useMemo, useState, type ReactNode } from "react"
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  ChevronDown,
+  ChevronUp,
+  Filter,
+  Plus,
+  X,
+} from "lucide-react"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { useTransactions, useTransactionMutations } from "@/lib/hooks"
@@ -58,6 +66,17 @@ export default function TransactionsPage() {
     })
   }
 
+  function setTypeFilter(type?: TransactionType) {
+    patch({ type })
+  }
+
+  const statusLabels =
+    filters.type === "income"
+      ? { all: "Todas", paid: "Recebidas", pending: "A receber" }
+      : filters.type === "expense"
+        ? { all: "Todas", paid: "Pagas", pending: "Pendentes" }
+        : { all: "Todos", paid: "Concluídos", pending: "Em aberto" }
+
   return (
     <div className="animate-in">
       <PageHeader
@@ -71,7 +90,12 @@ export default function TransactionsPage() {
               onClick={() => setShowFilters((s) => !s)}
               aria-expanded={showFilters}
             >
-              <Filter className="h-4 w-4" aria-hidden /> Filtros
+              {showFilters ? (
+                <ChevronUp className="h-4 w-4" aria-hidden />
+              ) : (
+                <Filter className="h-4 w-4" aria-hidden />
+              )}
+              Filtros
               {activeFilterCount > 0 && (
                 <span className="ml-1 rounded-full bg-primary px-1.5 text-[11px] font-semibold text-primary-foreground">
                   {activeFilterCount}
@@ -86,22 +110,49 @@ export default function TransactionsPage() {
       />
 
       {showFilters && (
-        <Card elevated={false} className="mb-4 animate-in">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Card elevated={false} className="mb-5 animate-in p-4 sm:p-5">
+          <div className="mb-4 flex items-center justify-between">
             <div>
-              <Label htmlFor="f-type">Tipo</Label>
-              <Select
-                id="f-type"
-                value={filters.type ?? ""}
-                onChange={(e) =>
-                  patch({ type: (e.target.value || undefined) as TransactionType })
-                }
-              >
-                <option value="">Todos</option>
-                <option value="income">Receita</option>
-                <option value="expense">Despesa</option>
-              </Select>
+              <p className="text-sm font-semibold text-foreground">Filtrar lançamentos</p>
+              <p className="mt-0.5 text-xs text-subtle">Refine a lista pelos dados que você precisa.</p>
             </div>
+            <div className="flex items-center gap-1">
+              {activeFilterCount > 0 && (
+              <button
+                onClick={() => setFilters({})}
+                className="inline-flex h-8 items-center gap-1 rounded-lg px-2 text-xs font-medium text-muted transition-colors hover:bg-surface-3 hover:text-foreground"
+              >
+                <X className="h-3.5 w-3.5" aria-hidden /> Limpar
+              </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setShowFilters(false)}
+                aria-label="Recolher filtros"
+                title="Recolher filtros"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-3 hover:text-foreground"
+              >
+                <ChevronUp className="h-4 w-4" aria-hidden />
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <Label>Tipo de lançamento</Label>
+            <div className="grid grid-cols-3 rounded-xl border border-border bg-background p-1">
+              <FilterOption active={!filters.type} onClick={() => setTypeFilter()}>
+                Todos
+              </FilterOption>
+              <FilterOption active={filters.type === "income"} onClick={() => setTypeFilter("income")}>
+                <ArrowDownLeft className="h-3.5 w-3.5" aria-hidden /> Receitas
+              </FilterOption>
+              <FilterOption active={filters.type === "expense"} onClick={() => setTypeFilter("expense")}>
+                <ArrowUpRight className="h-3.5 w-3.5" aria-hidden /> Despesas
+              </FilterOption>
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-[1fr_1.2fr_1.5fr]">
             <div>
               <Label htmlFor="f-status">Status</Label>
               <Select
@@ -113,25 +164,27 @@ export default function TransactionsPage() {
                   })
                 }
               >
-                <option value="">Todos</option>
-                <option value="paid">Pago</option>
-                <option value="pending">Pendente</option>
+                <option value="">{statusLabels.all}</option>
+                <option value="paid">{statusLabels.paid}</option>
+                <option value="pending">{statusLabels.pending}</option>
               </Select>
             </div>
             <div>
               <Label htmlFor="f-cat">Categoria</Label>
-              <Input
-                id="f-cat"
-                list="f-cat-list"
-                value={filters.category ?? ""}
-                onChange={(e) => patch({ category: e.target.value })}
-                placeholder="Todas"
-              />
-              <datalist id="f-cat-list">
-                {CATEGORY_SUGGESTIONS.map((c) => (
-                  <option key={c} value={c} />
-                ))}
-              </datalist>
+              <div className="relative">
+                <Select
+                  id="f-cat"
+                  value={filters.category ?? ""}
+                  onChange={(e) => patch({ category: e.target.value })}
+                  className="cursor-pointer pr-10"
+                >
+                  <option value="">Todas as categorias</option>
+                  {CATEGORY_SUGGESTIONS.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </Select>
+                <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-subtle" aria-hidden />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
@@ -140,6 +193,7 @@ export default function TransactionsPage() {
                   id="f-start"
                   type="date"
                   value={filters.start_date ?? ""}
+                  max={filters.end_date}
                   onChange={(e) => patch({ start_date: e.target.value })}
                 />
               </div>
@@ -149,19 +203,12 @@ export default function TransactionsPage() {
                   id="f-end"
                   type="date"
                   value={filters.end_date ?? ""}
+                  min={filters.start_date}
                   onChange={(e) => patch({ end_date: e.target.value })}
                 />
               </div>
             </div>
           </div>
-          {activeFilterCount > 0 && (
-            <button
-              onClick={() => setFilters({})}
-              className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-muted hover:text-foreground"
-            >
-              <X className="h-3.5 w-3.5" aria-hidden /> Limpar filtros
-            </button>
-          )}
         </Card>
       )}
 
@@ -281,5 +328,31 @@ export default function TransactionsPage() {
         </div>
       </Dialog>
     </div>
+  )
+}
+
+function FilterOption({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean
+  onClick: () => void
+  children: ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={cn(
+        "flex h-9 items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-medium transition-all sm:text-sm",
+        active
+          ? "bg-surface-3 text-foreground shadow-sm"
+          : "text-muted hover:bg-surface-2 hover:text-foreground",
+      )}
+    >
+      {children}
+    </button>
   )
 }

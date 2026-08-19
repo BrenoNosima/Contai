@@ -31,6 +31,7 @@ export function TransactionCard({
   const isIncome = tx.type === "income"
   const paid = tx.status === "paid"
   const due = dueLabel(tx.due_date)
+  const completedLabel = isIncome ? "Recebida" : "Paga"
 
   return (
     <div
@@ -73,7 +74,7 @@ export function TransactionCard({
                   (paid || due.tone === "neutral") && "text-subtle",
                 )}
               >
-                {paid ? "Pago" : due.text}
+                {paid ? completedLabel : isIncome ? "A receber" : due.text}
               </span>
             </>
           )}
@@ -90,8 +91,16 @@ export function TransactionCard({
             <button
               onClick={() => onToggleStatus(tx)}
               disabled={busy}
-              aria-label={paid ? "Marcar como pendente" : "Marcar como pago"}
-              title={paid ? "Marcar como pendente" : "Marcar como pago"}
+              aria-label={
+                isIncome
+                  ? paid ? "Marcar como a receber" : "Marcar como recebida"
+                  : paid ? "Marcar como pendente" : "Marcar como paga"
+              }
+              title={
+                isIncome
+                  ? paid ? "Marcar como a receber" : "Marcar como recebida"
+                  : paid ? "Marcar como pendente" : "Marcar como paga"
+              }
               className={cn(
                 "flex h-8 w-8 items-center justify-center rounded-lg border transition-colors disabled:opacity-50",
                 paid

@@ -5,6 +5,7 @@ import type {
   TransactionType,
   Priority,
   Recurrence,
+  TransactionStatus,
 } from "@/lib/types"
 import {
   Button,
@@ -16,6 +17,7 @@ import {
 import { CATEGORY_SUGGESTIONS } from "@/lib/categories"
 import { todayISO } from "@/lib/dates"
 import { cn } from "@/lib/utils"
+import { ChevronDown } from "lucide-react"
 
 export function TransactionForm({
   initial,
@@ -31,6 +33,9 @@ export function TransactionForm({
   submitting?: boolean
 }) {
   const [type, setType] = useState<TransactionType>(initial?.type ?? "expense")
+  const [status, setStatus] = useState<TransactionStatus>(
+    initial?.status ?? "pending",
+  )
   const [description, setDescription] = useState(initial?.description ?? "")
   const [category, setCategory] = useState(initial?.category ?? "")
   const [amount, setAmount] = useState(initial ? String(initial.amount) : "")
@@ -55,6 +60,7 @@ export function TransactionForm({
       description: description.trim(),
       category: category.trim(),
       amount: amountNum,
+      status,
       priority: type === "expense" && priority ? priority : null,
       due_date: dueDate,
       is_recurring: recurrence !== "",
@@ -87,6 +93,32 @@ export function TransactionForm({
       </div>
 
       <div>
+        <Label>Situação</Label>
+        <div className="grid grid-cols-2 rounded-xl border border-border bg-background p-1">
+          {(["pending", "paid"] as const).map((option) => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => setStatus(option)}
+              aria-pressed={status === option}
+              className={cn(
+                "h-9 rounded-lg text-sm font-medium transition-all",
+                status === option
+                  ? option === "paid"
+                    ? "bg-income-soft text-income shadow-sm"
+                    : "bg-warning-soft text-warning shadow-sm"
+                  : "text-muted hover:bg-surface-2 hover:text-foreground",
+              )}
+            >
+              {type === "income"
+                ? option === "paid" ? "Recebida" : "A receber"
+                : option === "paid" ? "Paga" : "Pendente"}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
         <Label htmlFor="tx-desc">Descrição</Label>
         <Input
           id="tx-desc"
@@ -97,21 +129,26 @@ export function TransactionForm({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid gap-3 sm:grid-cols-2">
         <div>
           <Label htmlFor="tx-cat">Categoria</Label>
-          <Input
-            id="tx-cat"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            placeholder="Categoria"
-            list="tx-cat-list"
-          />
-          <datalist id="tx-cat-list">
-            {CATEGORY_SUGGESTIONS.map((c) => (
-              <option key={c} value={c} />
-            ))}
-          </datalist>
+          <div className="relative">
+            <Select
+              id="tx-cat"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="cursor-pointer pr-10"
+            >
+              <option value="" disabled>Selecione uma categoria</option>
+              {category && !CATEGORY_SUGGESTIONS.includes(category) && (
+                <option value={category}>{category}</option>
+              )}
+              {CATEGORY_SUGGESTIONS.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </Select>
+            <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-subtle" aria-hidden />
+          </div>
         </div>
         <div>
           <Label htmlFor="tx-amount">Valor (R$)</Label>
@@ -126,9 +163,9 @@ export function TransactionForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid gap-3 sm:grid-cols-2">
         <div>
-          <Label htmlFor="tx-due">Vencimento</Label>
+          <Label htmlFor="tx-due">{type === "income" ? "Data prevista" : "Vencimento"}</Label>
           <Input
             id="tx-due"
             type="date"
