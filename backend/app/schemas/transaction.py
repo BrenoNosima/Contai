@@ -71,6 +71,7 @@ class TransactionResponse(BaseModel):
     is_recurring: bool
     recurrence: RecurrenceType | None
     parent_id: int | None
+    fixed_expense_id: int | None
     user_id: int | None
     created_at: datetime
     updated_at: datetime

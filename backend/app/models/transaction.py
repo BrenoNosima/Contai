@@ -112,9 +112,22 @@ class Transaction(Base):
         nullable=True,
     )
 
+    # Gasto fixo que originou esta cobrança mensal. Transações pagas
+    # permanecem no histórico mesmo se o cadastro do gasto for removido.
+    fixed_expense_id = Column(
+        Integer,
+        ForeignKey("fixed_expenses.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
     __table_args__ = (
         UniqueConstraint(
             "parent_id", "due_date", name="uq_transaction_parent_due_date"
+        ),
+        UniqueConstraint(
+            "fixed_expense_id",
+            "due_date",
+            name="uq_transaction_fixed_expense_due_date",
         ),
     )
 

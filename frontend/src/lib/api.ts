@@ -93,7 +93,7 @@ export const transactionsApi = {
   remove: (id: number) =>
     request<void>(`/transactions/${id}`, { method: "DELETE" }),
   generateOccurrences: (monthsAhead = 3) =>
-    request<unknown>(`/transactions/generate-occurrences?months_ahead=${monthsAhead}`, {
+    request<Transaction[]>(`/transactions/generate-occurrences?months_ahead=${monthsAhead}`, {
       method: "POST",
     }),
   fromText: (text: string) =>

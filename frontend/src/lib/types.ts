@@ -30,6 +30,7 @@ export interface Transaction {
   is_recurring: boolean
   recurrence: Recurrence | null
   parent_id: number | null
+  fixed_expense_id: number | null
   user_id: number | null
   created_at: string
   updated_at: string

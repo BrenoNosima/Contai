@@ -3,12 +3,14 @@ from app.models.fixed_expense import FixedExpense
 from app.repositories.fixed_expense_repository import (
     FixedExpenseRepository,
 )
+from app.repositories.transaction_repository import TransactionRepository
 
 
 class FixedExpenseService:
 
     def __init__(self):
         self.repository = FixedExpenseRepository()
+        self.transaction_repository = TransactionRepository()
 
     def create_fixed_expense(
         self,
@@ -81,10 +83,23 @@ class FixedExpenseService:
                 value,
             )
 
-        return self.repository.update(
+        updated = self.repository.update(
             db,
             expense,
         )
+
+        if updated.active:
+            self.transaction_repository.sync_pending_fixed_expense_occurrences(
+                db,
+                updated,
+            )
+        else:
+            self.transaction_repository.remove_pending_fixed_expense_occurrences(
+                db,
+                updated.id,
+            )
+
+        return updated
 
     def disable_fixed_expense(
         self,
@@ -100,10 +115,17 @@ class FixedExpenseService:
         if not expense:
             return None
 
-        return self.repository.disable(
+        disabled = self.repository.disable(
             db,
             expense,
         )
+
+        self.transaction_repository.remove_pending_fixed_expense_occurrences(
+            db,
+            disabled.id,
+        )
+
+        return disabled
 
     def delete_fixed_expense(
         self,
@@ -118,6 +140,15 @@ class FixedExpenseService:
 
         if not expense:
             return False
+
+        self.transaction_repository.remove_pending_fixed_expense_occurrences(
+            db,
+            expense.id,
+        )
+        self.transaction_repository.detach_fixed_expense_history(
+            db,
+            expense.id,
+        )
 
         self.repository.delete(
             db,

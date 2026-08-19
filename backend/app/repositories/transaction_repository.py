@@ -1,3 +1,4 @@
+from calendar import monthrange
 from datetime import date
 
 from sqlalchemy import func, extract
@@ -250,6 +251,75 @@ class TransactionRepository:
             .first()
             is not None
         )
+
+    def fixed_expense_occurrence_exists(
+        self,
+        db: Session,
+        fixed_expense_id: int,
+        due_date: date,
+    ) -> bool:
+        return (
+            db.query(Transaction)
+            .filter(
+                Transaction.fixed_expense_id == fixed_expense_id,
+                Transaction.due_date == due_date,
+            )
+            .first()
+            is not None
+        )
+
+    def sync_pending_fixed_expense_occurrences(
+        self,
+        db: Session,
+        fixed_expense,
+    ) -> None:
+        occurrences = (
+            db.query(Transaction)
+            .filter(
+                Transaction.fixed_expense_id == fixed_expense.id,
+                Transaction.status == "pending",
+            )
+            .all()
+        )
+
+        for occurrence in occurrences:
+            occurrence.description = fixed_expense.name
+            occurrence.category = fixed_expense.category
+            occurrence.amount = fixed_expense.amount
+            day = min(
+                fixed_expense.billing_day,
+                monthrange(occurrence.due_date.year, occurrence.due_date.month)[1],
+            )
+            occurrence.due_date = occurrence.due_date.replace(day=day)
+
+        db.commit()
+
+    def remove_pending_fixed_expense_occurrences(
+        self,
+        db: Session,
+        fixed_expense_id: int,
+    ) -> None:
+        (
+            db.query(Transaction)
+            .filter(
+                Transaction.fixed_expense_id == fixed_expense_id,
+                Transaction.status == "pending",
+            )
+            .delete(synchronize_session=False)
+        )
+        db.commit()
+
+    def detach_fixed_expense_history(
+        self,
+        db: Session,
+        fixed_expense_id: int,
+    ) -> None:
+        (
+            db.query(Transaction)
+            .filter(Transaction.fixed_expense_id == fixed_expense_id)
+            .update({Transaction.fixed_expense_id: None}, synchronize_session=False)
+        )
+        db.commit()
 
     def get_monthly_totals(
         self,

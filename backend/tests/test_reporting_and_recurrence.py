@@ -119,6 +119,82 @@ def test_recurring_batch_rolls_back_on_duplicate(db_session):
     )
 
 
+def test_fixed_expenses_generate_payable_transactions(client):
+    fixed_response = client.post(
+        "/fixed-expenses/",
+        json={
+            "name": "Internet",
+            "category": "Contas",
+            "amount": 100,
+            "billing_day": 31,
+        },
+    )
+    fixed_expense = fixed_response.json()
+
+    generated = client.post(
+        "/transactions/generate-occurrences",
+        params={"months_ahead": 1},
+    )
+    assert generated.status_code == 200
+    occurrences = [
+        item
+        for item in generated.json()
+        if item["fixed_expense_id"] == fixed_expense["id"]
+    ]
+    assert len(occurrences) == 2
+    assert all(item["status"] == "pending" for item in occurrences)
+    assert all(item["source"] == "recurring" for item in occurrences)
+
+    repeated = client.post(
+        "/transactions/generate-occurrences",
+        params={"months_ahead": 1},
+    )
+    assert repeated.status_code == 200
+    assert repeated.json() == []
+
+
+def test_fixed_expense_updates_pending_occurrences_and_preserves_paid_history(client):
+    fixed_expense = client.post(
+        "/fixed-expenses/",
+        json={
+            "name": "Internet",
+            "category": "Contas",
+            "amount": 100,
+            "billing_day": 10,
+        },
+    ).json()
+    occurrences = client.post(
+        "/transactions/generate-occurrences",
+        params={"months_ahead": 1},
+    ).json()
+    paid_id = occurrences[0]["id"]
+    client.patch(f"/transactions/{paid_id}/status", json={"status": "paid"})
+
+    updated = client.put(
+        f"/fixed-expenses/{fixed_expense['id']}",
+        json={"name": "Fibra", "amount": 120, "billing_day": 15},
+    )
+    assert updated.status_code == 200
+
+    transactions = client.get("/transactions/").json()
+    pending = [
+        item
+        for item in transactions
+        if item["fixed_expense_id"] == fixed_expense["id"]
+        and item["status"] == "pending"
+    ]
+    assert pending
+    assert all(item["description"] == "Fibra" for item in pending)
+    assert all(item["amount"] == 120 for item in pending)
+    assert all(item["due_date"].endswith("-15") for item in pending)
+
+    deleted = client.delete(f"/fixed-expenses/{fixed_expense['id']}")
+    assert deleted.status_code == 200
+    remaining = client.get("/transactions/").json()
+    assert [item["id"] for item in remaining] == [paid_id]
+    assert remaining[0]["fixed_expense_id"] is None
+
+
 def test_report_query_validation(client):
     assert client.get("/reports/monthly-trend", params={"months": 0}).status_code == 422
     assert client.get("/reports/category-breakdown", params={"month": 13}).status_code == 422

@@ -54,7 +54,7 @@ export function TransactionCard({
           <p className="truncate text-sm font-medium text-foreground">
             {tx.description}
           </p>
-          {tx.parent_id != null && (
+          {(tx.parent_id != null || tx.fixed_expense_id != null) && (
             <span title="Ocorrência recorrente" className="text-subtle">
               <Repeat2 className="h-3.5 w-3.5" aria-hidden />
               <span className="sr-only">Ocorrência recorrente</span>

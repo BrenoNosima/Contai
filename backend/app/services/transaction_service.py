@@ -8,6 +8,7 @@ from app.models.transaction import Transaction
 from app.repositories.transaction_repository import (
     TransactionRepository,
 )
+from app.repositories.fixed_expense_repository import FixedExpenseRepository
 
 from app.schemas.transaction import (
     TransactionCreate,
@@ -19,6 +20,7 @@ class TransactionService:
 
     def __init__(self):
         self.repository = TransactionRepository()
+        self.fixed_expense_repository = FixedExpenseRepository()
 
     def create_transaction(
         self,
@@ -253,7 +255,50 @@ class TransactionService:
 
                 created.append(occurrence)
 
+        for expense in self.fixed_expense_repository.get_active(db):
+            for occurrence_date in self._project_fixed_expense_dates(
+                expense.billing_day,
+                months_ahead,
+            ):
+                if self.repository.fixed_expense_occurrence_exists(
+                    db,
+                    expense.id,
+                    occurrence_date,
+                ):
+                    continue
+
+                created.append(
+                    Transaction(
+                        type="expense",
+                        description=expense.name,
+                        category=expense.category,
+                        amount=expense.amount,
+                        priority=None,
+                        source="recurring",
+                        due_date=occurrence_date,
+                        status="pending",
+                        is_recurring=False,
+                        recurrence=None,
+                        fixed_expense_id=expense.id,
+                    )
+                )
+
         return self.repository.create_many(db, created)
+
+    @staticmethod
+    def _project_fixed_expense_dates(
+        billing_day: int,
+        months_ahead: int,
+    ) -> list[date]:
+        today = date.today()
+        dates = []
+
+        for offset in range(months_ahead + 1):
+            month = _add_months(today.replace(day=1), offset)
+            day = min(billing_day, monthrange(month.year, month.month)[1])
+            dates.append(month.replace(day=day))
+
+        return dates
 
     @staticmethod
     def _project_dates(
