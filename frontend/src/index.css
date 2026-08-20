@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 @theme inline {
-  --font-sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", monospace;
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, "SF Mono", monospace;
 
   /* Neutral black foundation; color is reserved for meaning and actions */
   --color-background: #050505;
@@ -76,6 +76,7 @@
     text-rendering: optimizeLegibility;
     font-feature-settings: "ss01";
     min-width: 320px;
+    overflow-x: hidden;
   }
 
   /* Tabular figures everywhere money is shown */

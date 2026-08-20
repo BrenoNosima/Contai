@@ -22,7 +22,6 @@ import { TransactionCard } from "@/components/transaction-card"
 import { TransactionForm } from "@/components/transaction-form"
 import { isOverdue, parseDate } from "@/lib/dates"
 import { cn } from "@/lib/utils"
-import { FinancialGrid, FinancialOrbit } from "@/components/ui/financial-pattern"
 
 export default function OverviewPage() {
   const [adding, setAdding] = useState(false)
@@ -114,7 +113,6 @@ export default function OverviewPage() {
           {/* Month stats */}
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <Card className="group overflow-hidden transition-colors hover:border-income/30" elevated={false}>
-              <FinancialGrid />
               <div className="relative z-10 flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted">Recebido no mês</p>
@@ -130,7 +128,6 @@ export default function OverviewPage() {
               </div>
             </Card>
             <Card className="group overflow-hidden transition-colors hover:border-expense/30" elevated={false}>
-              <FinancialGrid />
               <div className="relative z-10 flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted">A pagar no mês</p>
@@ -275,8 +272,6 @@ function BalanceCard({
         highlight && "border-[color:var(--color-primary)]/30",
       )}
     >
-      <FinancialGrid />
-      <FinancialOrbit tone={value < 0 ? "expense" : "primary"} />
       <div className="relative z-10 flex items-center justify-between">
         <p className="text-xs text-muted">{label}</p>
         <span
@@ -309,8 +304,7 @@ function StatCard({
   tone: "income" | "expense"
 }) {
   return (
-    <Card className="col-span-3 min-h-40 overflow-hidden transition-all hover:-translate-y-0.5 hover:border-border-strong lg:col-span-2">
-      <FinancialOrbit tone={tone} />
+    <Card className="col-span-full min-h-40 overflow-hidden transition-all hover:-translate-y-0.5 hover:border-border-strong sm:col-span-3 lg:col-span-2">
       <div className="relative z-10 flex items-center justify-between">
         <p className="text-xs text-muted">{label}</p>
         <span

@@ -36,7 +36,7 @@ export function TransactionCard({
   return (
     <div
       className={cn(
-        "group flex items-center gap-3 rounded-2xl border border-border bg-surface-2/70 p-3.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-border-strong hover:bg-surface-2 hover:shadow-lg",
+        "group flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-surface-2/70 p-3.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-border-strong hover:bg-surface-2 hover:shadow-lg sm:flex-nowrap",
         !paid && !isIncome && due.tone === "expense" && "border-[color:var(--color-expense)]/40",
       )}
     >
@@ -84,7 +84,7 @@ export function TransactionCard({
         </div>
       </div>
 
-      <div className="flex shrink-0 flex-col items-end gap-1.5">
+      <div className="ml-14 flex w-full shrink-0 items-center justify-between gap-2 sm:ml-0 sm:w-auto sm:flex-col sm:items-end sm:gap-1.5">
         <Money value={tx.amount} type={tx.type} signed />
         <div className="flex items-center gap-1">
           {onToggleStatus && (

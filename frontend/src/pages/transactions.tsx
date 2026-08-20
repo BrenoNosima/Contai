@@ -26,7 +26,6 @@ import { TransactionForm } from "@/components/transaction-form"
 import { useFinanceMetadata } from "@/lib/metadata"
 import { parseDate } from "@/lib/dates"
 import { cn } from "@/lib/utils"
-import { FinancialGrid } from "@/components/ui/financial-pattern"
 
 export default function TransactionsPage() {
   const metadata = useFinanceMetadata()
@@ -113,7 +112,6 @@ export default function TransactionsPage() {
 
       {showFilters && (
         <Card elevated={false} className="mb-5 overflow-hidden animate-in p-4 sm:p-5">
-          <FinancialGrid />
           <div className="relative z-10 mb-4 flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold text-foreground">Filtrar lançamentos</p>

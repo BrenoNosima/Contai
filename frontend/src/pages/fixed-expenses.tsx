@@ -12,7 +12,6 @@ import { PageHeader } from "@/components/page-header"
 import { Button, Card, Input, Label, Money } from "@/components/ui/primitives"
 import { Dialog } from "@/components/ui/dialog"
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/states"
-import { FinancialGrid, FinancialOrbit } from "@/components/ui/financial-pattern"
 
 export default function FixedExpensesPage() {
   const [form, setForm] = useState<{ open: boolean; item?: FixedExpense }>({
@@ -72,8 +71,6 @@ export default function FixedExpensesPage() {
 
       {query.data && query.data.length > 0 && (
         <Card className="mb-4 overflow-hidden" elevated={false}>
-          <FinancialGrid />
-          <FinancialOrbit tone="expense" />
           <div className="relative z-10 flex items-center justify-between">
           <div>
             <p className="text-xs text-muted">Total mensal em gastos fixos</p>
@@ -114,7 +111,7 @@ export default function FixedExpensesPage() {
               return (
                 <div
                   key={item.id}
-                  className="group flex items-center gap-3 rounded-2xl border border-border bg-surface-2/70 p-3.5 transition-all hover:-translate-y-0.5 hover:border-border-strong hover:bg-surface-2 hover:shadow-lg"
+                  className="group flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-surface-2/70 p-3.5 transition-all hover:-translate-y-0.5 hover:border-border-strong hover:bg-surface-2 hover:shadow-lg sm:flex-nowrap"
                 >
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-surface-3 text-muted">
                     <Icon className="h-5 w-5" aria-hidden />
@@ -132,8 +129,9 @@ export default function FixedExpensesPage() {
                       </span>
                     </p>
                   </div>
-                  <Money value={item.amount} type="expense" />
-                  <div className="flex items-center gap-1">
+                  <div className="ml-14 flex w-full items-center justify-between gap-2 sm:ml-0 sm:w-auto sm:justify-end">
+                    <Money value={item.amount} type="expense" />
+                    <div className="flex items-center gap-1">
                     <button
                       onClick={() => setForm({ open: true, item })}
                       aria-label="Editar gasto fixo"
@@ -148,6 +146,7 @@ export default function FixedExpensesPage() {
                     >
                       <Trash2 className="h-4 w-4" aria-hidden />
                     </button>
+                    </div>
                   </div>
                 </div>
               )
@@ -258,7 +257,7 @@ function FixedExpenseForm({
           ))}
         </datalist>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <Label htmlFor="fe-amount">Valor (R$)</Label>
           <Input

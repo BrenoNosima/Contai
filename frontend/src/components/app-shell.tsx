@@ -35,16 +35,16 @@ const NAV: NavItem[] = [
 const MOBILE_NAV_PATHS = new Set(["/", "/calendario", "/lancamentos", "/assistente"])
 const MOBILE_NAV = NAV.filter((item) => MOBILE_NAV_PATHS.has(item.to))
 
-function Logo() {
+function Logo({ compact = false }: { compact?: boolean }) {
   return (
     <div className="flex items-center gap-2.5">
       <div className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-[14px] bg-primary text-primary-foreground shadow-[0_10px_28px_-12px_var(--color-primary)]">
         <span className="tnum text-lg font-bold">B</span>
         <span className="absolute inset-x-1 top-0 h-px bg-white/40" aria-hidden />
       </div>
-      <div className="leading-tight">
+      <div className={cn("leading-tight", compact && "hidden min-[360px]:block")}>
         <p className="text-sm font-semibold tracking-tight text-foreground">Breno Finance</p>
-        <p className="text-[11px] text-subtle">controle financeiro</p>
+        {!compact && <p className="text-[11px] text-subtle">controle financeiro</p>}
       </div>
     </div>
   )
@@ -110,8 +110,8 @@ export function AppShell() {
 
       {/* Mobile top bar */}
       <header className="sticky top-0 z-20 flex items-center justify-between border-b border-border/70 bg-background/80 px-4 py-3 backdrop-blur-xl lg:hidden">
-        <Logo />
-        <span className="text-sm font-medium text-muted">{active?.label}</span>
+        <Logo compact />
+        <span className="max-w-32 truncate text-sm font-medium text-muted">{active?.label}</span>
       </header>
 
       {/* Content */}

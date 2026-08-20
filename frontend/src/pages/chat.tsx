@@ -5,7 +5,6 @@ import { chatApi } from "@/lib/api"
 import { useFinanceInvalidation } from "@/lib/query"
 import { PageHeader } from "@/components/page-header"
 import { cn } from "@/lib/utils"
-import { FinancialGrid } from "@/components/ui/financial-pattern"
 
 interface Message {
   id: string
@@ -85,7 +84,7 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex h-[calc(100dvh-9.5rem)] min-h-[560px] flex-col md:h-[calc(100dvh-7rem)]">
+    <div className="flex h-[calc(100dvh-10.5rem)] min-h-[460px] flex-col sm:min-h-[560px] md:h-[calc(100dvh-7rem)]">
       <PageHeader
         title="Assistente"
         subtitle="Converse em português para registrar e consultar suas finanças."
@@ -95,7 +94,6 @@ export default function ChatPage() {
         ref={scrollRef}
         className="card-elevated relative flex-1 overflow-y-auto rounded-3xl p-4 sm:p-6"
       >
-        <FinancialGrid className="fixed opacity-[0.025]" />
         <div className="relative z-10 mx-auto flex max-w-2xl flex-col gap-5">
           {messages.map((m) => (
             <MessageBubble key={m.id} message={m} />

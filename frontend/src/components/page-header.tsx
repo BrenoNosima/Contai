@@ -17,7 +17,11 @@ export function PageHeader({
         </h1>
         {subtitle && <p className="max-w-2xl text-sm leading-relaxed text-muted text-pretty">{subtitle}</p>}
       </div>
-      {actions && <div className="flex items-center gap-2 self-start sm:self-auto">{actions}</div>}
+      {actions && (
+        <div className="flex w-full flex-wrap items-center gap-2 self-start sm:w-auto sm:self-auto">
+          {actions}
+        </div>
+      )}
     </div>
   )
 }

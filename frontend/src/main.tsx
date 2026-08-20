@@ -5,6 +5,8 @@ import { RouterProvider, createBrowserRouter, Navigate } from "react-router-dom"
 import { queryClient } from "@/lib/query"
 import { AppShell } from "@/components/app-shell"
 import { ToastProvider } from "@/components/ui/toast"
+import "@fontsource-variable/geist"
+import "@fontsource-variable/geist-mono"
 import "./index.css"
 
 const lazyPage = (loader: () => Promise<{ default: ComponentType }>) =>

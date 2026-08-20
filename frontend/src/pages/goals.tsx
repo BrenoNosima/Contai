@@ -13,7 +13,6 @@ import { Dialog } from "@/components/ui/dialog"
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/states"
 import { parseDate } from "@/lib/dates"
 import { cn } from "@/lib/utils"
-import { FinancialGrid, FinancialOrbit } from "@/components/ui/financial-pattern"
 
 const STATUS_META: Record<
   GoalStatus,
@@ -192,11 +191,6 @@ function GoalCard({
   const pct = Math.min(100, Math.max(0, goal.progress_percentage))
   return (
     <Card className="flex flex-col gap-4 overflow-hidden transition-all hover:-translate-y-0.5 hover:border-border-strong hover:shadow-xl">
-      <FinancialGrid />
-      <FinancialOrbit
-        tone={goal.status === "overdue" ? "expense" : goal.status === "completed" ? "income" : "primary"}
-        className="-right-20 -top-20"
-      />
       <div className="relative z-10 flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate font-medium text-foreground">{goal.name}</p>
@@ -247,7 +241,7 @@ function GoalCard({
         </div>
       </div>
 
-      <div className="relative z-10 flex items-center justify-between">
+      <div className="relative z-10 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
         <span className="flex items-center gap-1.5 text-xs text-subtle">
           {goal.deadline ? (
             <>
@@ -258,8 +252,8 @@ function GoalCard({
             "Sem prazo"
           )}
         </span>
-        <div className="flex items-center gap-1">
-          <Button size="sm" variant="secondary" onClick={onAddProgress}>
+        <div className="flex items-center justify-end gap-1">
+          <Button size="sm" variant="secondary" className="flex-1 sm:flex-none" onClick={onAddProgress}>
             <TrendingUp className="h-4 w-4" aria-hidden /> Progresso
           </Button>
           <button
@@ -331,7 +325,7 @@ function GoalForm({
           autoFocus
         />
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <Label htmlFor="g-target">Valor alvo (R$)</Label>
           <Input

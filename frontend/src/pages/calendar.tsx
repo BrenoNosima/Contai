@@ -145,13 +145,13 @@ export default function CalendarPage() {
             }}
           />
         ) : (
-          <div className="overflow-x-auto">
-            <div className="min-w-[620px] sm:min-w-0">
+          <div>
+            <div className="min-w-0">
               <div className="grid grid-cols-7 border-b border-[color:var(--color-calendar-border)] bg-[color:var(--color-calendar-header)]">
                 {WEEKDAYS.map((d) => (
                   <div
                     key={d}
-                    className="border-r border-[color:var(--color-calendar-border)] py-3 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-muted last:border-r-0"
+                    className="border-r border-[color:var(--color-calendar-border)] py-2 text-center text-[10px] font-semibold uppercase tracking-[0.06em] text-muted last:border-r-0 sm:py-3 sm:text-[11px] sm:tracking-[0.12em]"
                   >
                     {d}
                   </div>
@@ -174,7 +174,7 @@ export default function CalendarPage() {
                     }`}
                     aria-pressed={!!isSel}
                     className={cn(
-                      "group relative min-h-[118px] border-b border-r border-[color:var(--color-calendar-border)] p-2 text-left text-sm transition-colors [@media(min-width:900px)]:min-h-[132px] [&:nth-child(7n)]:border-r-0",
+                      "group relative min-h-16 border-b border-r border-[color:var(--color-calendar-border)] p-1 text-left text-sm transition-colors sm:min-h-[118px] sm:p-2 [@media(min-width:900px)]:min-h-[132px] [&:nth-child(7n)]:border-r-0",
                       inMonth
                         ? "bg-[color:var(--color-calendar-surface)] text-foreground"
                         : "bg-[color:var(--color-calendar-outside)] text-subtle/50",
@@ -183,10 +183,10 @@ export default function CalendarPage() {
                         : "hover:bg-[color:var(--color-calendar-hover)]",
                     )}
                   >
-                    <span className="mb-2 flex items-center justify-between">
+                    <span className="mb-1 flex items-center justify-between sm:mb-2">
                       <span
                         className={cn(
-                          "tnum flex h-7 min-w-7 items-center justify-center rounded-full px-1.5 text-xs font-medium",
+                          "tnum flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-[11px] font-medium sm:h-7 sm:min-w-7 sm:px-1.5 sm:text-xs",
                           isToday(day) &&
                             "bg-[color:var(--color-calendar-accent)] font-semibold text-white shadow-sm",
                         )}
@@ -194,12 +194,12 @@ export default function CalendarPage() {
                         {format(day, "d")}
                       </span>
                       {items.length > 0 && (
-                        <span className="text-[10px] text-subtle">
+                        <span className="hidden text-[10px] text-subtle sm:inline">
                           {items.length} {items.length === 1 ? "item" : "itens"}
                         </span>
                       )}
                     </span>
-                    <span className="flex flex-col gap-1">
+                    <span className="hidden flex-col gap-1 sm:flex">
                       {visibleItems.map((transaction) => (
                         <CalendarItem
                           key={transaction.id}
@@ -212,6 +212,20 @@ export default function CalendarPage() {
                         </span>
                       )}
                     </span>
+                    {items.length > 0 && (
+                      <span className="mt-2 flex flex-wrap gap-1 px-0.5 sm:hidden" aria-hidden>
+                        {items.slice(0, 4).map((transaction) => (
+                          <span
+                            key={transaction.id}
+                            className={cn(
+                              "h-1.5 w-1.5 rounded-full",
+                              transaction.type === "income" ? "bg-income" : "bg-expense",
+                              transaction.status === "pending" && "ring-1 ring-warning ring-offset-1 ring-offset-[color:var(--color-calendar-surface)]",
+                            )}
+                          />
+                        ))}
+                      </span>
+                    )}
                     {items.length > 0 && (
                       <span className="sr-only">
                         {hasPending ? "pendente" : "pago"}
