@@ -13,11 +13,3 @@ const brl = new Intl.NumberFormat("pt-BR", {
 export function formatMoney(value: number): string {
   return brl.format(value ?? 0)
 }
-
-/** Money without the R$ symbol, for tight tabular columns when needed. */
-export function formatMoneyPlain(value: number): string {
-  return new Intl.NumberFormat("pt-BR", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value ?? 0)
-}

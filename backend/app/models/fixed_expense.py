@@ -85,14 +85,6 @@ class FixedExpense(Base):
         nullable=False,
     )
 
-    @property
-    def is_active(self):
-        """
-        Retorna se o gasto está ativo.
-        """
-
-        return self.active
-
     def __repr__(self):
         return (
             f"<FixedExpense("

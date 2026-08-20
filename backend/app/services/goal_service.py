@@ -123,22 +123,3 @@ class GoalService:
             goal,
             amount,
         )
-
-    def calculate_monthly_saving(
-        self,
-        goal,
-        months_remaining,
-    ):
-
-        if months_remaining <= 0:
-            return 0
-
-        remaining_amount = (
-            goal.target_amount
-            - goal.current_amount
-        )
-
-        return round(
-            remaining_amount / months_remaining,
-            2,
-        )

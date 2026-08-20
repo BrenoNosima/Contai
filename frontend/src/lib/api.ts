@@ -1,5 +1,4 @@
 import type {
-  CategoryBreakdown,
   ChatResponse,
   DashboardSummary,
   FixedExpense,
@@ -7,7 +6,6 @@ import type {
   FinanceMetadata,
   Goal,
   GoalCreate,
-  MonthlyTrendPoint,
   ReportSummary,
   Transaction,
   TransactionCreate,
@@ -75,7 +73,6 @@ function toQuery(params: Record<string, unknown>): string {
 export const transactionsApi = {
   list: (filters: TransactionFilters = {}) =>
     request<Transaction[]>(`/transactions/${toQuery(filters as Record<string, unknown>)}`),
-  get: (id: number) => request<Transaction>(`/transactions/${id}`),
   create: (data: TransactionCreate) =>
     request<Transaction>(`/transactions/`, {
       method: "POST",
@@ -102,7 +99,6 @@ export const transactionsApi = {
 // ---------- Goals ----------
 export const goalsApi = {
   list: () => request<Goal[]>(`/goals/`),
-  get: (id: number) => request<Goal>(`/goals/${id}`),
   create: (data: GoalCreate) =>
     request<Goal>(`/goals/`, { method: "POST", body: JSON.stringify(data) }),
   update: (id: number, data: Partial<GoalCreate>) =>
@@ -118,7 +114,6 @@ export const goalsApi = {
 // ---------- Fixed expenses ----------
 export const fixedExpensesApi = {
   list: () => request<FixedExpense[]>(`/fixed-expenses/`),
-  listActive: () => request<FixedExpense[]>(`/fixed-expenses/active`),
   create: (data: FixedExpenseCreate) =>
     request<FixedExpense>(`/fixed-expenses/`, {
       method: "POST",
@@ -136,20 +131,12 @@ export const fixedExpensesApi = {
 // ---------- Dashboard ----------
 export const dashboardApi = {
   summary: () => request<DashboardSummary>(`/dashboard/`),
-  topCategory: () => request<unknown>(`/dashboard/top-category`),
-  insights: () => request<unknown>(`/dashboard/insights`),
 }
 
 // ---------- Reports ----------
 export const reportsApi = {
   summary: (months = 6) =>
     request<ReportSummary>(`/reports/summary?months=${months}`),
-  monthlyTrend: (months = 6) =>
-    request<MonthlyTrendPoint[]>(`/reports/monthly-trend?months=${months}`),
-  monthlyBalance: (months = 6) =>
-    request<MonthlyTrendPoint[]>(`/reports/monthly-balance?months=${months}`),
-  categoryBreakdown: (month?: number, year?: number) =>
-    request<CategoryBreakdown>(`/reports/category-breakdown${toQuery({ month, year })}`),
 }
 
 // ---------- Chat ----------

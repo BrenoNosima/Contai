@@ -30,17 +30,6 @@ class FixedExpenseService:
             expense,
         )
 
-    def get_fixed_expense(
-        self,
-        db,
-        expense_id,
-    ):
-
-        return self.repository.get_by_id(
-            db,
-            expense_id,
-        )
-
     def get_all_fixed_expenses(
         self,
         db,
@@ -100,32 +89,6 @@ class FixedExpenseService:
             )
 
         return updated
-
-    def disable_fixed_expense(
-        self,
-        db,
-        expense_id,
-    ):
-
-        expense = self.repository.get_by_id(
-            db,
-            expense_id,
-        )
-
-        if not expense:
-            return None
-
-        disabled = self.repository.disable(
-            db,
-            expense,
-        )
-
-        self.transaction_repository.remove_pending_fixed_expense_occurrences(
-            db,
-            disabled.id,
-        )
-
-        return disabled
 
     def delete_fixed_expense(
         self,

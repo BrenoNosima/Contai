@@ -150,18 +150,6 @@ class Transaction(Base):
         nullable=False,
     )
 
-    @property
-    def is_income(self):
-        return self.type == "income"
-
-    @property
-    def is_expense(self):
-        return self.type == "expense"
-
-    @property
-    def is_paid(self):
-        return self.status == "paid"
-
     def __repr__(self):
         return (
             f"<Transaction("

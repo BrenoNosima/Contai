@@ -120,13 +120,6 @@ export interface MonthlyTrendPoint {
   balance?: number
 }
 
-export interface CategoryBreakdown {
-  month: number
-  year: number
-  expenses: { category: string; amount: number }[]
-  income: { category: string; amount: number }[]
-}
-
 export interface ReportSummary {
   monthly: (MonthlyTrendPoint & { balance: number })[]
   categories: { category: string; amount: number }[]

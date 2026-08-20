@@ -65,13 +65,3 @@ class FixedExpenseRepository:
 
         db.delete(fixed_expense)
         commit(db)
-
-    def disable(
-        self,
-        db: Session,
-        fixed_expense: FixedExpense,
-    ):
-
-        fixed_expense.active = False
-
-        return commit(db, fixed_expense)

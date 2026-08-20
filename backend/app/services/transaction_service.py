@@ -66,12 +66,6 @@ class TransactionService:
             transaction_id,
         )
 
-    def get_all_transactions(
-        self,
-        db: Session,
-    ):
-        return self.repository.get_all(db)
-
     def list_transactions(
         self,
         db: Session,
