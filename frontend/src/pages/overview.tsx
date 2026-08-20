@@ -22,6 +22,7 @@ import { TransactionCard } from "@/components/transaction-card"
 import { TransactionForm } from "@/components/transaction-form"
 import { isOverdue, parseDate } from "@/lib/dates"
 import { cn } from "@/lib/utils"
+import { FinancialGrid, FinancialOrbit } from "@/components/ui/financial-pattern"
 
 export default function OverviewPage() {
   const [adding, setAdding] = useState(false)
@@ -89,7 +90,7 @@ export default function OverviewPage() {
         />
       ) : dashboard.data ? (
         <>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-6 gap-3">
             <BalanceCard
               label="Saldo atual"
               value={dashboard.data.summary.balance}
@@ -112,7 +113,9 @@ export default function OverviewPage() {
 
           {/* Month stats */}
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            <Card className="flex items-center justify-between transition-colors hover:border-income/30" elevated={false}>
+            <Card className="group overflow-hidden transition-colors hover:border-income/30" elevated={false}>
+              <FinancialGrid />
+              <div className="relative z-10 flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted">Recebido no mês</p>
                 <Money
@@ -124,8 +127,11 @@ export default function OverviewPage() {
               <span className="rounded-lg bg-income-soft p-2 text-income">
                 <TrendingUp className="h-5 w-5" aria-hidden />
               </span>
+              </div>
             </Card>
-            <Card className="flex items-center justify-between transition-colors hover:border-expense/30" elevated={false}>
+            <Card className="group overflow-hidden transition-colors hover:border-expense/30" elevated={false}>
+              <FinancialGrid />
+              <div className="relative z-10 flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted">A pagar no mês</p>
                 <Money
@@ -137,6 +143,7 @@ export default function OverviewPage() {
               <span className="rounded-lg bg-expense-soft p-2 text-expense">
                 <CalendarClock className="h-5 w-5" aria-hidden />
               </span>
+              </div>
             </Card>
           </div>
         </>
@@ -264,10 +271,12 @@ function BalanceCard({
   return (
     <Card
       className={cn(
-        "relative overflow-hidden sm:col-span-2",
+        "relative col-span-full min-h-40 overflow-hidden lg:col-span-2",
         highlight && "border-[color:var(--color-primary)]/30",
       )}
     >
+      <FinancialGrid />
+      <FinancialOrbit tone={value < 0 ? "expense" : "primary"} />
       <div className="relative z-10 flex items-center justify-between">
         <p className="text-xs text-muted">{label}</p>
         <span
@@ -284,9 +293,6 @@ function BalanceCard({
         type={value < 0 ? "expense" : undefined}
         className="relative z-10 mt-4 block text-3xl sm:text-4xl"
       />
-      {highlight && (
-        <div className="pointer-events-none absolute -bottom-20 -right-16 h-48 w-48 rounded-full bg-primary/10 blur-2xl" aria-hidden />
-      )}
     </Card>
   )
 }
@@ -303,8 +309,9 @@ function StatCard({
   tone: "income" | "expense"
 }) {
   return (
-    <Card className="transition-all hover:-translate-y-0.5 hover:border-border-strong">
-      <div className="flex items-center justify-between">
+    <Card className="col-span-3 min-h-40 overflow-hidden transition-all hover:-translate-y-0.5 hover:border-border-strong lg:col-span-2">
+      <FinancialOrbit tone={tone} />
+      <div className="relative z-10 flex items-center justify-between">
         <p className="text-xs text-muted">{label}</p>
         <span
           className={cn(
@@ -317,7 +324,7 @@ function StatCard({
           <Icon className="h-4 w-4" aria-hidden />
         </span>
       </div>
-      <Money value={value} type={tone} className="mt-4 block text-2xl lg:text-3xl" />
+      <Money value={value} type={tone} className="relative z-10 mt-8 block text-2xl lg:text-3xl" />
     </Card>
   )
 }

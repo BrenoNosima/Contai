@@ -12,6 +12,7 @@ import { PageHeader } from "@/components/page-header"
 import { Button, Card, Input, Label, Money } from "@/components/ui/primitives"
 import { Dialog } from "@/components/ui/dialog"
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/states"
+import { FinancialGrid, FinancialOrbit } from "@/components/ui/financial-pattern"
 
 export default function FixedExpensesPage() {
   const [form, setForm] = useState<{ open: boolean; item?: FixedExpense }>({
@@ -70,7 +71,10 @@ export default function FixedExpensesPage() {
       />
 
       {query.data && query.data.length > 0 && (
-        <Card className="mb-4 flex items-center justify-between" elevated={false}>
+        <Card className="mb-4 overflow-hidden" elevated={false}>
+          <FinancialGrid />
+          <FinancialOrbit tone="expense" />
+          <div className="relative z-10 flex items-center justify-between">
           <div>
             <p className="text-xs text-muted">Total mensal em gastos fixos</p>
             <Money value={total} type="expense" className="mt-1 text-2xl" />
@@ -78,6 +82,7 @@ export default function FixedExpensesPage() {
           <span className="rounded-xl bg-expense-soft p-2.5 text-expense">
             <Repeat className="h-5 w-5" aria-hidden />
           </span>
+          </div>
         </Card>
       )}
 

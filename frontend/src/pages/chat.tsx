@@ -5,6 +5,7 @@ import { chatApi } from "@/lib/api"
 import { useFinanceInvalidation } from "@/lib/query"
 import { PageHeader } from "@/components/page-header"
 import { cn } from "@/lib/utils"
+import { FinancialGrid } from "@/components/ui/financial-pattern"
 
 interface Message {
   id: string
@@ -94,7 +95,8 @@ export default function ChatPage() {
         ref={scrollRef}
         className="card-elevated relative flex-1 overflow-y-auto rounded-3xl p-4 sm:p-6"
       >
-        <div className="mx-auto flex max-w-2xl flex-col gap-5">
+        <FinancialGrid className="fixed opacity-[0.025]" />
+        <div className="relative z-10 mx-auto flex max-w-2xl flex-col gap-5">
           {messages.map((m) => (
             <MessageBubble key={m.id} message={m} />
           ))}

@@ -22,6 +22,7 @@ import { Card } from "@/components/ui/primitives"
 import { ErrorState, LoadingState } from "@/components/ui/states"
 import { formatMoney } from "@/lib/utils"
 import { categoryMeta } from "@/lib/categories"
+import { FinancialGrid, FinancialOrbit } from "@/components/ui/financial-pattern"
 
 const RANGE_OPTIONS = [
   { value: 3, label: "3 meses" },
@@ -236,10 +237,12 @@ export default function ReportsPage() {
 
 function SummaryCard({ label, value, tone }: { label: string; value: number; tone: "income" | "expense" }) {
   return (
-    <Card className="relative overflow-hidden p-4 transition-all hover:-translate-y-0.5 hover:border-border-strong">
-      <p className="text-sm text-muted">{label}</p>
+    <Card className="relative min-h-32 overflow-hidden p-4 transition-all hover:-translate-y-0.5 hover:border-border-strong">
+      <FinancialGrid />
+      <FinancialOrbit tone={tone} className="-right-20 -top-20" />
+      <p className="relative z-10 text-sm text-muted">{label}</p>
       <p
-        className={`mt-1 font-mono text-2xl font-semibold ${tone === "income" ? "text-income" : "text-danger"}`}
+        className={`relative z-10 mt-5 font-mono text-2xl font-semibold ${tone === "income" ? "text-income" : "text-danger"}`}
       >
         {formatMoney(value)}
       </p>

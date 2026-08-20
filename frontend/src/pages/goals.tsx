@@ -13,6 +13,7 @@ import { Dialog } from "@/components/ui/dialog"
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/states"
 import { parseDate } from "@/lib/dates"
 import { cn } from "@/lib/utils"
+import { FinancialGrid, FinancialOrbit } from "@/components/ui/financial-pattern"
 
 const STATUS_META: Record<
   GoalStatus,
@@ -190,8 +191,13 @@ function GoalCard({
   const meta = STATUS_META[goal.status]
   const pct = Math.min(100, Math.max(0, goal.progress_percentage))
   return (
-    <Card className="flex flex-col gap-4 transition-all hover:-translate-y-0.5 hover:border-border-strong hover:shadow-xl">
-      <div className="flex items-start justify-between gap-2">
+    <Card className="flex flex-col gap-4 overflow-hidden transition-all hover:-translate-y-0.5 hover:border-border-strong hover:shadow-xl">
+      <FinancialGrid />
+      <FinancialOrbit
+        tone={goal.status === "overdue" ? "expense" : goal.status === "completed" ? "income" : "primary"}
+        className="-right-20 -top-20"
+      />
+      <div className="relative z-10 flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate font-medium text-foreground">{goal.name}</p>
           {goal.description && (
@@ -210,7 +216,7 @@ function GoalCard({
         </span>
       </div>
 
-      <div>
+      <div className="relative z-10">
         <div className="mb-1.5 flex items-baseline justify-between">
           <Money value={goal.current_amount} className="text-lg text-foreground" />
           <span className="tnum text-xs text-muted">
@@ -241,7 +247,7 @@ function GoalCard({
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="relative z-10 flex items-center justify-between">
         <span className="flex items-center gap-1.5 text-xs text-subtle">
           {goal.deadline ? (
             <>
