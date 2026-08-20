@@ -28,3 +28,10 @@ class ReportSummary(BaseModel):
     monthly: list[MonthlyBalancePoint]
     categories: list[ReportCategoryTotal]
     totals: ReportTotals
+
+
+class CategoryBreakdownResponse(BaseModel):
+    month: int
+    year: int
+    expenses: list[ReportCategoryTotal]
+    income: list[ReportCategoryTotal]

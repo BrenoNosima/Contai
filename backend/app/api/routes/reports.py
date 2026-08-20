@@ -5,7 +5,12 @@ from fastapi import Query
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_db
-from app.schemas.report import ReportSummary
+from app.schemas.report import (
+    CategoryBreakdownResponse,
+    MonthlyBalancePoint,
+    MonthlyReportPoint,
+    ReportSummary,
+)
 
 from app.services.report_service import (
     ReportService,
@@ -29,7 +34,7 @@ def report_summary(
     return service.summary(db, months=months)
 
 
-@router.get("/monthly-trend")
+@router.get("/monthly-trend", response_model=list[MonthlyReportPoint])
 def monthly_trend(
     db: Session = Depends(get_db),
     months: int = Query(default=6, ge=1, le=24),
@@ -39,7 +44,7 @@ def monthly_trend(
     return service.monthly_trend(db, months=months)
 
 
-@router.get("/monthly-balance")
+@router.get("/monthly-balance", response_model=list[MonthlyBalancePoint])
 def monthly_balance(
     db: Session = Depends(get_db),
     months: int = Query(default=6, ge=1, le=24),
@@ -49,7 +54,7 @@ def monthly_balance(
     return service.monthly_balance_table(db, months=months)
 
 
-@router.get("/category-breakdown")
+@router.get("/category-breakdown", response_model=CategoryBreakdownResponse)
 def category_breakdown(
     db: Session = Depends(get_db),
     month: int | None = Query(default=None, ge=1, le=12),

@@ -199,3 +199,13 @@ def test_report_query_validation(client):
     assert client.get("/reports/monthly-trend", params={"months": 0}).status_code == 422
     assert client.get("/reports/category-breakdown", params={"month": 13}).status_code == 422
     assert client.get("/reports/summary", params={"months": 25}).status_code == 422
+
+
+def test_empty_dashboard_auxiliary_contracts(client):
+    top_category = client.get("/dashboard/top-category")
+    insight = client.get("/dashboard/insights")
+
+    assert top_category.status_code == 200
+    assert top_category.json() is None
+    assert insight.status_code == 200
+    assert insight.json() == {"message": "Nenhum dado encontrado."}

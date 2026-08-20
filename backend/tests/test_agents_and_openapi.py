@@ -99,6 +99,18 @@ def test_openapi_exposes_core_contracts(client):
     assert schema["paths"]["/transactions/"]["post"]["responses"]["200"][
         "content"
     ]["application/json"]["schema"]["$ref"].endswith("TransactionResponse")
+    dashboard_schema = schema["paths"]["/dashboard/"]["get"]["responses"]["200"][
+        "content"
+    ]["application/json"]["schema"]
+    assert dashboard_schema["$ref"].endswith("DashboardSummaryResponse")
+    trend_schema = schema["paths"]["/reports/monthly-trend"]["get"]["responses"][
+        "200"
+    ]["content"]["application/json"]["schema"]
+    assert trend_schema["items"]["$ref"].endswith("MonthlyReportPoint")
+    breakdown_schema = schema["paths"]["/reports/category-breakdown"]["get"][
+        "responses"
+    ]["200"]["content"]["application/json"]["schema"]
+    assert breakdown_schema["$ref"].endswith("CategoryBreakdownResponse")
 
 
 def test_finance_metadata_contract(client):
