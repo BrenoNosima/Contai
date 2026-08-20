@@ -153,6 +153,25 @@ def test_chat_handles_provider_failure(client, monkeypatch):
     }
 
 
+def test_chat_rejects_oversized_context_before_calling_agent(client, monkeypatch):
+    def fail_if_called():
+        raise AssertionError("O agente não deveria ser instanciado")
+
+    monkeypatch.setattr(chat_route, "get_agent", fail_if_called)
+    response = client.post(
+        "/chat/",
+        json={
+            "message": "saldo",
+            "chat_history": [
+                {"role": "user", "content": "x" * 9000}
+                for _ in range(6)
+            ],
+        },
+    )
+
+    assert response.status_code == 422
+
+
 def test_openapi_exposes_core_contracts(client):
     schema = client.get("/openapi.json").json()
 

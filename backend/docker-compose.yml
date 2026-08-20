@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: breno
       POSTGRES_DB: breno_finance
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - breno_finance_db:/var/lib/postgresql/data
     healthcheck:

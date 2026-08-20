@@ -93,10 +93,16 @@ As principais variáveis do backend ficam em `backend/.env`:
 | `GROQ_API_KEY` | Chave usada pelo assistente e pela extração de texto |
 | `GROQ_MODEL` | Modelo utilizado na Groq; por padrão, `openai/gpt-oss-20b` |
 | `CORS_ORIGINS` | Endereços autorizados a acessar a API, separados por vírgula |
+| `AI_TIMEOUT_SECONDS` | Tempo máximo de uma chamada ao provedor de IA (1 a 120 segundos) |
+| `AI_MAX_RETRIES` | Número de novas tentativas do cliente de IA (0 a 5) |
 
 No frontend, `VITE_API_URL` define o endereço público da API. Ela pode permanecer vazia no desenvolvimento local.
 
 Nunca envie arquivos `.env` ou chaves de API para o repositório.
+
+Como a aplicação ainda não possui autenticação, mantenha a API acessível apenas
+em uma rede confiável. O Docker Compose publica o PostgreSQL somente em
+`127.0.0.1`; para exposição pública, adicione autenticação antes de publicar a API.
 
 ## Estrutura do projeto
 

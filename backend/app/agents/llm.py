@@ -10,4 +10,6 @@ def create_chat_model() -> ChatGroq:
         model=SETTINGS.groq_model,
         api_key=SETTINGS.groq_api_key,
         temperature=0,
+        request_timeout=SETTINGS.ai_timeout_seconds,
+        max_retries=SETTINGS.ai_max_retries,
     )

@@ -12,6 +12,8 @@ DEFAULT_CORS_ORIGINS = (
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 )
+DEFAULT_AI_TIMEOUT_SECONDS = 30
+DEFAULT_AI_MAX_RETRIES = 1
 
 
 @dataclass(frozen=True)
@@ -20,6 +22,8 @@ class Settings:
     groq_api_key: str
     groq_model: str
     cors_origins: tuple[str, ...]
+    ai_timeout_seconds: int
+    ai_max_retries: int
 
     @classmethod
     def from_mapping(cls, values: Mapping[str, str]) -> "Settings":
@@ -27,6 +31,20 @@ class Settings:
         groq_api_key = values.get("GROQ_API_KEY", "").strip()
         groq_model = values.get("GROQ_MODEL", "openai/gpt-oss-20b").strip()
         cors_origins = _parse_cors_origins(values.get("CORS_ORIGINS"))
+        ai_timeout_seconds = _parse_int(
+            values.get("AI_TIMEOUT_SECONDS"),
+            default=DEFAULT_AI_TIMEOUT_SECONDS,
+            name="AI_TIMEOUT_SECONDS",
+            minimum=1,
+            maximum=120,
+        )
+        ai_max_retries = _parse_int(
+            values.get("AI_MAX_RETRIES"),
+            default=DEFAULT_AI_MAX_RETRIES,
+            name="AI_MAX_RETRIES",
+            minimum=0,
+            maximum=5,
+        )
 
         if not database_url or "://" not in database_url:
             raise ValueError("DATABASE_URL deve ser uma URL SQLAlchemy válida.")
@@ -38,6 +56,8 @@ class Settings:
             groq_api_key=groq_api_key,
             groq_model=groq_model,
             cors_origins=cors_origins,
+            ai_timeout_seconds=ai_timeout_seconds,
+            ai_max_retries=ai_max_retries,
         )
 
     @property
@@ -56,6 +76,24 @@ def _parse_cors_origins(raw: str | None) -> tuple[str, ...]:
     if any(not origin.startswith(("http://", "https://")) for origin in origins):
         raise ValueError("CORS_ORIGINS aceita apenas origens HTTP ou HTTPS explícitas.")
     return origins
+
+
+def _parse_int(
+    raw: str | None,
+    *,
+    default: int,
+    name: str,
+    minimum: int,
+    maximum: int,
+) -> int:
+    try:
+        value = default if raw is None else int(raw.strip())
+    except ValueError as error:
+        raise ValueError(f"{name} deve ser um número inteiro.") from error
+
+    if not minimum <= value <= maximum:
+        raise ValueError(f"{name} deve estar entre {minimum} e {maximum}.")
+    return value
 
 
 load_dotenv()
