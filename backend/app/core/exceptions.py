@@ -2,6 +2,10 @@ class ApplicationError(Exception):
     """Erro conhecido que pode ser traduzido com segurança pela API."""
 
 
+class DomainValidationError(ApplicationError):
+    """A operação viola uma regra de negócio da aplicação."""
+
+
 class PersistenceConflictError(ApplicationError):
     """A operação viola uma restrição de integridade do banco."""
 

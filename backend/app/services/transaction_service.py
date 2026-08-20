@@ -3,6 +3,7 @@ from datetime import date, timedelta
 
 from sqlalchemy.orm import Session
 
+from app.core.exceptions import DomainValidationError
 from app.models.transaction import Transaction
 
 from app.repositories.transaction_repository import (
@@ -120,9 +121,11 @@ class TransactionService:
         resulting_recurrence = changes.get("recurrence", transaction.recurrence)
 
         if resulting_type == "income" and resulting_priority is not None:
-            raise ValueError("Receitas não podem ter prioridade.")
+            raise DomainValidationError("Receitas não podem ter prioridade.")
         if resulting_recurring != (resulting_recurrence is not None):
-            raise ValueError("is_recurring e recurrence devem ser informados juntos.")
+            raise DomainValidationError(
+                "is_recurring e recurrence devem ser informados juntos."
+            )
 
         for field, value in changes.items():
             setattr(
@@ -145,7 +148,7 @@ class TransactionService:
         """Marca uma transação como paga ou pendente."""
 
         if status not in {"paid", "pending"}:
-            raise ValueError("Status inválido.")
+            raise DomainValidationError("Status inválido.")
 
         transaction = self.repository.get_by_id(
             db,

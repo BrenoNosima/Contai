@@ -1,4 +1,5 @@
 from app.models.goal import Goal
+from app.core.exceptions import DomainValidationError
 
 from app.repositories.goal_repository import (
     GoalRepository,
@@ -115,7 +116,7 @@ class GoalService:
             return None
 
         if amount <= 0:
-            raise ValueError("O progresso deve ser maior que zero.")
+            raise DomainValidationError("O progresso deve ser maior que zero.")
 
         return self.repository.add_progress(
             db,

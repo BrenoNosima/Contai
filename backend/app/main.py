@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import CORS_ORIGINS
 from app.core.exceptions import (
+    DomainValidationError,
     PersistenceConflictError,
     PersistenceUnavailableError,
 )
@@ -59,6 +60,19 @@ app.include_router(dashboard_router)
 app.include_router(chat_router)
 app.include_router(reports_router)
 app.include_router(metadata_router)
+
+
+@app.exception_handler(DomainValidationError)
+def domain_validation_handler(
+    request: Request,
+    error: DomainValidationError,
+) -> JSONResponse:
+    logger.info(
+        "Regra de negócio rejeitada em %s %s",
+        request.method,
+        request.url.path,
+    )
+    return JSONResponse(status_code=422, content={"detail": str(error)})
 
 
 @app.exception_handler(PersistenceConflictError)

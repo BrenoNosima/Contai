@@ -6,6 +6,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.core.database import Base
+from app.core.exceptions import DomainValidationError
 from app.schemas.fixed_expense import FixedExpenseCreate
 from app.schemas.natural_language import NaturalLanguageResponse
 from app.schemas.transaction import TransactionCreate
@@ -99,6 +100,11 @@ def test_transaction_service_exposes_queries_used_by_agent_tools(db):
     assert service.get_balance(db) == -75
     assert service.get_recent_transactions(db, limit=1)[0].description == "Mercado"
     assert service.get_expenses_by_category(db)[0][0] == "Alimentação"
+
+
+def test_services_raise_domain_validation_errors(db):
+    with pytest.raises(DomainValidationError, match="Status inválido"):
+        TransactionService().update_status(db, 1, "unknown")
 
 
 def test_tool_schemas_expose_domain_constraints():

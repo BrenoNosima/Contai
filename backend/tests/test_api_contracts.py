@@ -75,6 +75,24 @@ def test_transaction_validation_and_not_found_contracts(client):
     assert client.delete("/transactions/999999").status_code == 404
 
 
+def test_transaction_update_rejects_invalid_resulting_domain_state(client):
+    transaction = client.post(
+        "/transactions/",
+        json=transaction_payload(priority="essential"),
+    ).json()
+
+    response = client.put(
+        f"/transactions/{transaction['id']}",
+        json={"type": "income"},
+    )
+
+    assert response.status_code == 422
+    assert response.json() == {"detail": "Receitas não podem ter prioridade."}
+    persisted = client.get(f"/transactions/{transaction['id']}").json()
+    assert persisted["type"] == "expense"
+    assert persisted["priority"] == "essential"
+
+
 def test_goals_contract(client):
     response = client.post(
         "/goals/",
