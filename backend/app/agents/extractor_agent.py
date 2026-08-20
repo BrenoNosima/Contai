@@ -18,6 +18,6 @@ class ExtractorAgent:
             NaturalLanguageResponse
         )
 
-    def extract(self, text: str) -> dict:
+    def extract(self, text: str) -> NaturalLanguageResponse:
         result: NaturalLanguageResponse = self.chain.invoke({"text": text})
-        return result.model_dump()
+        return result

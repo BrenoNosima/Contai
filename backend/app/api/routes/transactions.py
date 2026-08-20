@@ -1,5 +1,6 @@
 from datetime import date
 from functools import lru_cache
+import logging
 
 from fastapi import APIRouter
 from fastapi import Depends
@@ -30,6 +31,7 @@ from app.schemas.natural_language import (
     NaturalLanguageRequest,
 )
 
+
 @lru_cache
 def get_extractor() -> ExtractorAgent:
     return ExtractorAgent()
@@ -40,6 +42,7 @@ router = APIRouter(
 )
 
 service = TransactionService()
+logger = logging.getLogger(__name__)
 
 
 @router.post(
@@ -251,19 +254,23 @@ def create_transaction_from_text(
     except (ValueError, ValidationError) as error:
         raise HTTPException(
             status_code=422,
-            detail=f"Não foi possível interpretar o texto: {error}",
-        )
+            detail="Não foi possível interpretar o texto informado.",
+        ) from error
+    except Exception as error:
+        logger.exception("Erro inesperado ao extrair uma transação do texto")
+        raise HTTPException(
+            status_code=502,
+            detail=(
+                "Não foi possível interpretar o texto agora. "
+                "Tente novamente em instantes."
+            ),
+        ) from error
 
     transaction_data = TransactionCreate(
-        type=extracted.get("type"),
-        description=extracted.get("description"),
-        category=extracted.get("category"),
-        amount=extracted.get("amount"),
-        priority=extracted.get("priority"),
-        source="ai",
+        **extracted.model_dump(),
     )
 
-    return service.create_transaction(
+    return service.create_ai_transaction(
         db=db,
         transaction_data=transaction_data,
     )

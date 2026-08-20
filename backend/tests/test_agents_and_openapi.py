@@ -1,19 +1,28 @@
 from app.api.routes import chat as chat_route
 from app.api.routes import transactions as transaction_routes
 from app.agents.extractor_agent import ExtractorAgent
+from app.models.transaction import Transaction
 from app.schemas.natural_language import NaturalLanguageResponse
 
 
 class FakeExtractor:
     def extract(self, text):
         assert text == "gastei 20 no café"
-        return {
-            "type": "expense",
-            "description": "Café",
-            "category": "Alimentação",
-            "amount": 20,
-            "priority": "desirable",
-        }
+        return NaturalLanguageResponse(
+            type="expense",
+            description="Café",
+            category="Alimentação",
+            amount=20,
+            priority="desirable",
+        )
+
+
+class FailingExtractor:
+    def __init__(self, error):
+        self.error = error
+
+    def extract(self, text):
+        raise self.error
 
 
 class FakeAgent:
@@ -21,6 +30,11 @@ class FakeAgent:
         assert message == "Qual meu saldo?"
         assert history == [{"role": "user", "content": "Oi"}]
         return "Seu saldo é R$ 100,00."
+
+
+class FailingAgent:
+    def ask(self, message, history):
+        raise RuntimeError("provider unavailable")
 
 
 class FakeExtractionChain:
@@ -40,7 +54,7 @@ def test_extractor_returns_validated_structured_data():
 
     result = extractor.extract("recebi 500")
 
-    assert result == {
+    assert result.model_dump() == {
         "type": "income",
         "description": "Freelancer",
         "category": "Freelancer",
@@ -49,7 +63,11 @@ def test_extractor_returns_validated_structured_data():
     }
 
 
-def test_create_transaction_from_text_without_calling_llm(client, monkeypatch):
+def test_create_transaction_from_text_without_calling_llm(
+    client,
+    db_session,
+    monkeypatch,
+):
     monkeypatch.setattr(transaction_routes, "get_extractor", lambda: FakeExtractor())
 
     response = client.post("/transactions/text", json={"text": "gastei 20 no café"})
@@ -57,6 +75,50 @@ def test_create_transaction_from_text_without_calling_llm(client, monkeypatch):
     assert response.status_code == 200
     assert response.json()["description"] == "Café"
     assert response.json()["source"] == "ai"
+    assert db_session.query(Transaction).count() == 1
+
+
+def test_create_transaction_from_invalid_text_does_not_persist(
+    client,
+    db_session,
+    monkeypatch,
+):
+    monkeypatch.setattr(
+        transaction_routes,
+        "get_extractor",
+        lambda: FailingExtractor(ValueError("invalid structured output")),
+    )
+
+    response = client.post("/transactions/text", json={"text": "texto incompleto"})
+
+    assert response.status_code == 422
+    assert response.json() == {
+        "detail": "Não foi possível interpretar o texto informado."
+    }
+    assert db_session.query(Transaction).count() == 0
+
+
+def test_create_transaction_from_text_handles_provider_failure(
+    client,
+    db_session,
+    monkeypatch,
+):
+    monkeypatch.setattr(
+        transaction_routes,
+        "get_extractor",
+        lambda: FailingExtractor(RuntimeError("provider unavailable")),
+    )
+
+    response = client.post("/transactions/text", json={"text": "gastei 20"})
+
+    assert response.status_code == 502
+    assert response.json() == {
+        "detail": (
+            "Não foi possível interpretar o texto agora. "
+            "Tente novamente em instantes."
+        )
+    }
+    assert db_session.query(Transaction).count() == 0
 
 
 def test_chat_contract_without_calling_llm(client, monkeypatch):
@@ -72,6 +134,23 @@ def test_chat_contract_without_calling_llm(client, monkeypatch):
 
     assert response.status_code == 200
     assert response.json() == {"response": "Seu saldo é R$ 100,00."}
+
+
+def test_chat_handles_provider_failure(client, monkeypatch):
+    monkeypatch.setattr(chat_route, "get_agent", lambda: FailingAgent())
+
+    response = client.post(
+        "/chat/",
+        json={"message": "Qual meu saldo?", "chat_history": []},
+    )
+
+    assert response.status_code == 502
+    assert response.json() == {
+        "detail": (
+            "Não foi possível falar com o assistente agora. "
+            "Tente novamente em instantes."
+        )
+    }
 
 
 def test_openapi_exposes_core_contracts(client):

@@ -35,7 +35,7 @@ def create_transaction(
         if isinstance(parsed_due_date, dict):
             return parsed_due_date
 
-        transaction = service.create_transaction(
+        transaction = service.create_ai_transaction(
             db,
             TransactionCreate(
                 type=type,
@@ -43,7 +43,6 @@ def create_transaction(
                 category=category,
                 amount=amount,
                 priority=priority,
-                source="ai",
                 due_date=parsed_due_date,
                 is_recurring=is_recurring,
                 recurrence=recurrence,

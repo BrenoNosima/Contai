@@ -102,6 +102,21 @@ def test_transaction_service_exposes_queries_used_by_agent_tools(db):
     assert service.get_expenses_by_category(db)[0][0] == "Alimentação"
 
 
+def test_ai_transaction_creation_enforces_source(db):
+    transaction = TransactionService().create_ai_transaction(
+        db,
+        TransactionCreate(
+            type="expense",
+            description="Café",
+            category="Alimentação",
+            amount=10,
+            source="manual",
+        ),
+    )
+
+    assert transaction.source == "ai"
+
+
 def test_services_raise_domain_validation_errors(db):
     with pytest.raises(DomainValidationError, match="Status inválido"):
         TransactionService().update_status(db, 1, "unknown")

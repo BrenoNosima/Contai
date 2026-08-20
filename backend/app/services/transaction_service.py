@@ -55,6 +55,18 @@ class TransactionService:
             transaction,
         )
 
+    def create_ai_transaction(
+        self,
+        db: Session,
+        transaction_data: TransactionCreate,
+    ) -> Transaction:
+        """Cria uma transação garantindo a origem dos fluxos de IA."""
+
+        return self.create_transaction(
+            db,
+            transaction_data.model_copy(update={"source": "ai"}),
+        )
+
     def get_transaction(
         self,
         db: Session,
