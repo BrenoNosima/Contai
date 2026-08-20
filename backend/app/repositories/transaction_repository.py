@@ -263,6 +263,8 @@ class TransactionRepository:
         self,
         db: Session,
         fixed_expense,
+        *,
+        commit_changes: bool = True,
     ) -> None:
         occurrences = (
             db.query(Transaction)
@@ -283,12 +285,15 @@ class TransactionRepository:
             )
             occurrence.due_date = occurrence.due_date.replace(day=day)
 
-        commit(db)
+        if commit_changes:
+            commit(db)
 
     def remove_pending_fixed_expense_occurrences(
         self,
         db: Session,
         fixed_expense_id: int,
+        *,
+        commit_changes: bool = True,
     ) -> None:
         (
             db.query(Transaction)
@@ -298,19 +303,23 @@ class TransactionRepository:
             )
             .delete(synchronize_session=False)
         )
-        commit(db)
+        if commit_changes:
+            commit(db)
 
     def detach_fixed_expense_history(
         self,
         db: Session,
         fixed_expense_id: int,
+        *,
+        commit_changes: bool = True,
     ) -> None:
         (
             db.query(Transaction)
             .filter(Transaction.fixed_expense_id == fixed_expense_id)
             .update({Transaction.fixed_expense_id: None}, synchronize_session=False)
         )
-        commit(db)
+        if commit_changes:
+            commit(db)
 
     def get_monthly_totals(
         self,

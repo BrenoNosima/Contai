@@ -53,15 +53,22 @@ class FixedExpenseRepository:
         self,
         db: Session,
         fixed_expense: FixedExpense,
+        *,
+        commit_changes: bool = True,
     ):
 
-        return commit(db, fixed_expense)
+        if commit_changes:
+            return commit(db, fixed_expense)
+        return fixed_expense
 
     def delete(
         self,
         db: Session,
         fixed_expense: FixedExpense,
+        *,
+        commit_changes: bool = True,
     ):
 
         db.delete(fixed_expense)
-        commit(db)
+        if commit_changes:
+            commit(db)

@@ -1,5 +1,8 @@
 from datetime import date
 
+import pytest
+
+from app.api.routes import fixed_expenses as fixed_expense_routes
 from app.models.transaction import Transaction
 from app.repositories.transaction_repository import TransactionRepository
 from app.schemas.transaction import TransactionCreate
@@ -193,6 +196,82 @@ def test_fixed_expense_updates_pending_occurrences_and_preserves_paid_history(cl
     remaining = client.get("/transactions/").json()
     assert [item["id"] for item in remaining] == [paid_id]
     assert remaining[0]["fixed_expense_id"] is None
+
+
+def test_fixed_expense_update_rolls_back_when_occurrence_sync_fails(
+    client,
+    monkeypatch,
+):
+    fixed_expense = client.post(
+        "/fixed-expenses/",
+        json={
+            "name": "Internet",
+            "category": "Contas",
+            "amount": 100,
+            "billing_day": 10,
+        },
+    ).json()
+    client.post("/transactions/generate-occurrences", params={"months_ahead": 1})
+
+    def fail_sync(*args, **kwargs):
+        raise RuntimeError("sync failed")
+
+    monkeypatch.setattr(
+        fixed_expense_routes.service.transaction_repository,
+        "sync_pending_fixed_expense_occurrences",
+        fail_sync,
+    )
+
+    with pytest.raises(RuntimeError, match="sync failed"):
+        client.patch(
+            f"/fixed-expenses/{fixed_expense['id']}",
+            json={"name": "Fibra", "amount": 120},
+        )
+
+    persisted = client.get("/fixed-expenses/").json()[0]
+    assert persisted["name"] == "Internet"
+    assert persisted["amount"] == 100
+    occurrences = client.get("/transactions/").json()
+    assert all(item["description"] == "Internet" for item in occurrences)
+    assert all(item["amount"] == 100 for item in occurrences)
+
+
+def test_fixed_expense_delete_rolls_back_when_history_detach_fails(
+    client,
+    monkeypatch,
+):
+    fixed_expense = client.post(
+        "/fixed-expenses/",
+        json={
+            "name": "Internet",
+            "category": "Contas",
+            "amount": 100,
+            "billing_day": 10,
+        },
+    ).json()
+    generated = client.post(
+        "/transactions/generate-occurrences",
+        params={"months_ahead": 1},
+    ).json()
+
+    def fail_detach(*args, **kwargs):
+        raise RuntimeError("detach failed")
+
+    monkeypatch.setattr(
+        fixed_expense_routes.service.transaction_repository,
+        "detach_fixed_expense_history",
+        fail_detach,
+    )
+
+    with pytest.raises(RuntimeError, match="detach failed"):
+        client.delete(f"/fixed-expenses/{fixed_expense['id']}")
+
+    assert [item["id"] for item in client.get("/fixed-expenses/").json()] == [
+        fixed_expense["id"]
+    ]
+    assert {item["id"] for item in client.get("/transactions/").json()} == {
+        item["id"] for item in generated
+    }
 
 
 def test_report_query_validation(client):

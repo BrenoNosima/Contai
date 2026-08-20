@@ -1,4 +1,5 @@
 from app.models.fixed_expense import FixedExpense
+from app.core.persistence import commit
 
 from app.repositories.fixed_expense_repository import (
     FixedExpenseRepository,
@@ -72,23 +73,30 @@ class FixedExpenseService:
                 value,
             )
 
-        updated = self.repository.update(
-            db,
-            expense,
-        )
-
-        if updated.active:
-            self.transaction_repository.sync_pending_fixed_expense_occurrences(
+        try:
+            updated = self.repository.update(
                 db,
-                updated,
-            )
-        else:
-            self.transaction_repository.remove_pending_fixed_expense_occurrences(
-                db,
-                updated.id,
+                expense,
+                commit_changes=False,
             )
 
-        return updated
+            if updated.active:
+                self.transaction_repository.sync_pending_fixed_expense_occurrences(
+                    db,
+                    updated,
+                    commit_changes=False,
+                )
+            else:
+                self.transaction_repository.remove_pending_fixed_expense_occurrences(
+                    db,
+                    updated.id,
+                    commit_changes=False,
+                )
+
+            return commit(db, updated)
+        except Exception:
+            db.rollback()
+            raise
 
     def delete_fixed_expense(
         self,
@@ -104,18 +112,26 @@ class FixedExpenseService:
         if not expense:
             return False
 
-        self.transaction_repository.remove_pending_fixed_expense_occurrences(
-            db,
-            expense.id,
-        )
-        self.transaction_repository.detach_fixed_expense_history(
-            db,
-            expense.id,
-        )
+        try:
+            self.transaction_repository.remove_pending_fixed_expense_occurrences(
+                db,
+                expense.id,
+                commit_changes=False,
+            )
+            self.transaction_repository.detach_fixed_expense_history(
+                db,
+                expense.id,
+                commit_changes=False,
+            )
 
-        self.repository.delete(
-            db,
-            expense,
-        )
+            self.repository.delete(
+                db,
+                expense,
+                commit_changes=False,
+            )
+            commit(db)
+        except Exception:
+            db.rollback()
+            raise
 
         return True
