@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { Plus, Repeat, Pencil, Trash2, CalendarClock } from "lucide-react"
 import { fixedExpensesApi } from "@/lib/api"
-import { qk, useInvalidateFinance } from "@/lib/query"
+import { qk, useFinanceInvalidation } from "@/lib/query"
 import { errMsg } from "@/lib/hooks"
 import { useToast } from "@/components/ui/toast"
 import type { FixedExpense, FixedExpenseCreate } from "@/lib/types"
@@ -18,7 +18,7 @@ export default function FixedExpensesPage() {
     open: false,
   })
   const [deleting, setDeleting] = useState<FixedExpense | null>(null)
-  const invalidate = useInvalidateFinance()
+  const { fixedExpenses: invalidateFixedExpenses } = useFinanceInvalidation()
   const toast = useToast()
 
   const query = useQuery({
@@ -29,7 +29,7 @@ export default function FixedExpensesPage() {
   const create = useMutation({
     mutationFn: (data: FixedExpenseCreate) => fixedExpensesApi.create(data),
     onSuccess: () => {
-      invalidate()
+      invalidateFixedExpenses()
       toast("Gasto fixo criado.")
       setForm({ open: false })
     },
@@ -39,7 +39,7 @@ export default function FixedExpensesPage() {
     mutationFn: ({ id, data }: { id: number; data: Partial<FixedExpenseCreate> }) =>
       fixedExpensesApi.update(id, data),
     onSuccess: () => {
-      invalidate()
+      invalidateFixedExpenses()
       toast("Gasto fixo atualizado.")
       setForm({ open: false })
     },
@@ -48,7 +48,7 @@ export default function FixedExpensesPage() {
   const remove = useMutation({
     mutationFn: (id: number) => fixedExpensesApi.remove(id),
     onSuccess: () => {
-      invalidate()
+      invalidateFixedExpenses()
       toast("Gasto fixo removido.")
       setDeleting(null)
     },

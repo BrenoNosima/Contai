@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { transactionsApi } from "./api"
-import { qk, useInvalidateFinance } from "./query"
+import { qk, useFinanceInvalidation } from "./query"
 import { useToast } from "@/components/ui/toast"
 import type {
   Transaction,
@@ -24,13 +24,13 @@ export function useTransactions(filters: TransactionFilters = {}) {
 }
 
 export function useTransactionMutations() {
-  const invalidate = useInvalidateFinance()
+  const { transactions: invalidateTransactions } = useFinanceInvalidation()
   const toast = useToast()
 
   const create = useMutation({
     mutationFn: (data: TransactionCreate) => transactionsApi.create(data),
     onSuccess: () => {
-      invalidate()
+      invalidateTransactions()
       toast("Lançamento adicionado.")
     },
     onError: (e) => toast(errMsg(e), "error"),
@@ -40,7 +40,7 @@ export function useTransactionMutations() {
     mutationFn: ({ id, data }: { id: number; data: Partial<TransactionCreate> }) =>
       transactionsApi.update(id, data),
     onSuccess: () => {
-      invalidate()
+      invalidateTransactions()
       toast("Lançamento atualizado.")
     },
     onError: (e) => toast(errMsg(e), "error"),
@@ -49,7 +49,7 @@ export function useTransactionMutations() {
   const remove = useMutation({
     mutationFn: (id: number) => transactionsApi.remove(id),
     onSuccess: () => {
-      invalidate()
+      invalidateTransactions()
       toast("Lançamento removido.")
     },
     onError: (e) => toast(errMsg(e), "error"),
@@ -59,7 +59,7 @@ export function useTransactionMutations() {
     mutationFn: ({ id, status }: { id: number; status: TransactionStatus }) =>
       transactionsApi.setStatus(id, status),
     onSuccess: (data, vars) => {
-      invalidate()
+      invalidateTransactions()
       toast(
         data.type === "income"
           ? vars.status === "paid" ? "Receita recebida." : "Receita marcada como a receber."

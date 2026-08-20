@@ -3,7 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query"
 import { Plus, Target, Pencil, Trash2, TrendingUp, Flag } from "lucide-react"
 import { format } from "date-fns"
 import { goalsApi } from "@/lib/api"
-import { qk, useInvalidateFinance } from "@/lib/query"
+import { qk, useFinanceInvalidation } from "@/lib/query"
 import { errMsg } from "@/lib/hooks"
 import { useToast } from "@/components/ui/toast"
 import type { Goal, GoalCreate, GoalStatus } from "@/lib/types"
@@ -27,7 +27,7 @@ export default function GoalsPage() {
   const [form, setForm] = useState<{ open: boolean; goal?: Goal }>({ open: false })
   const [progressFor, setProgressFor] = useState<Goal | null>(null)
   const [deleting, setDeleting] = useState<Goal | null>(null)
-  const invalidate = useInvalidateFinance()
+  const { goals: invalidateGoals } = useFinanceInvalidation()
   const toast = useToast()
 
   const query = useQuery({ queryKey: qk.goals, queryFn: goalsApi.list })
@@ -35,7 +35,7 @@ export default function GoalsPage() {
   const create = useMutation({
     mutationFn: (data: GoalCreate) => goalsApi.create(data),
     onSuccess: () => {
-      invalidate()
+      invalidateGoals()
       toast("Meta criada.")
       setForm({ open: false })
     },
@@ -45,7 +45,7 @@ export default function GoalsPage() {
     mutationFn: ({ id, data }: { id: number; data: Partial<GoalCreate> }) =>
       goalsApi.update(id, data),
     onSuccess: () => {
-      invalidate()
+      invalidateGoals()
       toast("Meta atualizada.")
       setForm({ open: false })
     },
@@ -54,7 +54,7 @@ export default function GoalsPage() {
   const remove = useMutation({
     mutationFn: (id: number) => goalsApi.remove(id),
     onSuccess: () => {
-      invalidate()
+      invalidateGoals()
       toast("Meta removida.")
       setDeleting(null)
     },
@@ -64,7 +64,7 @@ export default function GoalsPage() {
     mutationFn: ({ id, amount }: { id: number; amount: number }) =>
       goalsApi.addProgress(id, amount),
     onSuccess: () => {
-      invalidate()
+      invalidateGoals()
       toast("Progresso adicionado.")
       setProgressFor(null)
     },

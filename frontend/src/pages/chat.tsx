@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation } from "@tanstack/react-query"
 import { Bot, Send, Sparkles, User } from "lucide-react"
 import { chatApi } from "@/lib/api"
+import { useFinanceInvalidation } from "@/lib/query"
 import { PageHeader } from "@/components/page-header"
 import { cn } from "@/lib/utils"
 
@@ -29,7 +30,7 @@ const GREETING: Message = {
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([GREETING])
   const [input, setInput] = useState("")
-  const queryClient = useQueryClient()
+  const { allFinance: invalidateFinance } = useFinanceInvalidation()
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
@@ -46,8 +47,8 @@ export default function ChatPage() {
         ...prev,
         { id: crypto.randomUUID(), role: "assistant", content: data.response },
       ])
-      // The assistant may have created/edited transactions — refresh everything.
-      queryClient.invalidateQueries()
+      // The assistant may have changed any financial domain through its tools.
+      invalidateFinance()
     },
     onError: (err: Error) => {
       setMessages((prev) => [

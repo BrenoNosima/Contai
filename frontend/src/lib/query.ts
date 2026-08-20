@@ -21,17 +21,33 @@ export const qk = {
   financeMetadata: ["metadata", "finance"] as const,
 }
 
-/**
- * Invalidate everything that can change when money moves — a status flip, a new
- * transaction, a goal update, etc. Keeps Overview/Calendar/Reports in sync.
- */
-export function useInvalidateFinance() {
+/** Invalidate only the query domains affected by each mutation. */
+export function useFinanceInvalidation() {
   const client = useQueryClient()
-  return () => {
-    client.invalidateQueries({ queryKey: ["transactions"] })
-    client.invalidateQueries({ queryKey: ["dashboard"] })
-    client.invalidateQueries({ queryKey: ["reports"] })
-    client.invalidateQueries({ queryKey: ["goals"] })
-    client.invalidateQueries({ queryKey: ["fixed-expenses"] })
+
+  const transactions = () => {
+    client.invalidateQueries({ queryKey: qk.transactions() })
+    client.invalidateQueries({ queryKey: qk.dashboard })
+    client.invalidateQueries({ queryKey: qk.reports() })
   }
+
+  const goals = () => {
+    client.invalidateQueries({ queryKey: qk.goals })
+    client.invalidateQueries({ queryKey: qk.dashboard })
+  }
+
+  const fixedExpenses = () => {
+    client.invalidateQueries({ queryKey: qk.fixedExpenses })
+    client.invalidateQueries({ queryKey: qk.dashboard })
+    client.invalidateQueries({ queryKey: qk.transactions() })
+    client.invalidateQueries({ queryKey: qk.reports() })
+  }
+
+  const allFinance = () => {
+    transactions()
+    client.invalidateQueries({ queryKey: qk.goals })
+    client.invalidateQueries({ queryKey: qk.fixedExpenses })
+  }
+
+  return { transactions, goals, fixedExpenses, allFinance }
 }
