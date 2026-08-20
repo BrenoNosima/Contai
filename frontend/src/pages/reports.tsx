@@ -20,7 +20,7 @@ import { reportsApi } from "@/lib/api"
 import { PageHeader } from "@/components/page-header"
 import { Card } from "@/components/ui/primitives"
 import { ErrorState, LoadingState } from "@/components/ui/states"
-import { formatMoney } from "@/lib/utils"
+import { cn, formatMoney } from "@/lib/utils"
 import { categoryMeta } from "@/lib/categories"
 
 const RANGE_OPTIONS = [
@@ -113,17 +113,17 @@ export default function ReportsPage() {
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-4">
         <SummaryCard label="Entradas no período" value={totals.income} tone="income" />
         <SummaryCard label="Saídas no período" value={totals.expense} tone="expense" />
-        <SummaryCard label="Saldo líquido" value={totals.net} tone={totals.net >= 0 ? "income" : "expense"} />
+        <SummaryCard className="col-span-2 sm:col-span-1" label="Saldo líquido" value={totals.net} tone={totals.net >= 0 ? "income" : "expense"} />
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <Card className="p-5 transition-colors hover:border-border-strong">
           <h2 className="font-sans text-base font-semibold text-foreground">Entradas x Saídas</h2>
           <p className="mb-4 text-sm text-muted">Comparativo mensal dos últimos {range} meses.</p>
-          <div className="h-72">
+          <div className="h-56 sm:h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={monthly} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
@@ -147,7 +147,7 @@ export default function ReportsPage() {
         <Card className="p-5 transition-colors hover:border-border-strong">
           <h2 className="font-sans text-base font-semibold text-foreground">Evolução do saldo</h2>
           <p className="mb-4 text-sm text-muted">Saldo acumulado ao longo do período.</p>
-          <div className="h-72">
+          <div className="h-56 sm:h-72">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={trend} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
@@ -185,7 +185,7 @@ export default function ReportsPage() {
             <p className="py-8 text-center text-sm text-muted">Nenhuma saída paga no período selecionado.</p>
           ) : (
             <div className="grid items-center gap-6 md:grid-cols-2">
-              <div className="h-72">
+              <div className="h-56 sm:h-72">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -234,12 +234,12 @@ export default function ReportsPage() {
   )
 }
 
-function SummaryCard({ label, value, tone }: { label: string; value: number; tone: "income" | "expense" }) {
+function SummaryCard({ label, value, tone, className }: { label: string; value: number; tone: "income" | "expense"; className?: string }) {
   return (
-    <Card className="relative min-h-32 overflow-hidden p-4 transition-all hover:-translate-y-0.5 hover:border-border-strong">
+    <Card className={cn("relative min-h-24 overflow-hidden p-3.5 transition-all hover:-translate-y-0.5 hover:border-border-strong sm:min-h-32 sm:p-4", className)}>
       <p className="relative z-10 text-sm text-muted">{label}</p>
       <p
-        className={`relative z-10 mt-5 font-mono text-2xl font-semibold ${tone === "income" ? "text-income" : "text-danger"}`}
+        className={`relative z-10 mt-3 font-mono text-lg font-semibold sm:mt-5 sm:text-2xl ${tone === "income" ? "text-income" : "text-danger"}`}
       >
         {formatMoney(value)}
       </p>

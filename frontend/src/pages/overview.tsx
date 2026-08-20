@@ -89,7 +89,7 @@ export default function OverviewPage() {
         />
       ) : dashboard.data ? (
         <>
-          <div className="grid grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-6 sm:gap-3">
             <BalanceCard
               label="Saldo atual"
               value={dashboard.data.summary.balance}
@@ -111,33 +111,33 @@ export default function OverviewPage() {
           </div>
 
           {/* Month stats */}
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            <Card className="group overflow-hidden transition-colors hover:border-income/30" elevated={false}>
+          <div className="mt-2.5 grid grid-cols-2 gap-2.5 sm:mt-3 sm:gap-3">
+            <Card className="group overflow-hidden p-3.5 transition-colors hover:border-income/30 sm:p-6" elevated={false}>
               <div className="relative z-10 flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted">Recebido no mês</p>
                 <Money
                   value={monthStats.received}
                   type="income"
-                  className="mt-1 text-xl"
+                  className="mt-1 block text-base sm:text-xl"
                 />
               </div>
-              <span className="rounded-lg bg-income-soft p-2 text-income">
+              <span className="hidden rounded-lg bg-income-soft p-2 text-income min-[390px]:inline-flex">
                 <TrendingUp className="h-5 w-5" aria-hidden />
               </span>
               </div>
             </Card>
-            <Card className="group overflow-hidden transition-colors hover:border-expense/30" elevated={false}>
+            <Card className="group overflow-hidden p-3.5 transition-colors hover:border-expense/30 sm:p-6" elevated={false}>
               <div className="relative z-10 flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted">A pagar no mês</p>
                 <Money
                   value={monthStats.toPay}
                   type="expense"
-                  className="mt-1 text-xl"
+                  className="mt-1 block text-base sm:text-xl"
                 />
               </div>
-              <span className="rounded-lg bg-expense-soft p-2 text-expense">
+              <span className="hidden rounded-lg bg-expense-soft p-2 text-expense min-[390px]:inline-flex">
                 <CalendarClock className="h-5 w-5" aria-hidden />
               </span>
               </div>
@@ -147,7 +147,7 @@ export default function OverviewPage() {
       ) : null}
 
       {/* Upcoming due */}
-      <section className="mt-6">
+      <section className="mt-5 sm:mt-6">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-base font-semibold text-foreground">
             <CalendarClock className="h-4 w-4 text-warning" aria-hidden />
@@ -179,13 +179,14 @@ export default function OverviewPage() {
           </Card>
         ) : (
           <div className="space-y-2">
-            {upcoming.slice(0, 6).map((tx) => (
-              <TransactionCard
-                key={tx.id}
-                tx={tx}
-                busy={setStatus.isPending}
-                onToggleStatus={toggleStatus}
-              />
+            {upcoming.slice(0, 6).map((tx, index) => (
+              <div key={tx.id} className={cn(index >= 3 && "hidden sm:block")}>
+                <TransactionCard
+                  tx={tx}
+                  busy={setStatus.isPending}
+                  onToggleStatus={toggleStatus}
+                />
+              </div>
             ))}
           </div>
         )}
@@ -193,17 +194,20 @@ export default function OverviewPage() {
 
       {/* Recent + insight teaser */}
       {dashboard.data && dashboard.data.recent_transactions.length > 0 && (
-        <section className="mt-6">
+        <section className="mt-5 sm:mt-6">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-base font-semibold text-foreground">
               Movimentações recentes
             </h2>
           </div>
           <Card elevated={false} className="divide-y divide-border overflow-hidden p-0">
-            {dashboard.data.recent_transactions.map((t) => (
+            {dashboard.data.recent_transactions.map((t, index) => (
               <div
                 key={t.id}
-                className="flex items-center justify-between px-4 py-3.5 transition-colors hover:bg-surface-3/40"
+                className={cn(
+                  "flex items-center justify-between px-4 py-3 transition-colors hover:bg-surface-3/40 sm:py-3.5",
+                  index >= 3 && "hidden sm:flex",
+                )}
               >
                 <div className="min-w-0">
                   <p className="truncate text-sm text-foreground">
@@ -220,7 +224,7 @@ export default function OverviewPage() {
 
       <Link
         to="/assistente"
-        className="group mt-6 flex items-center gap-3 overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/10 via-surface-2 to-surface-2 p-4 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-xl"
+        className="group mt-5 flex items-center gap-3 overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/10 via-surface-2 to-surface-2 p-3.5 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-xl sm:mt-6 sm:p-4"
       >
         <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/15 text-primary">
           <Sparkles className="h-5 w-5" aria-hidden />
@@ -268,7 +272,7 @@ function BalanceCard({
   return (
     <Card
       className={cn(
-        "relative col-span-full min-h-40 overflow-hidden lg:col-span-2",
+        "relative col-span-full min-h-28 overflow-hidden sm:min-h-40 lg:col-span-2",
         highlight && "border-[color:var(--color-primary)]/30",
       )}
     >
@@ -286,7 +290,7 @@ function BalanceCard({
       <Money
         value={value}
         type={value < 0 ? "expense" : undefined}
-        className="relative z-10 mt-4 block text-3xl sm:text-4xl"
+        className="relative z-10 mt-3 block text-2xl sm:mt-4 sm:text-4xl"
       />
     </Card>
   )
@@ -304,7 +308,7 @@ function StatCard({
   tone: "income" | "expense"
 }) {
   return (
-    <Card className="col-span-full min-h-40 overflow-hidden transition-all hover:-translate-y-0.5 hover:border-border-strong sm:col-span-3 lg:col-span-2">
+    <Card className="col-span-1 min-h-28 overflow-hidden transition-all hover:-translate-y-0.5 hover:border-border-strong sm:col-span-3 sm:min-h-40 lg:col-span-2">
       <div className="relative z-10 flex items-center justify-between">
         <p className="text-xs text-muted">{label}</p>
         <span
@@ -318,7 +322,7 @@ function StatCard({
           <Icon className="h-4 w-4" aria-hidden />
         </span>
       </div>
-      <Money value={value} type={tone} className="relative z-10 mt-8 block text-2xl lg:text-3xl" />
+      <Money value={value} type={tone} className="relative z-10 mt-4 block text-base min-[390px]:text-lg sm:mt-8 sm:text-2xl lg:text-3xl" />
     </Card>
   )
 }

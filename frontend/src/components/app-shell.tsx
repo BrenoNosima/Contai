@@ -118,7 +118,7 @@ export function AppShell() {
       <main className="lg:pl-64">
         <div
           className={cn(
-            "mx-auto w-full px-4 pb-28 pt-6 sm:px-6 lg:pb-12 lg:pt-9 xl:px-8",
+            "mx-auto w-full px-3 pb-24 pt-4 sm:px-6 sm:pb-28 sm:pt-6 lg:pb-12 lg:pt-9 xl:px-8",
             location.pathname.startsWith("/calendario")
               ? "max-w-7xl"
               : "max-w-5xl",

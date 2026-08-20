@@ -36,13 +36,13 @@ export function TransactionCard({
   return (
     <div
       className={cn(
-        "group flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-surface-2/70 p-3.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-border-strong hover:bg-surface-2 hover:shadow-lg sm:flex-nowrap",
+        "group flex items-center gap-2.5 rounded-2xl border border-border bg-surface-2/70 p-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-border-strong hover:bg-surface-2 hover:shadow-lg sm:gap-3 sm:p-3.5",
         !paid && !isIncome && due.tone === "expense" && "border-[color:var(--color-expense)]/40",
       )}
     >
       <div
         className={cn(
-          "flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] border border-white/[0.03]",
+          "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.03] sm:h-11 sm:w-11 sm:rounded-[14px]",
           isIncome ? "bg-income-soft text-income" : "bg-surface-3 text-muted",
         )}
       >
@@ -84,7 +84,7 @@ export function TransactionCard({
         </div>
       </div>
 
-      <div className="ml-14 flex w-full shrink-0 items-center justify-between gap-2 sm:ml-0 sm:w-auto sm:flex-col sm:items-end sm:gap-1.5">
+      <div className="flex shrink-0 flex-col items-end gap-1">
         <Money value={tx.amount} type={tx.type} signed />
         <div className="flex items-center gap-1">
           {onToggleStatus && (
@@ -102,7 +102,7 @@ export function TransactionCard({
                   : paid ? "Marcar como pendente" : "Marcar como paga"
               }
               className={cn(
-                "flex h-8 w-8 items-center justify-center rounded-lg border transition-colors disabled:opacity-50",
+                "flex h-7 w-7 items-center justify-center rounded-lg border transition-colors disabled:opacity-50 sm:h-8 sm:w-8",
                 paid
                   ? "border-[color:var(--color-income)]/40 bg-income-soft text-income"
                   : "border-border bg-surface-3 text-muted hover:text-foreground",
@@ -115,7 +115,7 @@ export function TransactionCard({
             <button
               onClick={() => onEdit(tx)}
               aria-label="Editar lançamento"
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted transition-all hover:bg-surface-3 hover:text-foreground sm:opacity-0 sm:focus-visible:opacity-100 sm:group-hover:opacity-100"
+              className="flex h-7 w-7 items-center justify-center rounded-lg text-muted transition-all hover:bg-surface-3 hover:text-foreground sm:h-8 sm:w-8 sm:opacity-0 sm:focus-visible:opacity-100 sm:group-hover:opacity-100"
             >
               <Pencil className="h-4 w-4" aria-hidden />
             </button>
@@ -124,7 +124,7 @@ export function TransactionCard({
             <button
               onClick={() => onDelete(tx)}
               aria-label="Excluir lançamento"
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted transition-all hover:bg-expense-soft hover:text-expense sm:opacity-0 sm:focus-visible:opacity-100 sm:group-hover:opacity-100"
+              className="flex h-7 w-7 items-center justify-center rounded-lg text-muted transition-all hover:bg-expense-soft hover:text-expense sm:h-8 sm:w-8 sm:opacity-0 sm:focus-visible:opacity-100 sm:group-hover:opacity-100"
             >
               <Trash2 className="h-4 w-4" aria-hidden />
             </button>

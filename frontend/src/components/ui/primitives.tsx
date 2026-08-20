@@ -54,7 +54,7 @@ export function Card({
   return (
     <div
       className={cn(
-        "relative rounded-2xl p-5 sm:p-6",
+        "relative rounded-2xl p-4 sm:p-6",
         elevated ? "card-elevated" : "card-elevated-2",
         className,
       )}
