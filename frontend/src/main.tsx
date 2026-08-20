@@ -1,31 +1,33 @@
-import { StrictMode } from "react"
+import { StrictMode, type ComponentType } from "react"
 import { createRoot } from "react-dom/client"
 import { QueryClientProvider } from "@tanstack/react-query"
 import { RouterProvider, createBrowserRouter, Navigate } from "react-router-dom"
 import { queryClient } from "@/lib/query"
 import { AppShell } from "@/components/app-shell"
 import { ToastProvider } from "@/components/ui/toast"
-import OverviewPage from "@/pages/overview"
-import CalendarPage from "@/pages/calendar"
-import TransactionsPage from "@/pages/transactions"
-import GoalsPage from "@/pages/goals"
-import ReportsPage from "@/pages/reports"
-import FixedExpensesPage from "@/pages/fixed-expenses"
-import ChatPage from "@/pages/chat"
 import "./index.css"
+
+const lazyPage = (loader: () => Promise<{ default: ComponentType }>) =>
+  async () => ({ Component: (await loader()).default })
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: <AppShell />,
     children: [
-      { index: true, element: <OverviewPage /> },
-      { path: "calendario", element: <CalendarPage /> },
-      { path: "lancamentos", element: <TransactionsPage /> },
-      { path: "metas", element: <GoalsPage /> },
-      { path: "relatorios", element: <ReportsPage /> },
-      { path: "gastos-fixos", element: <FixedExpensesPage /> },
-      { path: "assistente", element: <ChatPage /> },
+      { index: true, lazy: lazyPage(() => import("@/pages/overview")) },
+      { path: "calendario", lazy: lazyPage(() => import("@/pages/calendar")) },
+      {
+        path: "lancamentos",
+        lazy: lazyPage(() => import("@/pages/transactions")),
+      },
+      { path: "metas", lazy: lazyPage(() => import("@/pages/goals")) },
+      { path: "relatorios", lazy: lazyPage(() => import("@/pages/reports")) },
+      {
+        path: "gastos-fixos",
+        lazy: lazyPage(() => import("@/pages/fixed-expenses")),
+      },
+      { path: "assistente", lazy: lazyPage(() => import("@/pages/chat")) },
       { path: "*", element: <Navigate to="/" replace /> },
     ],
   },

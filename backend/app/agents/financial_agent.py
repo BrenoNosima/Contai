@@ -3,7 +3,7 @@ from langchain.agents import create_agent
 from pydantic import ValidationError
 
 from app.agents.llm import create_chat_model
-from app.tools.finance_tools import FINANCE_TOOLS
+from app.tools.registry import FINANCE_TOOLS
 
 
 SYSTEM_PROMPT = """
@@ -52,7 +52,7 @@ Regras:
 class FinancialAgent:
     """
     Agente financeiro com tool-calling: usa um LLM (via Groq) que decide
-    quando chamar as tools de app/tools/finance_tools.py, sincronizando
+    quando chamar as tools registradas em app/tools/registry.py, sincronizando
     a conversa diretamente com o banco de dados.
     """
 

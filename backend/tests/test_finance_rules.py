@@ -12,7 +12,7 @@ from app.schemas.natural_language import NaturalLanguageResponse
 from app.schemas.transaction import TransactionCreate
 from app.services.report_service import ReportService
 from app.services.transaction_service import TransactionService, _add_months
-from app.tools.finance_tools import FINANCE_TOOLS
+from app.tools.registry import FINANCE_TOOLS
 
 
 @pytest.fixture()

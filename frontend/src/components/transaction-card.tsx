@@ -1,4 +1,4 @@
-import { Check, Repeat2, Pencil, Trash2, Undo2 } from "lucide-react"
+import { Check, Repeat2, Pencil, Trash2 } from "lucide-react"
 import type { Transaction } from "@/lib/types"
 import { categoryMeta } from "@/lib/categories"
 import { Money, Badge } from "@/components/ui/primitives"
@@ -134,6 +134,3 @@ export function TransactionCard({
     </div>
   )
 }
-
-/** Compact status toggle re-export for contexts needing "undo" affordance. */
-export { Undo2 }

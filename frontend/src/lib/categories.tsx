@@ -53,10 +53,6 @@ export function categoryMeta(category: string): CategoryMeta {
   return fuzzy ?? { ...FALLBACK, label: category || "Outros" }
 }
 
-export function categoryIcon(category: string): LucideIcon {
-  return categoryMeta(category).icon
-}
-
 /** Suggested categories for select inputs. */
 export const CATEGORY_SUGGESTIONS = [
   ...CATEGORIES.map((c) => c.label),
