@@ -102,6 +102,23 @@ def test_transaction_service_exposes_queries_used_by_agent_tools(db):
 
 
 def test_tool_schemas_expose_domain_constraints():
+    assert [tool.name for tool in FINANCE_TOOLS] == [
+        "create_transaction",
+        "mark_transaction_status",
+        "search_transactions",
+        "generate_recurring_occurrences",
+        "get_balance",
+        "list_recent_transactions",
+        "get_expenses_by_category",
+        "get_monthly_report",
+        "get_category_breakdown",
+        "create_goal",
+        "list_goals",
+        "add_goal_progress",
+        "create_fixed_expense",
+        "list_fixed_expenses",
+        "get_dashboard_summary",
+    ]
     tools = {tool.name: tool for tool in FINANCE_TOOLS}
     create_schema = tools["create_transaction"].args_schema.model_json_schema()
     assert create_schema["properties"]["type"]["enum"] == ["income", "expense"]
