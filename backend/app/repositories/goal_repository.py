@@ -3,6 +3,7 @@ from decimal import Decimal
 from sqlalchemy.orm import Session
 
 from app.models.goal import Goal
+from app.core.persistence import commit
 
 
 class GoalRepository:
@@ -14,10 +15,7 @@ class GoalRepository:
     ):
 
         db.add(goal)
-        db.commit()
-        db.refresh(goal)
-
-        return goal
+        return commit(db, goal)
 
     def get_by_id(
         self,
@@ -48,10 +46,7 @@ class GoalRepository:
         goal: Goal,
     ):
 
-        db.commit()
-        db.refresh(goal)
-
-        return goal
+        return commit(db, goal)
 
     def delete(
         self,
@@ -60,7 +55,7 @@ class GoalRepository:
     ):
 
         db.delete(goal)
-        db.commit()
+        commit(db)
 
     def add_progress(
         self,
@@ -74,7 +69,4 @@ class GoalRepository:
             goal.current_amount + Decimal(str(amount)),
         )
 
-        db.commit()
-        db.refresh(goal)
-
-        return goal
+        return commit(db, goal)

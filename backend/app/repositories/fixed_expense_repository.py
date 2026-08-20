@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 
 from app.models.fixed_expense import FixedExpense
+from app.core.persistence import commit
 
 
 class FixedExpenseRepository:
@@ -12,10 +13,7 @@ class FixedExpenseRepository:
     ):
 
         db.add(fixed_expense)
-        db.commit()
-        db.refresh(fixed_expense)
-
-        return fixed_expense
+        return commit(db, fixed_expense)
 
     def get_by_id(
         self,
@@ -57,10 +55,7 @@ class FixedExpenseRepository:
         fixed_expense: FixedExpense,
     ):
 
-        db.commit()
-        db.refresh(fixed_expense)
-
-        return fixed_expense
+        return commit(db, fixed_expense)
 
     def delete(
         self,
@@ -69,7 +64,7 @@ class FixedExpenseRepository:
     ):
 
         db.delete(fixed_expense)
-        db.commit()
+        commit(db)
 
     def disable(
         self,
@@ -79,7 +74,4 @@ class FixedExpenseRepository:
 
         fixed_expense.active = False
 
-        db.commit()
-        db.refresh(fixed_expense)
-
-        return fixed_expense
+        return commit(db, fixed_expense)

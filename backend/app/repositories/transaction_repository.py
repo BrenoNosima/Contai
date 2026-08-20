@@ -2,9 +2,10 @@ from calendar import monthrange
 from datetime import date
 
 from sqlalchemy import func, extract
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.core.exceptions import PersistenceConflictError
+from app.core.persistence import commit
 from app.models.transaction import Transaction
 
 
@@ -24,10 +25,7 @@ class TransactionRepository:
     ) -> Transaction:
 
         db.add(transaction)
-        db.commit()
-        db.refresh(transaction)
-
-        return transaction
+        return commit(db, transaction)
 
     def create_many(
         self,
@@ -41,11 +39,10 @@ class TransactionRepository:
 
         db.add_all(transactions)
         try:
-            db.commit()
-        except IntegrityError:
+            commit(db)
+        except PersistenceConflictError:
             # Outra geração concorrente pode ter criado a mesma ocorrência
             # entre a consulta de existência e o commit do lote.
-            db.rollback()
             return []
 
         for transaction in transactions:
@@ -119,10 +116,7 @@ class TransactionRepository:
         transaction: Transaction,
     ) -> Transaction:
 
-        db.commit()
-        db.refresh(transaction)
-
-        return transaction
+        return commit(db, transaction)
 
     def update_status(
         self,
@@ -133,10 +127,7 @@ class TransactionRepository:
 
         transaction.status = status
 
-        db.commit()
-        db.refresh(transaction)
-
-        return transaction
+        return commit(db, transaction)
 
     def delete(
         self,
@@ -145,7 +136,7 @@ class TransactionRepository:
     ) -> None:
 
         db.delete(transaction)
-        db.commit()
+        commit(db)
 
     def get_total_income(
         self,
@@ -292,7 +283,7 @@ class TransactionRepository:
             )
             occurrence.due_date = occurrence.due_date.replace(day=day)
 
-        db.commit()
+        commit(db)
 
     def remove_pending_fixed_expense_occurrences(
         self,
@@ -307,7 +298,7 @@ class TransactionRepository:
             )
             .delete(synchronize_session=False)
         )
-        db.commit()
+        commit(db)
 
     def detach_fixed_expense_history(
         self,
@@ -319,7 +310,7 @@ class TransactionRepository:
             .filter(Transaction.fixed_expense_id == fixed_expense_id)
             .update({Transaction.fixed_expense_id: None}, synchronize_session=False)
         )
-        db.commit()
+        commit(db)
 
     def get_monthly_totals(
         self,
