@@ -68,6 +68,11 @@ def get_active_fixed_expenses(
 @router.put(
     "/{expense_id}",
     response_model=FixedExpenseResponse,
+    deprecated=True,
+)
+@router.patch(
+    "/{expense_id}",
+    response_model=FixedExpenseResponse,
 )
 def update_fixed_expense(
     expense_id: int,

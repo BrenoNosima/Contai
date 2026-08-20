@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+from fastapi import Body
 from fastapi import Depends
 from fastapi import HTTPException
 from fastapi import Query
@@ -6,11 +7,13 @@ from fastapi import Query
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_db
+from app.core.exceptions import DomainValidationError
 
 from app.schemas.goal import (
     GoalCreate,
     GoalUpdate,
     GoalResponse,
+    GoalProgress,
 )
 
 from app.services.goal_service import (
@@ -74,6 +77,11 @@ def get_goal(
 @router.put(
     "/{goal_id}",
     response_model=GoalResponse,
+    deprecated=True,
+)
+@router.patch(
+    "/{goal_id}",
+    response_model=GoalResponse,
 )
 def update_goal(
     goal_id: int,
@@ -119,17 +127,23 @@ def delete_goal(
 
 
 @router.post(
-    "/{goal_id}/progress"
+    "/{goal_id}/progress",
+    response_model=GoalResponse,
 )
 def add_progress(
     goal_id: int,
-    amount: float = Query(gt=0),
+    payload: GoalProgress | None = Body(default=None),
+    amount: float | None = Query(default=None, gt=0),
     db: Session = Depends(get_db),
 ):
+    progress_amount = payload.amount if payload is not None else amount
+    if progress_amount is None:
+        raise DomainValidationError("Informe o valor do progresso.")
+
     goal = service.add_progress(
         db,
         goal_id,
-        amount,
+        progress_amount,
     )
 
     if not goal:

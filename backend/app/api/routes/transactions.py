@@ -130,6 +130,11 @@ def get_transaction(
 @router.put(
     "/{transaction_id}",
     response_model=TransactionResponse,
+    deprecated=True,
+)
+@router.patch(
+    "/{transaction_id}",
+    response_model=TransactionResponse,
 )
 def update_transaction(
     transaction_id: int,

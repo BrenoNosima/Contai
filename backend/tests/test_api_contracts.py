@@ -44,6 +44,13 @@ def test_transaction_crud_and_filters(client):
     assert updated.status_code == 200
     assert updated.json()["description"] == "Supermercado"
 
+    patched = client.patch(
+        f"/transactions/{created['id']}",
+        json={"amount": 130},
+    )
+    assert patched.status_code == 200
+    assert patched.json()["amount"] == 130
+
     status = client.patch(
         f"/transactions/{created['id']}/status",
         json={"status": "pending"},
@@ -111,9 +118,25 @@ def test_goals_contract(client):
     assert progress.status_code == 200
     assert progress.json()["current_amount"] == 350
 
+    body_progress = client.post(
+        f"/goals/{goal['id']}/progress",
+        params={"amount": 999},
+        json={"amount": 50},
+    )
+    assert body_progress.status_code == 200
+    assert body_progress.json()["current_amount"] == 400
+
+    missing_progress = client.post(f"/goals/{goal['id']}/progress")
+    assert missing_progress.status_code == 422
+    assert missing_progress.json() == {"detail": "Informe o valor do progresso."}
+
     updated = client.put(f"/goals/{goal['id']}", json={"name": "Emergência"})
     assert updated.status_code == 200
     assert updated.json()["name"] == "Emergência"
+
+    patched = client.patch(f"/goals/{goal['id']}", json={"description": "Fundo"})
+    assert patched.status_code == 200
+    assert patched.json()["description"] == "Fundo"
 
     assert client.post("/goals/999999/progress", params={"amount": 10}).status_code == 404
     assert client.delete(f"/goals/{goal['id']}").status_code == 200
@@ -143,6 +166,13 @@ def test_fixed_expenses_contract(client):
     )
     assert updated.status_code == 200
     assert updated.json()["amount"] == 109.90
+
+    patched = client.patch(
+        f"/fixed-expenses/{expense['id']}",
+        json={"billing_day": 12},
+    )
+    assert patched.status_code == 200
+    assert patched.json()["billing_day"] == 12
 
     assert client.delete(f"/fixed-expenses/{expense['id']}").status_code == 200
     assert client.put("/fixed-expenses/999999", json={"amount": 10}).status_code == 404

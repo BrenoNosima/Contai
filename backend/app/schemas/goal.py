@@ -26,6 +26,10 @@ class GoalUpdate(BaseModel):
         return self
 
 
+class GoalProgress(BaseModel):
+    amount: float = Field(gt=0)
+
+
 class GoalResponse(BaseModel):
     id: int
     name: str

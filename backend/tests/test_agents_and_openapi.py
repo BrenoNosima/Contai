@@ -92,6 +92,10 @@ def test_openapi_exposes_core_contracts(client):
         "/metadata/finance",
     }
     assert expected <= set(schema["paths"])
+    assert {"put", "patch"} <= set(schema["paths"]["/transactions/{transaction_id}"])
+    assert {"put", "patch"} <= set(schema["paths"]["/goals/{goal_id}"])
+    assert {"put", "patch"} <= set(schema["paths"]["/fixed-expenses/{expense_id}"])
+    assert schema["paths"]["/transactions/{transaction_id}"]["put"]["deprecated"]
     assert schema["paths"]["/transactions/"]["post"]["responses"]["200"][
         "content"
     ]["application/json"]["schema"]["$ref"].endswith("TransactionResponse")

@@ -83,7 +83,7 @@ export const transactionsApi = {
     }),
   update: (id: number, data: Partial<TransactionCreate>) =>
     request<Transaction>(`/transactions/${id}`, {
-      method: "PUT",
+      method: "PATCH",
       body: JSON.stringify(data),
     }),
   setStatus: (id: number, status: TransactionStatus) =>
@@ -106,10 +106,10 @@ export const goalsApi = {
   create: (data: GoalCreate) =>
     request<Goal>(`/goals/`, { method: "POST", body: JSON.stringify(data) }),
   update: (id: number, data: Partial<GoalCreate>) =>
-    request<Goal>(`/goals/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    request<Goal>(`/goals/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
   remove: (id: number) => request<void>(`/goals/${id}`, { method: "DELETE" }),
   addProgress: (id: number, amount: number) =>
-    request<Goal>(`/goals/${id}/progress${toQuery({ amount })}`, {
+    request<Goal>(`/goals/${id}/progress`, {
       method: "POST",
       body: JSON.stringify({ amount }),
     }),
@@ -126,7 +126,7 @@ export const fixedExpensesApi = {
     }),
   update: (id: number, data: Partial<FixedExpenseCreate>) =>
     request<FixedExpense>(`/fixed-expenses/${id}`, {
-      method: "PUT",
+      method: "PATCH",
       body: JSON.stringify(data),
     }),
   remove: (id: number) =>
