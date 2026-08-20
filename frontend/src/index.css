@@ -4,55 +4,55 @@
   --font-sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", monospace;
 
-  /* Base surfaces — charcoal with a faint green cast */
-  --color-background: #0d1210;
-  --color-surface: #141b18;
-  --color-surface-2: #1b2420;
-  --color-surface-3: #24302a;
-  --color-border: #2b3833;
-  --color-border-strong: #3a4a43;
+  /* Neutral black foundation; color is reserved for meaning and actions */
+  --color-background: #050505;
+  --color-surface: #0c0c0c;
+  --color-surface-2: #121212;
+  --color-surface-3: #1a1a1a;
+  --color-border: #242424;
+  --color-border-strong: #363636;
 
-  /* Text — all AA-compliant on #0d1210 */
-  --color-foreground: #eef3f0;
-  --color-muted: #a7b4ad;
-  --color-subtle: #7f8f88;
+  /* Neutral text with clear hierarchy */
+  --color-foreground: #f5f5f5;
+  --color-muted: #a3a3a3;
+  --color-subtle: #737373;
 
   /* Semantic money colors */
-  --color-income: #3ddc8f;
-  --color-income-soft: #143026;
-  --color-expense: #f2666b;
-  --color-expense-soft: #331a1c;
-  --color-warning: #eebd4a;
-  --color-warning-soft: #322915;
-  --color-neutral: #8a978f;
+  --color-income: #4ade80;
+  --color-income-soft: #0d2817;
+  --color-expense: #fb7185;
+  --color-expense-soft: #351b23;
+  --color-warning: #f5c451;
+  --color-warning-soft: #332914;
+  --color-neutral: #8c8c8c;
   --color-danger: #f2666b;
   --color-accent: #f59f45;
 
-  /* Calendar — cooler surfaces inspired by agenda applications */
-  --color-calendar-surface: #121916;
-  --color-calendar-header: #18211d;
-  --color-calendar-outside: #0f1512;
-  --color-calendar-hover: #1b2722;
-  --color-calendar-selected: #203029;
-  --color-calendar-border: #2a3b34;
-  --color-calendar-accent: #5b9cf6;
-  --color-calendar-income: #38c987;
-  --color-calendar-income-soft: #183328;
-  --color-calendar-income-text: #8ee8bb;
+  /* Calendar follows the same black + semantic-green language */
+  --color-calendar-surface: #0b0b0b;
+  --color-calendar-header: #111111;
+  --color-calendar-outside: #070707;
+  --color-calendar-hover: #171717;
+  --color-calendar-selected: #102419;
+  --color-calendar-border: #262626;
+  --color-calendar-accent: #4ade80;
+  --color-calendar-income: #4ade80;
+  --color-calendar-income-soft: #0d2817;
+  --color-calendar-income-text: #86efac;
   --color-calendar-expense: #f07178;
   --color-calendar-expense-soft: #351f22;
   --color-calendar-expense-text: #f7a3a8;
 
   /* Categorical chart palette */
-  --color-chart-1: #2dd4bf;
-  --color-chart-2: #a78bfa;
-  --color-chart-3: #facc15;
-  --color-chart-4: #fb7185;
+  --color-chart-1: #4ade80;
+  --color-chart-2: #22c55e;
+  --color-chart-3: #a3e635;
+  --color-chart-4: #facc15;
   --color-chart-5: #60a5fa;
 
   /* Brand primary (money green) */
-  --color-primary: #3ddc8f;
-  --color-primary-foreground: #06120c;
+  --color-primary: #4ade80;
+  --color-primary-foreground: #031008;
 
   --radius: 0.875rem;
 }
@@ -75,6 +75,7 @@
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
     font-feature-settings: "ss01";
+    min-width: 320px;
   }
 
   /* Tabular figures everywhere money is shown */
@@ -102,18 +103,23 @@
   ::-webkit-scrollbar-track {
     background: transparent;
   }
+
+  ::selection {
+    background: rgba(74, 222, 128, 0.25);
+    color: var(--color-foreground);
+  }
 }
 
 @layer utilities {
   .card-elevated {
-    background-color: var(--color-surface);
+    background: linear-gradient(145deg, rgba(17, 17, 17, 0.98), rgba(10, 10, 10, 0.98));
     border: 1px solid var(--color-border);
     box-shadow:
-      0 1px 0 0 rgba(255, 255, 255, 0.02) inset,
-      0 8px 24px -12px rgba(0, 0, 0, 0.6);
+      0 1px 0 rgba(255, 255, 255, 0.035) inset,
+      0 18px 45px -28px rgba(0, 0, 0, 0.85);
   }
   .card-elevated-2 {
-    background-color: var(--color-surface-2);
+    background-color: rgba(18, 18, 18, 0.82);
     border: 1px solid var(--color-border);
   }
 }
@@ -130,4 +136,29 @@
 }
 .animate-in {
   animation: fade-in-up 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.animate-dialog-in {
+  animation: dialog-in 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

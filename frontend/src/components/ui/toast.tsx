@@ -48,10 +48,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               key={t.id}
               role="status"
               className={cn(
-                "pointer-events-auto flex items-center gap-3 rounded-xl border px-4 py-3 text-sm shadow-lg animate-in",
+                "pointer-events-auto flex items-center gap-3 rounded-2xl border bg-surface/95 px-4 py-3.5 text-sm shadow-2xl backdrop-blur-xl animate-in",
                 t.tone === "success"
-                  ? "border-[color:var(--color-income)]/30 bg-income-soft text-income"
-                  : "border-[color:var(--color-expense)]/30 bg-expense-soft text-expense",
+                  ? "border-[color:var(--color-income)]/30 text-income"
+                  : "border-[color:var(--color-expense)]/30 text-expense",
               )}
             >
               {t.tone === "success" ? (

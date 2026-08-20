@@ -190,7 +190,7 @@ function GoalCard({
   const meta = STATUS_META[goal.status]
   const pct = Math.min(100, Math.max(0, goal.progress_percentage))
   return (
-    <Card className="flex flex-col gap-4">
+    <Card className="flex flex-col gap-4 transition-all hover:-translate-y-0.5 hover:border-border-strong hover:shadow-xl">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate font-medium text-foreground">{goal.name}</p>

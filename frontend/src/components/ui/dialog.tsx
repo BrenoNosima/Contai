@@ -41,13 +41,13 @@ export function Dialog({
       aria-label={title}
     >
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/70 backdrop-blur-[6px]"
         onClick={onClose}
         aria-hidden
       />
       <div
         className={cn(
-          "relative z-10 max-h-[90vh] w-full overflow-y-auto rounded-t-3xl border border-border bg-surface p-6 shadow-2xl animate-in sm:max-w-lg sm:rounded-3xl",
+          "animate-dialog-in relative z-10 max-h-[90vh] w-full overflow-y-auto rounded-t-3xl border border-border bg-surface p-5 shadow-[0_30px_80px_-24px_rgba(0,0,0,0.9)] sm:max-w-lg sm:rounded-3xl sm:p-6",
           className,
         )}
       >

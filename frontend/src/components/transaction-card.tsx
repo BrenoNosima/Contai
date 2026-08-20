@@ -36,13 +36,13 @@ export function TransactionCard({
   return (
     <div
       className={cn(
-        "group flex items-center gap-3 rounded-xl border border-border bg-surface-2 p-3 transition-colors hover:border-border-strong",
+        "group flex items-center gap-3 rounded-2xl border border-border bg-surface-2/70 p-3.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-border-strong hover:bg-surface-2 hover:shadow-lg",
         !paid && !isIncome && due.tone === "expense" && "border-[color:var(--color-expense)]/40",
       )}
     >
       <div
         className={cn(
-          "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl",
+          "flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] border border-white/[0.03]",
           isIncome ? "bg-income-soft text-income" : "bg-surface-3 text-muted",
         )}
       >
@@ -115,7 +115,7 @@ export function TransactionCard({
             <button
               onClick={() => onEdit(tx)}
               aria-label="Editar lançamento"
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted opacity-0 transition-opacity hover:bg-surface-3 hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted transition-all hover:bg-surface-3 hover:text-foreground sm:opacity-0 sm:focus-visible:opacity-100 sm:group-hover:opacity-100"
             >
               <Pencil className="h-4 w-4" aria-hidden />
             </button>
@@ -124,7 +124,7 @@ export function TransactionCard({
             <button
               onClick={() => onDelete(tx)}
               aria-label="Excluir lançamento"
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted opacity-0 transition-opacity hover:bg-expense-soft hover:text-expense focus-visible:opacity-100 group-hover:opacity-100"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted transition-all hover:bg-expense-soft hover:text-expense sm:opacity-0 sm:focus-visible:opacity-100 sm:group-hover:opacity-100"
             >
               <Trash2 className="h-4 w-4" aria-hidden />
             </button>

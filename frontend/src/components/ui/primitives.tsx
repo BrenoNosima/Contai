@@ -7,11 +7,11 @@ type ButtonSize = "sm" | "md" | "icon"
 
 const variants: Record<ButtonVariant, string> = {
   primary:
-    "bg-primary text-primary-foreground hover:brightness-110 active:brightness-95 font-medium",
+    "bg-primary text-primary-foreground shadow-[0_8px_24px_-12px_var(--color-primary)] hover:-translate-y-0.5 hover:brightness-105 active:translate-y-0 active:brightness-95 font-semibold",
   secondary:
-    "bg-surface-3 text-foreground hover:bg-border-strong border border-border",
+    "bg-surface-3 text-foreground hover:-translate-y-0.5 hover:bg-border-strong border border-border",
   outline:
-    "bg-transparent text-foreground border border-border-strong hover:bg-surface-2",
+    "bg-surface/40 text-foreground border border-border-strong hover:bg-surface-2 hover:border-primary/40",
   ghost: "bg-transparent text-muted hover:text-foreground hover:bg-surface-2",
   danger:
     "bg-expense-soft text-expense border border-[color:var(--color-expense)]/30 hover:bg-expense hover:text-primary-foreground",
@@ -34,7 +34,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     <button
       ref={ref}
       className={cn(
-        "inline-flex items-center justify-center whitespace-nowrap transition-all disabled:opacity-50 disabled:pointer-events-none select-none",
+        "inline-flex items-center justify-center whitespace-nowrap transition-all duration-200 disabled:pointer-events-none disabled:translate-y-0 disabled:opacity-45 select-none",
         variants[variant],
         sizes[size],
         className,
@@ -54,7 +54,7 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-2xl p-5",
+        "rounded-2xl p-5 sm:p-6",
         elevated ? "card-elevated" : "card-elevated-2",
         className,
       )}
@@ -71,7 +71,7 @@ export const Input = React.forwardRef<
   <input
     ref={ref}
     className={cn(
-      "h-11 w-full rounded-xl border border-border bg-surface-2 px-3.5 text-sm text-foreground placeholder:text-subtle transition-colors focus:border-border-strong",
+      "h-11 w-full rounded-xl border border-border bg-surface-2/80 px-3.5 text-sm text-foreground shadow-[0_1px_0_rgba(255,255,255,0.02)_inset] outline-none placeholder:text-subtle transition-all focus:border-primary/60 focus:ring-4 focus:ring-primary/10",
       className,
     )}
     {...props}
@@ -87,7 +87,7 @@ export const Select = React.forwardRef<
   <select
     ref={ref}
     className={cn(
-      "h-11 w-full appearance-none rounded-xl border border-border bg-surface-2 px-3.5 text-sm text-foreground transition-colors focus:border-border-strong",
+      "h-11 w-full appearance-none rounded-xl border border-border bg-surface-2/80 px-3.5 text-sm text-foreground outline-none transition-all focus:border-primary/60 focus:ring-4 focus:ring-primary/10",
       className,
     )}
     {...props}
@@ -105,7 +105,7 @@ export const Textarea = React.forwardRef<
   <textarea
     ref={ref}
     className={cn(
-      "w-full rounded-xl border border-border bg-surface-2 px-3.5 py-2.5 text-sm text-foreground placeholder:text-subtle transition-colors focus:border-border-strong resize-none",
+      "w-full resize-none rounded-xl border border-border bg-surface-2/80 px-3.5 py-2.5 text-sm text-foreground outline-none placeholder:text-subtle transition-all focus:border-primary/60 focus:ring-4 focus:ring-primary/10",
       className,
     )}
     {...props}

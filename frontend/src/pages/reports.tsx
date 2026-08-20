@@ -97,13 +97,13 @@ export default function ReportsPage() {
         title="Relatórios"
         subtitle="Entenda para onde seu dinheiro vai."
         actions={
-          <div className="flex rounded-lg border border-border bg-surface p-1">
+          <div className="flex rounded-xl border border-border bg-surface-2/70 p-1 shadow-inner">
             {RANGE_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
                 onClick={() => setRange(opt.value)}
-                className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                  range === opt.value ? "bg-primary text-primary-foreground" : "text-muted hover:text-foreground"
+                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-all ${
+                  range === opt.value ? "bg-primary text-primary-foreground shadow-sm" : "text-muted hover:bg-surface-3 hover:text-foreground"
                 }`}
               >
                 {opt.label}
@@ -120,7 +120,7 @@ export default function ReportsPage() {
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <Card className="p-5">
+        <Card className="p-5 transition-colors hover:border-border-strong">
           <h2 className="font-sans text-base font-semibold text-foreground">Entradas x Saídas</h2>
           <p className="mb-4 text-sm text-muted">Comparativo mensal dos últimos {range} meses.</p>
           <div className="h-72">
@@ -144,7 +144,7 @@ export default function ReportsPage() {
           </div>
         </Card>
 
-        <Card className="p-5">
+        <Card className="p-5 transition-colors hover:border-border-strong">
           <h2 className="font-sans text-base font-semibold text-foreground">Evolução do saldo</h2>
           <p className="mb-4 text-sm text-muted">Saldo acumulado ao longo do período.</p>
           <div className="h-72">
@@ -174,7 +174,7 @@ export default function ReportsPage() {
           </div>
         </Card>
 
-        <Card className="p-5 lg:col-span-2">
+        <Card className="p-5 transition-colors hover:border-border-strong lg:col-span-2">
           <h2 className="font-sans text-base font-semibold text-foreground">Gastos por categoria</h2>
           <p className="mb-4 text-sm text-muted">
             {topCategory
@@ -236,13 +236,17 @@ export default function ReportsPage() {
 
 function SummaryCard({ label, value, tone }: { label: string; value: number; tone: "income" | "expense" }) {
   return (
-    <Card className="p-4">
+    <Card className="relative overflow-hidden p-4 transition-all hover:-translate-y-0.5 hover:border-border-strong">
       <p className="text-sm text-muted">{label}</p>
       <p
         className={`mt-1 font-mono text-2xl font-semibold ${tone === "income" ? "text-income" : "text-danger"}`}
       >
         {formatMoney(value)}
       </p>
+      <span
+        className={`absolute inset-y-4 left-0 w-0.5 rounded-full ${tone === "income" ? "bg-income" : "bg-expense"}`}
+        aria-hidden
+      />
     </Card>
   )
 }

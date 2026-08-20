@@ -89,7 +89,7 @@ export default function OverviewPage() {
         />
       ) : dashboard.data ? (
         <>
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <BalanceCard
               label="Saldo atual"
               value={dashboard.data.summary.balance}
@@ -112,7 +112,7 @@ export default function OverviewPage() {
 
           {/* Month stats */}
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            <Card className="flex items-center justify-between" elevated={false}>
+            <Card className="flex items-center justify-between transition-colors hover:border-income/30" elevated={false}>
               <div>
                 <p className="text-xs text-muted">Recebido no mês</p>
                 <Money
@@ -125,7 +125,7 @@ export default function OverviewPage() {
                 <TrendingUp className="h-5 w-5" aria-hidden />
               </span>
             </Card>
-            <Card className="flex items-center justify-between" elevated={false}>
+            <Card className="flex items-center justify-between transition-colors hover:border-expense/30" elevated={false}>
               <div>
                 <p className="text-xs text-muted">A pagar no mês</p>
                 <Money
@@ -195,11 +195,11 @@ export default function OverviewPage() {
               Movimentações recentes
             </h2>
           </div>
-          <Card elevated={false} className="divide-y divide-border p-0">
+          <Card elevated={false} className="divide-y divide-border overflow-hidden p-0">
             {dashboard.data.recent_transactions.map((t) => (
               <div
                 key={t.id}
-                className="flex items-center justify-between px-4 py-3"
+                className="flex items-center justify-between px-4 py-3.5 transition-colors hover:bg-surface-3/40"
               >
                 <div className="min-w-0">
                   <p className="truncate text-sm text-foreground">
@@ -216,7 +216,7 @@ export default function OverviewPage() {
 
       <Link
         to="/assistente"
-        className="mt-6 flex items-center gap-3 rounded-2xl border border-border bg-surface-2 p-4 transition-colors hover:border-border-strong"
+        className="group mt-6 flex items-center gap-3 overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/10 via-surface-2 to-surface-2 p-4 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-xl"
       >
         <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/15 text-primary">
           <Sparkles className="h-5 w-5" aria-hidden />
@@ -229,7 +229,7 @@ export default function OverviewPage() {
             "Quais contas estão pendentes esse mês?"
           </p>
         </div>
-        <ArrowRight className="h-4 w-4 text-muted" aria-hidden />
+        <ArrowRight className="h-4 w-4 text-muted transition-transform group-hover:translate-x-1 group-hover:text-primary" aria-hidden />
       </Link>
 
       <Dialog
@@ -264,11 +264,11 @@ function BalanceCard({
   return (
     <Card
       className={cn(
-        "relative overflow-hidden",
+        "relative overflow-hidden sm:col-span-2",
         highlight && "border-[color:var(--color-primary)]/30",
       )}
     >
-      <div className="flex items-center justify-between">
+      <div className="relative z-10 flex items-center justify-between">
         <p className="text-xs text-muted">{label}</p>
         <span
           className={cn(
@@ -282,8 +282,11 @@ function BalanceCard({
       <Money
         value={value}
         type={value < 0 ? "expense" : undefined}
-        className="mt-3 block text-3xl"
+        className="relative z-10 mt-4 block text-3xl sm:text-4xl"
       />
+      {highlight && (
+        <div className="pointer-events-none absolute -bottom-20 -right-16 h-48 w-48 rounded-full bg-primary/10 blur-2xl" aria-hidden />
+      )}
     </Card>
   )
 }
@@ -300,7 +303,7 @@ function StatCard({
   tone: "income" | "expense"
 }) {
   return (
-    <Card>
+    <Card className="transition-all hover:-translate-y-0.5 hover:border-border-strong">
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted">{label}</p>
         <span
@@ -314,7 +317,7 @@ function StatCard({
           <Icon className="h-4 w-4" aria-hidden />
         </span>
       </div>
-      <Money value={value} type={tone} className="mt-3 block text-3xl" />
+      <Money value={value} type={tone} className="mt-4 block text-2xl lg:text-3xl" />
     </Card>
   )
 }
