@@ -26,6 +26,7 @@ from app.api.routes.chat import (
 from app.api.routes.reports import (
     router as reports_router,
 )
+from app.api.routes.metadata import router as metadata_router
 
 app = FastAPI(
     title="Breno Finance AI",
@@ -48,6 +49,7 @@ app.include_router(fixed_expenses_router)
 app.include_router(dashboard_router)
 app.include_router(chat_router)
 app.include_router(reports_router)
+app.include_router(metadata_router)
 
 
 @app.get("/")

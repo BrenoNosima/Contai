@@ -6,7 +6,8 @@ import { qk, useInvalidateFinance } from "@/lib/query"
 import { errMsg } from "@/lib/hooks"
 import { useToast } from "@/components/ui/toast"
 import type { FixedExpense, FixedExpenseCreate } from "@/lib/types"
-import { categoryMeta, CATEGORY_SUGGESTIONS } from "@/lib/categories"
+import { categoryMeta } from "@/lib/categories"
+import { useFinanceMetadata } from "@/lib/metadata"
 import { PageHeader } from "@/components/page-header"
 import { Button, Card, Input, Label, Money } from "@/components/ui/primitives"
 import { Dialog } from "@/components/ui/dialog"
@@ -201,6 +202,7 @@ function FixedExpenseForm({
   onCancel: () => void
   submitting?: boolean
 }) {
+  const metadata = useFinanceMetadata()
   const [name, setName] = useState(initial?.name ?? "")
   const [category, setCategory] = useState(initial?.category ?? "")
   const [amount, setAmount] = useState(initial ? String(initial.amount) : "")
@@ -246,7 +248,7 @@ function FixedExpenseForm({
           placeholder="Categoria"
         />
         <datalist id="fe-cat-list">
-          {CATEGORY_SUGGESTIONS.map((c) => (
+          {metadata.categories.map((c) => (
             <option key={c} value={c} />
           ))}
         </datalist>

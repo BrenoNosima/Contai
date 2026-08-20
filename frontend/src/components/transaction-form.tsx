@@ -13,7 +13,7 @@ import {
   Label,
   Select,
 } from "@/components/ui/primitives"
-import { CATEGORY_SUGGESTIONS } from "@/lib/categories"
+import { useFinanceMetadata } from "@/lib/metadata"
 import { todayISO } from "@/lib/dates"
 import { cn } from "@/lib/utils"
 import { ChevronDown } from "lucide-react"
@@ -31,6 +31,7 @@ export function TransactionForm({
   onCancel: () => void
   submitting?: boolean
 }) {
+  const metadata = useFinanceMetadata()
   const [type, setType] = useState<TransactionType>(initial?.type ?? "expense")
   const [status, setStatus] = useState<TransactionStatus>(
     initial?.status ?? "pending",
@@ -139,10 +140,10 @@ export function TransactionForm({
               className="cursor-pointer pr-10"
             >
               <option value="" disabled>Selecione uma categoria</option>
-              {category && !CATEGORY_SUGGESTIONS.includes(category) && (
+              {category && !metadata.categories.includes(category) && (
                 <option value={category}>{category}</option>
               )}
-              {CATEGORY_SUGGESTIONS.map((c) => (
+              {metadata.categories.map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}
             </Select>
@@ -180,8 +181,9 @@ export function TransactionForm({
             onChange={(e) => setRecurrence(e.target.value as Recurrence | "")}
           >
             <option value="">Nenhuma</option>
-            <option value="weekly">Semanal</option>
-            <option value="monthly">Mensal</option>
+            {metadata.recurrences.map((option) => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
           </Select>
         </div>
       </div>
@@ -195,9 +197,9 @@ export function TransactionForm({
             onChange={(e) => setPriority(e.target.value as Priority | "")}
           >
             <option value="">Sem prioridade</option>
-            <option value="essential">Essencial</option>
-            <option value="desirable">Desejável</option>
-            <option value="superfluous">Supérfluo</option>
+            {metadata.priorities.map((option) => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
           </Select>
         </div>
       )}

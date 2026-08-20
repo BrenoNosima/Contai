@@ -23,11 +23,12 @@ import { Dialog } from "@/components/ui/dialog"
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/states"
 import { TransactionCard } from "@/components/transaction-card"
 import { TransactionForm } from "@/components/transaction-form"
-import { CATEGORY_SUGGESTIONS } from "@/lib/categories"
+import { useFinanceMetadata } from "@/lib/metadata"
 import { parseDate } from "@/lib/dates"
 import { cn } from "@/lib/utils"
 
 export default function TransactionsPage() {
+  const metadata = useFinanceMetadata()
   const [filters, setFilters] = useState<TransactionFilters>({})
   const [showFilters, setShowFilters] = useState(false)
   const [adding, setAdding] = useState(false)
@@ -179,7 +180,7 @@ export default function TransactionsPage() {
                   className="cursor-pointer pr-10"
                 >
                   <option value="">Todas as categorias</option>
-                  {CATEGORY_SUGGESTIONS.map((c) => (
+                  {metadata.categories.map((c) => (
                     <option key={c} value={c}>{c}</option>
                   ))}
                 </Select>

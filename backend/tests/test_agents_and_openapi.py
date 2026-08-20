@@ -89,8 +89,27 @@ def test_openapi_exposes_core_contracts(client):
         "/reports/monthly-trend",
         "/reports/summary",
         "/chat/",
+        "/metadata/finance",
     }
     assert expected <= set(schema["paths"])
     assert schema["paths"]["/transactions/"]["post"]["responses"]["200"][
         "content"
     ]["application/json"]["schema"]["$ref"].endswith("TransactionResponse")
+
+
+def test_finance_metadata_contract(client):
+    response = client.get("/metadata/finance")
+
+    assert response.status_code == 200
+    metadata = response.json()
+    assert "Alimentação" in metadata["categories"]
+    assert "Outros" in metadata["categories"]
+    assert metadata["priorities"] == [
+        {"value": "essential", "label": "Essencial"},
+        {"value": "desirable", "label": "Desejável"},
+        {"value": "superfluous", "label": "Supérfluo"},
+    ]
+    assert metadata["recurrences"] == [
+        {"value": "weekly", "label": "Semanal"},
+        {"value": "monthly", "label": "Mensal"},
+    ]

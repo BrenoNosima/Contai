@@ -18,6 +18,7 @@ export const qk = {
   fixedExpenses: ["fixed-expenses"] as const,
   reports: (months?: number) =>
     months ? (["reports", months] as const) : (["reports"] as const),
+  financeMetadata: ["metadata", "finance"] as const,
 }
 
 /**

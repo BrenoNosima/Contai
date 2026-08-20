@@ -58,4 +58,8 @@ export function categoryIcon(category: string): LucideIcon {
 }
 
 /** Suggested categories for select inputs. */
-export const CATEGORY_SUGGESTIONS = CATEGORIES.map((c) => c.label)
+export const CATEGORY_SUGGESTIONS = [
+  ...CATEGORIES.map((c) => c.label),
+  "Freelancer",
+  "Outros",
+]

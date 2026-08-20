@@ -4,6 +4,7 @@ import type {
   DashboardSummary,
   FixedExpense,
   FixedExpenseCreate,
+  FinanceMetadata,
   Goal,
   GoalCreate,
   MonthlyTrendPoint,
@@ -158,4 +159,9 @@ export const chatApi = {
       method: "POST",
       body: JSON.stringify({ message, chat_history: chatHistory }),
     }),
+}
+
+// ---------- Metadata ----------
+export const metadataApi = {
+  finance: () => request<FinanceMetadata>(`/metadata/finance`),
 }

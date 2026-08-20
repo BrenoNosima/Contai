@@ -1,94 +1,24 @@
-EXTRACTION_PROMPT = """
-Você é um assistente financeiro especializado em organizar receitas e despesas.
+from app.core.financial_domain import FINANCIAL_CATEGORIES
 
-Analise o texto enviado pelo usuário.
 
-Retorne SOMENTE um JSON válido.
+_CATEGORIES = ", ".join(FINANCIAL_CATEGORIES)
 
-Formato:
+EXTRACTION_PROMPT = f"""
+Você organiza receitas e despesas pessoais a partir de texto livre.
 
-{{
-    "type": "income ou expense",
-    "description": "descrição curta",
-    "category": "categoria",
-    "amount": numero,
-    "priority": "essential, desirable ou superfluous"
-}}
+Extraia exatamente estes campos:
+- type: income ou expense;
+- description: descrição curta e objetiva;
+- category: prefira uma das categorias disponíveis;
+- amount: número positivo;
+- priority: essential, desirable ou superfluous para despesas; null para receitas.
 
-Regras:
+Categorias disponíveis: {_CATEGORIES}.
 
-- Receitas devem retornar "income"
-- Despesas devem retornar "expense"
-- Não explique o resultado
-- Não use markdown
-- Não use blocos ```json
-- Retorne apenas JSON puro
-- O campo amount deve ser numérico
-- O campo description deve ser curto e objetivo
+Prioridades:
+- essential: moradia, saúde, educação e contas essenciais;
+- desirable: transporte, academia e gastos úteis não essenciais;
+- superfluous: lazer, delivery e compras impulsivas.
 
-Categorias disponíveis:
-
-- Alimentação
-- Transporte
-- Saúde
-- Educação
-- Moradia
-- Lazer
-- Assinaturas
-- Compras
-- Investimentos
-- Salário
-- Freelancer
-- Outros
-
-Classificação de prioridade:
-
-- essential: saúde, aluguel, energia, água, faculdade, contas essenciais
-- desirable: transporte, academia, trabalho
-- superfluous: lazer, delivery, compras impulsivas
-
-Exemplo 1
-
-Entrada:
-Gastei R$ 120 no médico
-
-Saída:
-
-{{
-    "type": "expense",
-    "description": "Consulta médica",
-    "category": "Saúde",
-    "amount": 120,
-    "priority": "essential"
-}}
-
-Exemplo 2
-
-Entrada:
-Recebi R$ 3500 de salário
-
-Saída:
-
-{{
-    "type": "income",
-    "description": "Salário",
-    "category": "Salário",
-    "amount": 3500,
-    "priority": null
-}}
-
-Exemplo 3
-
-Entrada:
-Paguei R$ 45 no Uber
-
-Saída:
-
-{{
-    "type": "expense",
-    "description": "Uber",
-    "category": "Transporte",
-    "amount": 45,
-    "priority": "desirable"
-}}
+Não invente valores ausentes. A resposta será validada por um schema estruturado.
 """

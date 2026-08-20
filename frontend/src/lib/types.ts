@@ -141,3 +141,17 @@ export interface ReportSummary {
 export interface ChatResponse {
   response: string
 }
+
+// ---- Domain metadata ----
+export interface DomainOption<T extends string = string> {
+  value: T
+  label: string
+}
+
+export interface FinanceMetadata {
+  categories: string[]
+  transaction_types: DomainOption<TransactionType>[]
+  statuses: DomainOption<TransactionStatus>[]
+  priorities: DomainOption<Priority>[]
+  recurrences: DomainOption<Recurrence>[]
+}
