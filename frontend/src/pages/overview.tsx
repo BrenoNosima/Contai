@@ -4,12 +4,12 @@ import { Link } from "react-router-dom"
 import {
   TrendingUp,
   TrendingDown,
-  Wallet,
   Plus,
   CalendarClock,
   ArrowRight,
   Sparkles,
 } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
 import { endOfMonth, startOfMonth, format } from "date-fns"
 import { dashboardApi, transactionsApi } from "@/lib/api"
 import { qk } from "@/lib/query"
@@ -88,26 +88,21 @@ export default function OverviewPage() {
           onRetry={() => dashboard.refetch()}
         />
       ) : dashboard.data ? (
-        <div className="grid gap-3 lg:grid-cols-[1.15fr_0.85fr]">
-          <Card className="overflow-hidden p-4 sm:p-5">
-            <div className="flex items-start justify-between gap-4">
-              <div>
+        <div className="grid gap-2.5 sm:gap-3 lg:grid-cols-[1.15fr_0.85fr]">
+          <Card className="overflow-hidden p-3.5 sm:p-5">
+            <div>
                 <p className="text-xs font-medium uppercase tracking-[0.12em] text-subtle">
                   Posição atual
                 </p>
-                <p className="mt-2 text-sm text-muted">Saldo disponível</p>
+                <p className="mt-1.5 text-xs text-muted sm:mt-2 sm:text-sm">Saldo disponível</p>
                 <Money
                   value={dashboard.data.summary.balance}
                   type={dashboard.data.summary.balance < 0 ? "expense" : undefined}
-                  className="metric-value-lg mt-1 block"
+                  className="tnum mt-1 block text-xl font-semibold tracking-[-0.025em] sm:text-[2rem]"
                 />
-              </div>
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
-                <Wallet className="h-5 w-5" aria-hidden />
-              </span>
             </div>
 
-            <div className="mt-5 grid grid-cols-2 divide-x divide-border border-t border-border pt-4">
+            <div className="mt-4 grid grid-cols-2 divide-x divide-border border-t border-border pt-3.5 sm:mt-5 sm:pt-4">
               <SummaryMetric
                 label="Receitas acumuladas"
                 value={dashboard.data.summary.total_income}
@@ -124,17 +119,14 @@ export default function OverviewPage() {
             </div>
           </Card>
 
-          <Card className="overflow-hidden p-4 sm:p-5" elevated={false}>
-            <div className="flex items-center justify-between gap-3">
-              <div>
+          <Card className="overflow-hidden p-3.5 sm:p-5" elevated={false}>
+            <div>
                 <p className="text-xs font-medium uppercase tracking-[0.12em] text-subtle">
                   Este mês
                 </p>
-                <p className="mt-1 text-sm text-muted">Fluxo previsto e realizado</p>
-              </div>
-              <CalendarClock className="h-5 w-5 text-warning" aria-hidden />
+                <p className="mt-1 text-xs text-muted sm:text-sm">Fluxo previsto e realizado</p>
             </div>
-            <div className="mt-4 divide-y divide-border rounded-xl border border-border bg-background/35 px-3.5">
+            <div className="mt-3 divide-y divide-border rounded-xl border border-border bg-background/35 px-3 sm:mt-4 sm:px-3.5">
               <MonthMetric
                 label="Recebido"
                 value={monthStats.received}
@@ -273,7 +265,7 @@ function SummaryMetric({
 }: {
   label: string
   value: number
-  icon: typeof Wallet
+  icon: LucideIcon
   tone: "income" | "expense"
   className?: string
 }) {
@@ -300,13 +292,13 @@ function MonthMetric({
 }: {
   label: string
   value: number
-  icon: typeof Wallet
+  icon: LucideIcon
   tone: "income" | "expense"
 }) {
   return (
-    <div className="flex min-h-16 items-center justify-between gap-3 py-3">
-      <div className="flex min-w-0 items-center gap-3">
-        <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-lg", tone === "income" ? "bg-income-soft text-income" : "bg-expense-soft text-expense")}>
+    <div className="flex min-h-14 items-center justify-between gap-2.5 py-2.5 sm:min-h-16 sm:gap-3 sm:py-3">
+      <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
+        <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg sm:h-9 sm:w-9", tone === "income" ? "bg-income-soft text-income" : "bg-expense-soft text-expense")}>
           <Icon className="h-4 w-4" aria-hidden />
         </span>
         <span className="text-sm font-medium text-foreground">{label}</span>
