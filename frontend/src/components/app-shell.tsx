@@ -39,12 +39,12 @@ function Logo({ compact = false }: { compact?: boolean }) {
   return (
     <div className="flex items-center gap-2.5">
       <div className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-[14px] bg-primary text-primary-foreground shadow-[0_10px_28px_-12px_var(--color-primary)]">
-        <span className="tnum text-lg font-bold">B</span>
+        <span className="tnum text-lg font-bold">C</span>
         <span className="absolute inset-x-1 top-0 h-px bg-white/40" aria-hidden />
       </div>
       <div className={cn("leading-tight", compact && "hidden min-[360px]:block")}>
-        <p className="text-sm font-semibold tracking-tight text-foreground">Breno Finance</p>
-        {!compact && <p className="text-[11px] text-subtle">controle financeiro</p>}
+        <p className="text-sm font-semibold tracking-tight text-foreground">CONTAÍ</p>
+        {!compact && <p className="text-[11px] text-subtle">Agenda financeira</p>}
       </div>
     </div>
   )
@@ -60,7 +60,7 @@ export function AppShell() {
   return (
     <div className="min-h-dvh bg-transparent">
       {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-border/80 bg-surface/80 px-4 py-5 backdrop-blur-xl lg:flex">
+      <aside className="app-sidebar fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-border bg-surface px-4 py-5 lg:flex">
         <div className="px-2 py-1">
           <Logo />
         </div>
@@ -77,8 +77,8 @@ export function AppShell() {
                 cn(
                   "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
                   isActive
-                    ? "bg-primary/10 text-foreground shadow-[0_1px_0_rgba(255,255,255,0.03)_inset]"
-                    : "text-muted hover:translate-x-0.5 hover:bg-surface-2/80 hover:text-foreground",
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted hover:bg-surface-2 hover:text-foreground",
                 )
               }
             >
@@ -99,17 +99,17 @@ export function AppShell() {
         </nav>
         <NavLink
           to="/lancamentos"
-          className="mb-3 flex items-center justify-center gap-2 rounded-xl bg-primary px-3 py-2.5 text-sm font-semibold text-primary-foreground shadow-[0_12px_28px_-16px_var(--color-primary)] transition-all hover:-translate-y-0.5 hover:brightness-105"
+          className="mb-3 flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-3 py-2.5 text-sm font-semibold text-primary-foreground shadow-[0_12px_28px_-20px_rgba(255,255,255,0.35)] transition-colors hover:bg-[color:#f1f3f2]"
         >
           <Plus className="h-4 w-4" aria-hidden /> Novo lançamento
         </NavLink>
-        <div className="rounded-xl border border-border/80 bg-surface-2/60 p-3 text-xs leading-relaxed text-muted">
-          Atualize os status das contas para manter seu saldo e relatórios em dia.
+        <div className="rounded-xl border border-border bg-surface-2 p-3 text-xs leading-relaxed text-muted">
+          Organize vencimentos, metas e movimentações em uma única agenda.
         </div>
       </aside>
 
       {/* Mobile top bar */}
-      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-border/70 bg-background/80 px-4 py-3 backdrop-blur-xl lg:hidden">
+      <header className="app-sidebar sticky top-0 z-20 flex items-center justify-between border-b border-border bg-surface/95 px-4 py-3 shadow-sm backdrop-blur-xl lg:hidden">
         <Logo compact />
         <span className="max-w-32 truncate text-sm font-medium text-muted">{active?.label}</span>
       </header>
@@ -118,10 +118,15 @@ export function AppShell() {
       <main className="lg:pl-64">
         <div
           className={cn(
-            "mx-auto w-full px-3 pb-24 pt-4 sm:px-6 sm:pb-28 sm:pt-6 lg:pb-12 lg:pt-9 xl:px-8",
-            location.pathname.startsWith("/calendario")
-              ? "max-w-7xl"
-              : "max-w-5xl",
+            "mx-auto w-full px-4 sm:px-6 xl:px-8",
+            location.pathname.startsWith("/assistente")
+              ? "h-[calc(100dvh-4.0625rem)] max-w-5xl overflow-hidden pb-[calc(4.5rem+env(safe-area-inset-bottom))] pt-4 sm:pt-6 lg:h-dvh lg:pb-8 lg:pt-8"
+              : cn(
+                  "pb-24 pt-5 sm:pb-28 sm:pt-7 lg:pb-12 lg:pt-9",
+                  location.pathname.startsWith("/calendario")
+                    ? "max-w-7xl"
+                    : "max-w-5xl",
+                ),
           )}
         >
           <Outlet />
@@ -130,7 +135,7 @@ export function AppShell() {
 
       {/* Mobile bottom nav */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-border/80 bg-surface/90 shadow-[0_-16px_40px_-28px_rgba(0,0,0,0.9)] backdrop-blur-xl lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface/95 shadow-[0_-12px_30px_-24px_rgba(0,0,0,0.7)] backdrop-blur-xl lg:hidden"
         aria-label="Navegação inferior"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
@@ -172,7 +177,7 @@ export function AppShell() {
       {moreOpen && (
         <div className="fixed inset-0 z-40 lg:hidden" id="mobile-more-menu">
           <button
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-slate-950/45 backdrop-blur-sm"
             onClick={() => setMoreOpen(false)}
             aria-label="Fechar menu"
           />

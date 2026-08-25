@@ -74,7 +74,7 @@ export default function FixedExpensesPage() {
           <div className="relative z-10 flex items-center justify-between">
           <div>
             <p className="text-xs text-muted">Total mensal em gastos fixos</p>
-            <Money value={total} type="expense" className="mt-1 text-2xl" />
+            <Money value={total} type="expense" className="metric-value mt-1 block" />
           </div>
           <span className="rounded-xl bg-expense-soft p-2.5 text-expense">
             <Repeat className="h-5 w-5" aria-hidden />
@@ -129,20 +129,20 @@ export default function FixedExpensesPage() {
                       </span>
                     </p>
                   </div>
-                  <div className="ml-14 flex w-full items-center justify-between gap-2 sm:ml-0 sm:w-auto sm:justify-end">
+                  <div className="flex w-full items-center justify-between gap-2 pl-14 sm:w-auto sm:justify-end sm:pl-0">
                     <Money value={item.amount} type="expense" />
                     <div className="flex items-center gap-1">
                     <button
                       onClick={() => setForm({ open: true, item })}
                       aria-label="Editar gasto fixo"
-                      className="flex h-9 w-9 items-center justify-center rounded-lg text-muted transition-all hover:bg-surface-3 hover:text-foreground sm:opacity-0 sm:focus-visible:opacity-100 sm:group-hover:opacity-100"
+                      className="flex h-10 w-10 items-center justify-center rounded-lg text-muted transition-all hover:bg-surface-3 hover:text-foreground sm:h-9 sm:w-9 sm:opacity-0 sm:focus-visible:opacity-100 sm:group-hover:opacity-100"
                     >
                       <Pencil className="h-4 w-4" aria-hidden />
                     </button>
                     <button
                       onClick={() => setDeleting(item)}
                       aria-label="Excluir gasto fixo"
-                      className="flex h-9 w-9 items-center justify-center rounded-lg text-muted transition-all hover:bg-expense-soft hover:text-expense sm:opacity-0 sm:focus-visible:opacity-100 sm:group-hover:opacity-100"
+                      className="flex h-10 w-10 items-center justify-center rounded-lg text-muted transition-all hover:bg-expense-soft hover:text-expense sm:h-9 sm:w-9 sm:opacity-0 sm:focus-visible:opacity-100 sm:group-hover:opacity-100"
                     >
                       <Trash2 className="h-4 w-4" aria-hidden />
                     </button>

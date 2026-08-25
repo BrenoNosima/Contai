@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from "react"
+import { useEffect, useId, useRef, type ReactNode } from "react"
 import { createPortal } from "react-dom"
 import { X } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -18,16 +18,39 @@ export function Dialog({
   children: ReactNode
   className?: string
 }) {
+  const titleId = useId()
+  const descriptionId = useId()
+  const panelRef = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
     if (!open) return
+    const previousFocus = document.activeElement as HTMLElement | null
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose()
+      if (e.key === "Tab" && panelRef.current) {
+        const focusable = panelRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
+        )
+        const first = focusable[0]
+        const last = focusable[focusable.length - 1]
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault()
+          last?.focus()
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault()
+          first?.focus()
+        }
+      }
     }
     document.addEventListener("keydown", onKey)
     document.body.style.overflow = "hidden"
+    window.requestAnimationFrame(() => {
+      panelRef.current?.querySelector<HTMLElement>("[autofocus], input, select, textarea, button")?.focus()
+    })
     return () => {
       document.removeEventListener("keydown", onKey)
       document.body.style.overflow = ""
+      previousFocus?.focus()
     }
   }, [open, onClose])
 
@@ -38,31 +61,33 @@ export function Dialog({
       className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
       role="dialog"
       aria-modal="true"
-      aria-label={title}
+      aria-labelledby={titleId}
+      aria-describedby={description ? descriptionId : undefined}
     >
       <div
-        className="absolute inset-0 bg-black/70 backdrop-blur-[6px]"
+        className="absolute inset-0 bg-slate-950/45 backdrop-blur-[2px]"
         onClick={onClose}
         aria-hidden
       />
       <div
+        ref={panelRef}
         className={cn(
-          "animate-dialog-in relative z-10 max-h-[90vh] w-full overflow-y-auto rounded-t-3xl border border-border bg-surface p-5 shadow-[0_30px_80px_-24px_rgba(0,0,0,0.9)] sm:max-w-lg sm:rounded-3xl sm:p-6",
+          "animate-dialog-in relative z-10 max-h-[92dvh] w-full overscroll-contain overflow-y-auto rounded-t-3xl border border-border bg-surface p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_30px_80px_-28px_rgba(0,0,0,0.75)] sm:max-h-[90vh] sm:max-w-lg sm:rounded-2xl sm:p-6",
           className,
         )}
       >
         <div className="mb-5 flex items-start justify-between gap-4">
           <div className="space-y-1">
-            <h2 className="text-lg font-semibold text-foreground text-balance">
+            <h2 id={titleId} className="text-lg font-semibold text-foreground text-balance">
               {title}
             </h2>
             {description && (
-              <p className="text-sm text-muted text-pretty">{description}</p>
+              <p id={descriptionId} className="text-sm text-muted text-pretty">{description}</p>
             )}
           </div>
           <button
             onClick={onClose}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-2 hover:text-foreground"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-2 hover:text-foreground sm:h-9 sm:w-9"
             aria-label="Fechar"
           >
             <X className="h-5 w-5" aria-hidden />

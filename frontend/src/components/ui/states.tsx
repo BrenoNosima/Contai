@@ -10,14 +10,22 @@ export function Spinner({ className }: { className?: string }) {
 export function LoadingState({ label = "Carregando…" }: { label?: string }) {
   return (
     <div
-      className="card-elevated-2 flex flex-col items-center justify-center gap-3 rounded-2xl py-16 text-muted"
+      className="card-elevated-2 overflow-hidden rounded-2xl p-5 text-muted"
       role="status"
       aria-live="polite"
+      aria-busy="true"
     >
-      <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10">
-        <Spinner className="h-5 w-5 text-primary" />
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+          <Spinner className="h-5 w-5 text-primary" />
+        </div>
+        <span className="text-sm font-medium text-foreground">{label}</span>
       </div>
-      <span className="text-sm">{label}</span>
+      <div className="mt-5 space-y-3" aria-hidden>
+        <div className="h-3 w-2/5 animate-pulse rounded-full bg-surface-3" />
+        <div className="h-12 w-full animate-pulse rounded-xl bg-surface-3" />
+        <div className="h-12 w-4/5 animate-pulse rounded-xl bg-surface-3" />
+      </div>
     </div>
   )
 }

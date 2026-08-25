@@ -1,6 +1,6 @@
-# Breno Finance
+# Contaí
 
-O Breno Finance é uma aplicação de finanças pessoais criada para reunir, em um só lugar, a rotina financeira do dia a dia. Ela permite acompanhar receitas e despesas, organizar contas recorrentes, definir metas e consultar relatórios sem depender de planilhas espalhadas.
+A Contaí é uma aplicação de finanças pessoais criada para reunir, em um só lugar, a rotina financeira do dia a dia. Ela permite acompanhar receitas e despesas, organizar contas recorrentes, definir metas e consultar relatórios sem depender de planilhas espalhadas.
 
 Além das telas tradicionais, o projeto conta com um assistente integrado à Groq. Com ele, é possível registrar e consultar informações usando frases como “gastei 45 reais no mercado hoje” ou “quais contas ainda estão pendentes este mês?”.
 

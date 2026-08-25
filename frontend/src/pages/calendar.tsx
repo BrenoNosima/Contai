@@ -97,7 +97,7 @@ export default function CalendarPage() {
           <p className="text-sm font-medium text-[color:var(--color-calendar-accent)]">
             Agenda financeira
           </p>
-          <h1 className="mt-1 font-sans text-3xl font-semibold capitalize text-foreground">
+          <h1 className="mt-1 font-sans text-2xl font-semibold capitalize text-foreground sm:text-3xl">
             {format(cursor, "MMMM 'de' yyyy", { locale: ptBR })}
           </h1>
           {!calendarLoading && !calendarError && (
@@ -108,7 +108,7 @@ export default function CalendarPage() {
             </p>
           )}
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-start">
           <Button
             size="icon"
             variant="outline"
@@ -120,6 +120,7 @@ export default function CalendarPage() {
           <Button
             size="sm"
             variant="outline"
+            className="flex-1 sm:flex-none"
             onClick={() => setCursor(new Date())}
           >
             Hoje
@@ -135,7 +136,7 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      <Card elevated className="overflow-hidden border-[color:var(--color-calendar-border)] bg-[color:var(--color-calendar-surface)] p-0">
+      <Card elevated className="calendar-panel overflow-hidden border-[color:var(--color-calendar-border)] bg-[color:var(--color-calendar-surface)] p-0 shadow-[0_20px_50px_-32px_rgba(17,28,35,0.75)]">
         {calendarLoading ? (
           <LoadingState label="Carregando o mês…" />
         ) : calendarError ? (
@@ -151,9 +152,10 @@ export default function CalendarPage() {
                 {WEEKDAYS.map((d) => (
                   <div
                     key={d}
-                    className="border-r border-[color:var(--color-calendar-border)] py-2 text-center text-[10px] font-semibold uppercase tracking-[0.06em] text-muted last:border-r-0 sm:py-3 sm:text-[11px] sm:tracking-[0.12em]"
+                    className="border-r border-[color:var(--color-calendar-border)] py-2.5 text-center text-[11px] font-semibold uppercase tracking-[0.06em] text-muted last:border-r-0 sm:py-3 sm:text-xs sm:tracking-[0.1em]"
                   >
-                    {d}
+                    <span className="sm:hidden" aria-hidden>{d.slice(0, 1)}</span>
+                    <span className="hidden sm:inline">{d}</span>
                   </div>
                 ))}
               </div>
@@ -162,6 +164,8 @@ export default function CalendarPage() {
                 const key = format(day, "yyyy-MM-dd")
                 const items = byDay.get(key) ?? []
                 const hasPending = items.some((t) => t.status === "pending")
+                const hasIncome = items.some((t) => t.type === "income")
+                const hasExpense = items.some((t) => t.type === "expense")
                 const inMonth = isSameMonth(day, cursor)
                 const isSel = selected && isSameDay(day, selected)
                 const visibleItems = items.slice(0, 3)
@@ -174,10 +178,10 @@ export default function CalendarPage() {
                     }`}
                     aria-pressed={!!isSel}
                     className={cn(
-                      "group relative min-h-16 border-b border-r border-[color:var(--color-calendar-border)] p-1 text-left text-sm transition-colors sm:min-h-[118px] sm:p-2 [@media(min-width:900px)]:min-h-[132px] [&:nth-child(7n)]:border-r-0",
+                      "group relative min-h-14 border-b border-r border-[color:var(--color-calendar-border)] p-1 text-left text-sm transition-colors min-[420px]:min-h-16 min-[420px]:p-1.5 sm:min-h-[122px] sm:p-2.5 [@media(min-width:900px)]:min-h-[136px] [&:nth-child(7n)]:border-r-0",
                       inMonth
                         ? "bg-[color:var(--color-calendar-surface)] text-foreground"
-                        : "bg-[color:var(--color-calendar-outside)] text-subtle/50",
+                        : "bg-[color:var(--color-calendar-outside)] text-subtle/70",
                       isSel
                         ? "z-10 bg-[color:var(--color-calendar-selected)] shadow-[inset_0_0_0_2px_var(--color-calendar-accent)]"
                         : "hover:bg-[color:var(--color-calendar-hover)]",
@@ -186,16 +190,22 @@ export default function CalendarPage() {
                     <span className="mb-1 flex items-center justify-between sm:mb-2">
                       <span
                         className={cn(
-                          "tnum flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-[11px] font-medium sm:h-7 sm:min-w-7 sm:px-1.5 sm:text-xs",
+                          "tnum flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-[11px] font-semibold min-[420px]:text-xs sm:h-7 sm:min-w-7 sm:px-1.5 sm:text-sm",
                           isToday(day) &&
-                            "bg-[color:var(--color-calendar-accent)] font-semibold text-white shadow-sm",
+                            "bg-[color:var(--color-calendar-accent)] font-semibold text-primary-foreground shadow-sm",
                         )}
                       >
                         {format(day, "d")}
                       </span>
                       {items.length > 0 && (
-                        <span className="hidden text-[10px] text-subtle sm:inline">
-                          {items.length} {items.length === 1 ? "item" : "itens"}
+                        <span className={cn(
+                          "tnum text-[10px] font-semibold sm:text-[11px]",
+                          hasPending ? "text-warning" : "text-subtle",
+                        )}>
+                          <span className="sm:hidden">{items.length}</span>
+                          <span className="hidden sm:inline">
+                            {items.length} {items.length === 1 ? "item" : "itens"}
+                          </span>
                         </span>
                       )}
                     </span>
@@ -207,23 +217,27 @@ export default function CalendarPage() {
                         />
                       ))}
                       {items.length > visibleItems.length && (
-                        <span className="px-1 text-[10px] font-medium text-muted">
+                        <span className="px-1 text-[11px] font-medium text-muted">
                           +{items.length - visibleItems.length} outro{items.length - visibleItems.length > 1 ? "s" : ""}
                         </span>
                       )}
                     </span>
                     {items.length > 0 && (
-                      <span className="mt-2 flex flex-wrap gap-1 px-0.5 sm:hidden" aria-hidden>
-                        {items.slice(0, 4).map((transaction) => (
+                      <span className="absolute inset-x-1 bottom-1 flex items-center gap-1 sm:hidden" aria-hidden>
+                        <span className="flex min-w-0 flex-1 items-center gap-0.5">
+                          {hasIncome && (
+                            <span className="h-1 flex-1 rounded-full bg-income" />
+                          )}
+                          {hasExpense && (
+                            <span className="h-1 flex-1 rounded-full bg-expense" />
+                          )}
+                        </span>
+                        {hasPending && (
                           <span
-                            key={transaction.id}
-                            className={cn(
-                              "h-1.5 w-1.5 rounded-full",
-                              transaction.type === "income" ? "bg-income" : "bg-expense",
-                              transaction.status === "pending" && "ring-1 ring-warning ring-offset-1 ring-offset-[color:var(--color-calendar-surface)]",
-                            )}
+                            className="h-1.5 w-1.5 shrink-0 rounded-full bg-warning"
+                            title="Há lançamento pendente"
                           />
-                        ))}
+                        )}
                       </span>
                     )}
                     {items.length > 0 && (
@@ -236,13 +250,14 @@ export default function CalendarPage() {
               })}
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 bg-[color:var(--color-calendar-header)] px-4 py-3 text-[11px] text-muted">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 bg-[color:var(--color-calendar-header)] px-3 py-2.5 text-[11px] text-muted sm:gap-x-5 sm:px-4 sm:py-3 sm:text-xs">
               <Legend tone="income" label="Receita" />
               <Legend tone="expense" label="Despesa" />
               <span className="flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-full bg-warning" />
                 Pendente
               </span>
+              <span className="sm:hidden">Número = lançamentos</span>
             </div>
           </div>
         )}
@@ -339,7 +354,7 @@ function CalendarItem({ transaction }: { transaction: Transaction }) {
   return (
     <span
       className={cn(
-        "flex min-w-0 items-center gap-1.5 rounded-md border-l-2 px-1.5 py-1 text-[10px] leading-tight",
+        "flex min-w-0 items-center gap-1.5 rounded-md border-l-2 px-1.5 py-1 text-[11px] leading-tight",
         isExpense
           ? "border-l-[color:var(--color-calendar-expense)] bg-[color:var(--color-calendar-expense-soft)] text-[color:var(--color-calendar-expense-text)]"
           : "border-l-[color:var(--color-calendar-income)] bg-[color:var(--color-calendar-income-soft)] text-[color:var(--color-calendar-income-text)]",

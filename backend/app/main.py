@@ -39,7 +39,7 @@ from app.api.routes.metadata import router as metadata_router
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
-    title="Breno Finance AI",
+    title="Contaí",
     description="Sistema financeiro pessoal com IA",
     version="0.1.0",
 )
@@ -109,7 +109,7 @@ def persistence_unavailable_handler(
 def root():
     return {
         "status": "online",
-        "project": "Breno Finance AI",
+        "project": "Contaí",
         "version": "0.1.0",
     }
 

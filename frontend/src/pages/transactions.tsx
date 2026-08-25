@@ -140,7 +140,7 @@ export default function TransactionsPage() {
 
           <div className="relative z-10">
             <Label>Tipo de lançamento</Label>
-            <div className="grid grid-cols-3 rounded-xl border border-border bg-background p-1">
+            <div className="grid grid-cols-1 gap-1 rounded-xl border border-border bg-background p-1 min-[380px]:grid-cols-3">
               <FilterOption active={!filters.type} onClick={() => setTypeFilter()}>
                 Todos
               </FilterOption>
@@ -347,7 +347,7 @@ function FilterOption({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "flex h-9 items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-medium transition-all sm:text-sm",
+        "flex h-11 items-center justify-center gap-1.5 rounded-lg px-2 text-sm font-medium transition-all sm:h-9",
         active
           ? "bg-surface-3 text-foreground shadow-sm"
           : "text-muted hover:bg-surface-2 hover:text-foreground",

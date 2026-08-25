@@ -259,14 +259,14 @@ function GoalCard({
           <button
             onClick={onEdit}
             aria-label="Editar meta"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-surface-2 hover:text-foreground"
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-muted hover:bg-surface-2 hover:text-foreground sm:h-9 sm:w-9"
           >
             <Pencil className="h-4 w-4" aria-hidden />
           </button>
           <button
             onClick={onDelete}
             aria-label="Excluir meta"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-expense-soft hover:text-expense"
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-muted hover:bg-expense-soft hover:text-expense sm:h-9 sm:w-9"
           >
             <Trash2 className="h-4 w-4" aria-hidden />
           </button>

@@ -79,7 +79,7 @@ export default function OverviewPage() {
         }
       />
 
-      {/* Balance cards */}
+      {/* Financial summary */}
       {dashboard.isLoading ? (
         <LoadingState />
       ) : dashboard.isError ? (
@@ -88,62 +88,68 @@ export default function OverviewPage() {
           onRetry={() => dashboard.refetch()}
         />
       ) : dashboard.data ? (
-        <>
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-6 sm:gap-3">
-            <BalanceCard
-              label="Saldo atual"
-              value={dashboard.data.summary.balance}
-              icon={Wallet}
-              highlight
-            />
-            <StatCard
-              label="Total de receitas"
-              value={dashboard.data.summary.total_income}
-              icon={TrendingUp}
-              tone="income"
-            />
-            <StatCard
-              label="Total de despesas"
-              value={dashboard.data.summary.total_expense}
-              icon={TrendingDown}
-              tone="expense"
-            />
-          </div>
+        <div className="grid gap-3 lg:grid-cols-[1.15fr_0.85fr]">
+          <Card className="overflow-hidden p-4 sm:p-5">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[0.12em] text-subtle">
+                  Posição atual
+                </p>
+                <p className="mt-2 text-sm text-muted">Saldo disponível</p>
+                <Money
+                  value={dashboard.data.summary.balance}
+                  type={dashboard.data.summary.balance < 0 ? "expense" : undefined}
+                  className="metric-value-lg mt-1 block"
+                />
+              </div>
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
+                <Wallet className="h-5 w-5" aria-hidden />
+              </span>
+            </div>
 
-          {/* Month stats */}
-          <div className="mt-2.5 grid grid-cols-2 gap-2.5 sm:mt-3 sm:gap-3">
-            <Card className="group overflow-hidden p-3.5 transition-colors hover:border-income/30 sm:p-6" elevated={false}>
-              <div className="relative z-10 flex items-center justify-between">
+            <div className="mt-5 grid grid-cols-2 divide-x divide-border border-t border-border pt-4">
+              <SummaryMetric
+                label="Receitas acumuladas"
+                value={dashboard.data.summary.total_income}
+                tone="income"
+                icon={TrendingUp}
+              />
+              <SummaryMetric
+                label="Despesas acumuladas"
+                value={dashboard.data.summary.total_expense}
+                tone="expense"
+                icon={TrendingDown}
+                className="pl-4 sm:pl-5"
+              />
+            </div>
+          </Card>
+
+          <Card className="overflow-hidden p-4 sm:p-5" elevated={false}>
+            <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs text-muted">Recebido no mês</p>
-                <Money
-                  value={monthStats.received}
-                  type="income"
-                  className="mt-1 block text-base sm:text-xl"
-                />
+                <p className="text-xs font-medium uppercase tracking-[0.12em] text-subtle">
+                  Este mês
+                </p>
+                <p className="mt-1 text-sm text-muted">Fluxo previsto e realizado</p>
               </div>
-              <span className="hidden rounded-lg bg-income-soft p-2 text-income min-[390px]:inline-flex">
-                <TrendingUp className="h-5 w-5" aria-hidden />
-              </span>
-              </div>
-            </Card>
-            <Card className="group overflow-hidden p-3.5 transition-colors hover:border-expense/30 sm:p-6" elevated={false}>
-              <div className="relative z-10 flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted">A pagar no mês</p>
-                <Money
-                  value={monthStats.toPay}
-                  type="expense"
-                  className="mt-1 block text-base sm:text-xl"
-                />
-              </div>
-              <span className="hidden rounded-lg bg-expense-soft p-2 text-expense min-[390px]:inline-flex">
-                <CalendarClock className="h-5 w-5" aria-hidden />
-              </span>
-              </div>
-            </Card>
-          </div>
-        </>
+              <CalendarClock className="h-5 w-5 text-warning" aria-hidden />
+            </div>
+            <div className="mt-4 divide-y divide-border rounded-xl border border-border bg-background/35 px-3.5">
+              <MonthMetric
+                label="Recebido"
+                value={monthStats.received}
+                tone="income"
+                icon={TrendingUp}
+              />
+              <MonthMetric
+                label="A pagar"
+                value={monthStats.toPay}
+                tone="expense"
+                icon={CalendarClock}
+              />
+            </div>
+          </Card>
+        </div>
       ) : null}
 
       {/* Upcoming due */}
@@ -224,7 +230,7 @@ export default function OverviewPage() {
 
       <Link
         to="/assistente"
-        className="group mt-5 flex items-center gap-3 overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/10 via-surface-2 to-surface-2 p-3.5 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-xl sm:mt-6 sm:p-4"
+        className="group mt-5 flex items-center gap-3 overflow-hidden rounded-2xl border border-primary/20 bg-surface p-3.5 shadow-sm transition-all hover:border-primary/40 hover:shadow-md sm:mt-6 sm:p-4"
       >
         <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/15 text-primary">
           <Sparkles className="h-5 w-5" aria-hidden />
@@ -258,45 +264,35 @@ export default function OverviewPage() {
   )
 }
 
-function BalanceCard({
+function SummaryMetric({
   label,
   value,
   icon: Icon,
-  highlight,
+  tone,
+  className,
 }: {
   label: string
   value: number
   icon: typeof Wallet
-  highlight?: boolean
+  tone: "income" | "expense"
+  className?: string
 }) {
   return (
-    <Card
-      className={cn(
-        "relative col-span-full min-h-28 overflow-hidden sm:min-h-40 lg:col-span-2",
-        highlight && "border-[color:var(--color-primary)]/30",
-      )}
-    >
-      <div className="relative z-10 flex items-center justify-between">
-        <p className="text-xs text-muted">{label}</p>
-        <span
-          className={cn(
-            "rounded-lg p-1.5",
-            highlight ? "bg-primary/15 text-primary" : "bg-surface-3 text-muted",
-          )}
-        >
-          <Icon className="h-4 w-4" aria-hidden />
-        </span>
+    <div className={cn("min-w-0 pr-4 sm:pr-5", className)}>
+      <div className="flex items-center gap-1.5 text-xs text-muted">
+        <Icon className={cn("h-3.5 w-3.5", tone === "income" ? "text-income" : "text-expense")} aria-hidden />
+        <span className="truncate">{label}</span>
       </div>
       <Money
         value={value}
-        type={value < 0 ? "expense" : undefined}
-        className="relative z-10 mt-3 block text-2xl sm:mt-4 sm:text-4xl"
+        type={tone}
+        className="mt-1.5 block text-sm min-[380px]:text-base"
       />
-    </Card>
+    </div>
   )
 }
 
-function StatCard({
+function MonthMetric({
   label,
   value,
   icon: Icon,
@@ -308,21 +304,14 @@ function StatCard({
   tone: "income" | "expense"
 }) {
   return (
-    <Card className="col-span-1 min-h-28 overflow-hidden transition-all hover:-translate-y-0.5 hover:border-border-strong sm:col-span-3 sm:min-h-40 lg:col-span-2">
-      <div className="relative z-10 flex items-center justify-between">
-        <p className="text-xs text-muted">{label}</p>
-        <span
-          className={cn(
-            "rounded-lg p-1.5",
-            tone === "income"
-              ? "bg-income-soft text-income"
-              : "bg-expense-soft text-expense",
-          )}
-        >
+    <div className="flex min-h-16 items-center justify-between gap-3 py-3">
+      <div className="flex min-w-0 items-center gap-3">
+        <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-lg", tone === "income" ? "bg-income-soft text-income" : "bg-expense-soft text-expense")}>
           <Icon className="h-4 w-4" aria-hidden />
         </span>
+        <span className="text-sm font-medium text-foreground">{label}</span>
       </div>
-      <Money value={value} type={tone} className="relative z-10 mt-4 block text-base min-[390px]:text-lg sm:mt-8 sm:text-2xl lg:text-3xl" />
-    </Card>
+      <Money value={value} type={tone} className="shrink-0 text-sm min-[380px]:text-base" />
+    </div>
   )
 }
