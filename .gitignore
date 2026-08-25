@@ -1,0 +1,22 @@
+# Operating system and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Local environment and logs
+.env
+.env.*
+!.env.example
+*.log
+
+# Generated caches anywhere in the repository
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Codex project skills: keep sources and datasets, ignore runtime artifacts
+.agents/**/__pycache__/
+.agents/**/*.py[cod]
