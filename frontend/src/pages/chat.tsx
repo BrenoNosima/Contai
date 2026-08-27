@@ -98,7 +98,21 @@ export default function ChatPage() {
       >
         <div className="relative z-10 mx-auto flex max-w-2xl flex-col gap-6">
           {messages.map((m) => (
-            <MessageBubble key={m.id} message={m} onChanged={invalidateFinance} />
+            <MessageBubble
+              key={m.id}
+              message={m}
+              onActionResolved={(action) => {
+                setMessages((current) => [
+                  ...current,
+                  {
+                    id: crypto.randomUUID(),
+                    role: "assistant",
+                    content: action.status === "confirmed" ? confirmedActionMessage(action) : cancelledActionMessage(action),
+                  },
+                ])
+                if (action.status === "confirmed") invalidateFinance()
+              }}
+            />
           ))}
           {mutation.isPending && <TypingBubble />}
           {messages.length <= 1 && (
@@ -148,7 +162,13 @@ export default function ChatPage() {
   )
 }
 
-function MessageBubble({ message, onChanged }: { message: Message; onChanged: () => void }) {
+function MessageBubble({
+  message,
+  onActionResolved,
+}: {
+  message: Message
+  onActionResolved: (action: AssistantAction) => void
+}) {
   const isUser = message.role === "user"
   const [actions, setActions] = useState(message.actions ?? [])
   const actionMutation = useMutation({
@@ -156,7 +176,7 @@ function MessageBubble({ message, onChanged }: { message: Message; onChanged: ()
       confirm ? assistantActionsApi.confirm(id) : assistantActionsApi.reject(id),
     onSuccess: (updated) => {
       setActions((items) => items.filter((item) => item.id !== updated.id))
-      onChanged()
+      onActionResolved(updated)
     },
   })
   return (
@@ -193,6 +213,44 @@ function MessageBubble({ message, onChanged }: { message: Message; onChanged: ()
       </div>
     </div>
   )
+}
+
+function confirmedActionMessage(action: AssistantAction): string {
+  const payload = action.payload
+
+  switch (action.action) {
+    case "create_transaction": {
+      const kind = payload.type === "income" ? "receita" : "despesa"
+      const amount = formatMoney(Number(payload.amount))
+      const description = payload.description ? ` — ${payload.description}` : ""
+      const category = payload.category ? ` na categoria ${payload.category}` : ""
+      return `Lançamento concluído: ${kind} de ${amount}${category}${description}. Seus dados financeiros já foram atualizados.`
+    }
+    case "mark_transaction_status":
+      return `Atualização concluída: o lançamento #${payload.transaction_id} foi marcado como ${formatActionValue("status", payload.status).toLowerCase()}.`
+    case "generate_recurring_occurrences":
+      return `Geração concluída: os lançamentos recorrentes dos próximos ${formatActionValue("months_ahead", payload.months_ahead)} foram atualizados.`
+    case "create_goal":
+      return `Criação concluída: a meta “${payload.name}” foi criada com o valor de ${formatMoney(Number(payload.target_amount))}.`
+    case "add_goal_progress":
+      return `Progresso concluído: ${formatMoney(Number(payload.amount))} foram adicionados à meta #${payload.goal_id}.`
+    case "create_fixed_expense":
+      return `Cadastro concluído: a despesa fixa “${payload.name}”, no valor de ${formatMoney(Number(payload.amount))}, foi adicionada.`
+    default:
+      return "Ação concluída com sucesso. Seus dados financeiros já foram atualizados."
+  }
+}
+
+function cancelledActionMessage(action: AssistantAction): string {
+  const descriptions: Record<string, string> = {
+    create_transaction: "o novo lançamento",
+    mark_transaction_status: "a alteração de status",
+    generate_recurring_occurrences: "a geração dos lançamentos recorrentes",
+    create_goal: "a criação da meta",
+    add_goal_progress: "a atualização da meta",
+    create_fixed_expense: "a criação da despesa fixa",
+  }
+  return `Tudo bem, ${descriptions[action.action] ?? "a ação financeira"} foi cancelada e nenhuma alteração foi feita.`
 }
 
 const ACTION_TITLES: Record<string, string> = {
