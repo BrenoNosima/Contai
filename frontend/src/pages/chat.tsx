@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react"
 import { useMutation } from "@tanstack/react-query"
-import { Bot, Send } from "lucide-react"
+import { Bot, Check, LoaderCircle, ReceiptText, Send, X } from "lucide-react"
 import { assistantActionsApi, chatApi } from "@/lib/api"
 import type { AssistantAction } from "@/lib/types"
 import { useFinanceInvalidation } from "@/lib/query"
 import { PageHeader } from "@/components/page-header"
-import { cn } from "@/lib/utils"
+import { cn, formatMoney } from "@/lib/utils"
 
 interface Message {
   id: string
@@ -181,17 +181,137 @@ function MessageBubble({ message, onChanged }: { message: Message; onChanged: ()
       >
         <FormattedMessage content={message.content} />
         {actions.map((action) => (
-          <div key={action.id} className="mt-3 rounded-xl border border-border bg-surface-2 p-3">
-            <p className="text-xs text-muted">Confirme antes de executar: {action.action}</p>
-            <pre className="mt-1 overflow-x-auto whitespace-pre-wrap text-xs">{JSON.stringify(action.payload, null, 2)}</pre>
-            <div className="mt-2 flex gap-2">
-              <button disabled={actionMutation.isPending} onClick={() => actionMutation.mutate({ id: action.id, confirm: true })} className="rounded-lg bg-primary px-3 py-1.5 text-xs text-primary-foreground">Confirmar</button>
-              <button disabled={actionMutation.isPending} onClick={() => actionMutation.mutate({ id: action.id, confirm: false })} className="rounded-lg border border-border px-3 py-1.5 text-xs">Cancelar</button>
-            </div>
-          </div>
+          <ActionConfirmationCard
+            key={action.id}
+            action={action}
+            isPending={actionMutation.isPending}
+            error={actionMutation.error instanceof Error ? actionMutation.error.message : null}
+            onConfirm={() => actionMutation.mutate({ id: action.id, confirm: true })}
+            onReject={() => actionMutation.mutate({ id: action.id, confirm: false })}
+          />
         ))}
       </div>
     </div>
+  )
+}
+
+const ACTION_TITLES: Record<string, string> = {
+  create_transaction: "Novo lançamento",
+  mark_transaction_status: "Alterar status do lançamento",
+  generate_recurring_occurrences: "Gerar lançamentos recorrentes",
+  create_goal: "Nova meta financeira",
+  add_goal_progress: "Adicionar progresso à meta",
+  create_fixed_expense: "Nova despesa fixa",
+}
+
+const FIELD_LABELS: Record<string, string> = {
+  type: "Tipo",
+  description: "Descrição",
+  category: "Categoria",
+  amount: "Valor",
+  priority: "Prioridade",
+  due_date: "Data",
+  is_recurring: "Recorrente",
+  recurrence: "Frequência",
+  transaction_id: "Lançamento",
+  status: "Status",
+  months_ahead: "Período",
+  name: "Nome",
+  target_amount: "Valor da meta",
+  current_amount: "Valor inicial",
+  deadline: "Prazo",
+  goal_id: "Meta",
+  billing_day: "Dia de cobrança",
+}
+
+const VALUE_LABELS: Record<string, string> = {
+  expense: "Despesa",
+  income: "Receita",
+  essential: "Essencial",
+  desirable: "Desejável",
+  superfluous: "Supérflua",
+  paid: "Pago",
+  pending: "Pendente",
+  weekly: "Semanal",
+  monthly: "Mensal",
+}
+
+function formatActionValue(field: string, value: unknown): string {
+  if (field === "amount" || field === "target_amount" || field === "current_amount") {
+    return formatMoney(Number(value))
+  }
+  if (field === "months_ahead") return `${value} ${Number(value) === 1 ? "mês" : "meses"}`
+  if (field === "transaction_id" || field === "goal_id") return `#${value}`
+  if (field === "billing_day") return `Dia ${value}`
+  if ((field === "due_date" || field === "deadline") && /^\d{4}-\d{2}-\d{2}$/.test(String(value))) {
+    const [year, month, day] = String(value).split("-")
+    return `${day}/${month}/${year}`
+  }
+  if (typeof value === "boolean") return value ? "Sim" : "Não"
+  return VALUE_LABELS[String(value)] ?? String(value)
+}
+
+function ActionConfirmationCard({
+  action,
+  isPending,
+  error,
+  onConfirm,
+  onReject,
+}: {
+  action: AssistantAction
+  isPending: boolean
+  error: string | null
+  onConfirm: () => void
+  onReject: () => void
+}) {
+  const fields = Object.entries(action.payload).filter(([, value]) => value !== null && value !== undefined && value !== false)
+  const type = action.payload.type === "income" ? "Receita" : action.payload.type === "expense" ? "Despesa" : null
+
+  return (
+    <section className="mt-4 overflow-hidden rounded-xl border border-border bg-surface-2" aria-label="Confirmação de ação">
+      <div className="flex items-center gap-3 border-b border-border px-4 py-3">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-background text-foreground" aria-hidden>
+          <ReceiptText className="h-4 w-4" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-xs font-medium text-muted">Revise antes de confirmar</p>
+          <h3 className="font-semibold leading-5">{type ? `Nova ${type.toLowerCase()}` : ACTION_TITLES[action.action] ?? "Ação financeira"}</h3>
+        </div>
+      </div>
+
+      <dl className="grid grid-cols-1 gap-x-5 gap-y-3 px-4 py-4 sm:grid-cols-2">
+        {fields.map(([field, value]) => (
+          <div key={field} className={cn(field === "description" && "sm:col-span-2")}>
+            <dt className="text-xs text-muted">{FIELD_LABELS[field] ?? field}</dt>
+            <dd className={cn("mt-0.5 break-words font-medium leading-5", field.includes("amount") && "tabular-nums")}>
+              {formatActionValue(field, value)}
+            </dd>
+          </div>
+        ))}
+      </dl>
+
+      {error && <p className="px-4 pb-3 text-xs text-danger" role="alert">{error}</p>}
+
+      <div className="flex flex-col-reverse gap-2 border-t border-border px-4 py-3 sm:flex-row sm:justify-end">
+        <button
+          type="button"
+          disabled={isPending}
+          onClick={onReject}
+          className="flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border px-4 text-sm font-medium transition-colors hover:bg-background disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <X className="h-4 w-4" aria-hidden /> Cancelar
+        </button>
+        <button
+          type="button"
+          disabled={isPending}
+          onClick={onConfirm}
+          className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {isPending ? <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden /> : <Check className="h-4 w-4" aria-hidden />}
+          {isPending ? "Processando..." : "Confirmar"}
+        </button>
+      </div>
+    </section>
   )
 }
 
