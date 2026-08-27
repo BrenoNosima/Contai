@@ -33,6 +33,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let res: Response
   try {
     res = await fetch(`${BASE}${path}`, {
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       ...init,
     })
@@ -44,6 +45,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   if (!res.ok) {
+    if (res.status === 401 && !path.startsWith("/auth/")) {
+      window.dispatchEvent(new Event("auth:unauthorized"))
+    }
     let detail = `Erro ${res.status}`
     try {
       const body = await res.json()
@@ -57,6 +61,25 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (res.status === 204) return undefined as T
   const text = await res.text()
   return (text ? JSON.parse(text) : undefined) as T
+}
+
+export interface AuthUser {
+  id: number
+  name: string
+  email: string
+  created_at: string
+}
+
+export const authApi = {
+  me: () => request<AuthUser>("/auth/me"),
+  login: (email: string, password: string) =>
+    request<AuthUser>("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
+  register: (name: string, email: string, password: string, passwordConfirmation: string) =>
+    request<AuthUser>("/auth/register", {
+      method: "POST",
+      body: JSON.stringify({ name, email, password, password_confirmation: passwordConfirmation }),
+    }),
+  logout: () => request<void>("/auth/logout", { method: "POST" }),
 }
 
 function toQuery(params: Record<string, unknown>): string {

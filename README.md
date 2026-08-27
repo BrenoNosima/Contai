@@ -4,7 +4,7 @@ A Contaí é uma aplicação de finanças pessoais criada para reunir, em um só
 
 Além das telas tradicionais, o projeto conta com um assistente integrado à Groq. Com ele, é possível registrar e consultar informações usando frases como “gastei 45 reais no mercado hoje” ou “quais contas ainda estão pendentes este mês?”.
 
-> O projeto foi pensado para uso pessoal e, neste momento, não possui autenticação nem separação de dados por usuário.
+O acesso é protegido por autenticação JWT em cookie HttpOnly. Cada conta enxerga apenas suas próprias transações, metas, gastos fixos, relatórios e interações com o assistente.
 
 ## O que é possível fazer
 
@@ -42,7 +42,7 @@ Copy-Item .env.example .env
 
 No Linux ou macOS, substitua o último comando por `cp .env.example .env`.
 
-Abra o arquivo `.env` e preencha `GROQ_API_KEY`. As demais configurações já estão preparadas para o ambiente local.
+Abra o arquivo `.env`, gere um valor longo e aleatório para `JWT_SECRET_KEY` e preencha `GROQ_API_KEY` se desejar utilizar o assistente. As demais configurações já estão preparadas para o ambiente local.
 
 Inicie o PostgreSQL:
 
@@ -95,6 +95,10 @@ As principais variáveis do backend ficam em `backend/.env`:
 | `CORS_ORIGINS` | Endereços autorizados a acessar a API, separados por vírgula |
 | `AI_TIMEOUT_SECONDS` | Tempo máximo de uma chamada ao provedor de IA (1 a 120 segundos) |
 | `AI_MAX_RETRIES` | Número de novas tentativas do cliente de IA (0 a 5) |
+| `ENVIRONMENT` | Ambiente atual; em `production`, cookies seguros são ativados por padrão |
+| `JWT_SECRET_KEY` | Segredo longo e aleatório usado para assinar os tokens JWT |
+| `JWT_EXPIRE_MINUTES` | Tempo de validade da sessão em minutos |
+| `COOKIE_SECURE` | Força o envio do cookie somente por HTTPS |
 
 No frontend, `VITE_API_URL` define o endereço público da API. Ela pode permanecer vazia no desenvolvimento local.
 

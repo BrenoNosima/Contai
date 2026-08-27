@@ -11,9 +11,12 @@ import {
   Plus,
   MoreHorizontal,
   X,
+  LogOut,
+  UserRound,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useAuth } from "@/lib/auth"
 
 interface NavItem {
   to: string
@@ -53,6 +56,12 @@ function Logo({ compact = false }: { compact?: boolean }) {
 export function AppShell() {
   const location = useLocation()
   const [moreOpen, setMoreOpen] = useState(false)
+  const [loggingOut, setLoggingOut] = useState(false)
+  const { user, logout } = useAuth()
+  async function handleLogout() {
+    setLoggingOut(true)
+    try { await logout() } finally { setLoggingOut(false) }
+  }
   const active = NAV.find((n) =>
     n.end ? location.pathname === n.to : location.pathname.startsWith(n.to),
   )
@@ -97,6 +106,11 @@ export function AppShell() {
             </NavLink>
           ))}
         </nav>
+        <div className="mb-3 flex items-center gap-3 rounded-xl border border-border bg-surface-2 p-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-surface-3 text-muted"><UserRound className="h-4 w-4" aria-hidden /></div>
+          <div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold text-foreground">{user?.name}</p><p className="truncate text-[11px] text-subtle">{user?.email}</p></div>
+          <button type="button" onClick={handleLogout} disabled={loggingOut} aria-label="Sair da conta" title="Sair" className="flex h-9 w-9 items-center justify-center rounded-xl text-muted hover:bg-expense-soft hover:text-expense disabled:opacity-50"><LogOut className="h-4 w-4" aria-hidden /></button>
+        </div>
         <NavLink
           to="/lancamentos"
           className="mb-3 flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-3 py-2.5 text-sm font-semibold text-primary-foreground shadow-[0_12px_28px_-20px_rgba(255,255,255,0.35)] transition-colors hover:bg-[color:#f1f3f2]"
@@ -209,6 +223,7 @@ export function AppShell() {
                   {item.label}
                 </NavLink>
               ))}
+              <button type="button" onClick={handleLogout} disabled={loggingOut} className="flex min-h-12 items-center gap-3 rounded-2xl border border-expense/25 bg-expense-soft p-3 text-sm font-medium text-expense disabled:opacity-50"><LogOut className="h-5 w-5" aria-hidden /> Sair</button>
             </div>
           </div>
         </div>

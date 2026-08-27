@@ -5,6 +5,8 @@ import { RouterProvider, createBrowserRouter, Navigate } from "react-router-dom"
 import { queryClient } from "@/lib/query"
 import { AppShell } from "@/components/app-shell"
 import { ToastProvider } from "@/components/ui/toast"
+import { AuthProvider } from "@/lib/auth"
+import { PrivateGuard, PublicOnlyGuard } from "@/components/auth-guard"
 import "@fontsource-variable/geist"
 import "@fontsource-variable/geist-mono"
 import "./index.css"
@@ -14,10 +16,19 @@ const lazyPage = (loader: () => Promise<{ default: ComponentType }>) =>
 
 const router = createBrowserRouter([
   {
-    path: "/",
-    element: <AppShell />,
+    element: <PublicOnlyGuard />,
     children: [
-      { index: true, lazy: lazyPage(() => import("@/pages/overview")) },
+      { path: "/login", lazy: lazyPage(() => import("@/pages/login")) },
+      { path: "/cadastro", lazy: lazyPage(() => import("@/pages/register")) },
+    ],
+  },
+  {
+    element: <PrivateGuard />,
+    children: [{
+      path: "/",
+      element: <AppShell />,
+      children: [
+        { index: true, lazy: lazyPage(() => import("@/pages/overview")) },
       { path: "calendario", lazy: lazyPage(() => import("@/pages/calendar")) },
       {
         path: "lancamentos",
@@ -30,17 +41,20 @@ const router = createBrowserRouter([
         lazy: lazyPage(() => import("@/pages/fixed-expenses")),
       },
       { path: "assistente", lazy: lazyPage(() => import("@/pages/chat")) },
-      { path: "*", element: <Navigate to="/" replace /> },
-    ],
+        { path: "*", element: <Navigate to="/" replace /> },
+      ],
+    }],
   },
 ])
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <ToastProvider>
-        <RouterProvider router={router} />
-      </ToastProvider>
+      <AuthProvider>
+        <ToastProvider>
+          <RouterProvider router={router} />
+        </ToastProvider>
+      </AuthProvider>
     </QueryClientProvider>
   </StrictMode>,
 )
