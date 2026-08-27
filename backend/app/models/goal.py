@@ -8,6 +8,7 @@ from sqlalchemy import (
     String,
     Numeric,
     DateTime,
+    ForeignKey,
 )
 
 from app.core.database import Base
@@ -59,7 +60,9 @@ class Goal(Base):
     # Futuro sistema de usuários
     user_id = Column(
         Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
         nullable=True,
+        index=True,
     )
 
     created_at = Column(

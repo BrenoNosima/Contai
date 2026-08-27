@@ -134,7 +134,9 @@ class Transaction(Base):
     # futuro login
     user_id = Column(
         Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
         nullable=True,
+        index=True,
     )
 
     created_at = Column(

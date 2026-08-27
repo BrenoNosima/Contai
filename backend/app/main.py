@@ -1,10 +1,12 @@
 import logging
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import CORS_ORIGINS
+from app.core.dependencies import get_current_user
+from app.api.routes.auth import router as auth_router
 from app.core.exceptions import (
     DomainValidationError,
     PersistenceConflictError,
@@ -47,19 +49,21 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
-    allow_credentials=False,
+    allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Accept", "Content-Type"],
+    allow_headers=["Accept", "Content-Type", "X-Requested-With"],
 )
 
 # Rotas
-app.include_router(transactions_router)
-app.include_router(goals_router)
-app.include_router(fixed_expenses_router)
-app.include_router(dashboard_router)
-app.include_router(chat_router)
-app.include_router(reports_router)
-app.include_router(metadata_router)
+app.include_router(auth_router)
+private_dependencies = [Depends(get_current_user)]
+app.include_router(transactions_router, dependencies=private_dependencies)
+app.include_router(goals_router, dependencies=private_dependencies)
+app.include_router(fixed_expenses_router, dependencies=private_dependencies)
+app.include_router(dashboard_router, dependencies=private_dependencies)
+app.include_router(chat_router, dependencies=private_dependencies)
+app.include_router(reports_router, dependencies=private_dependencies)
+app.include_router(metadata_router, dependencies=private_dependencies)
 
 
 @app.exception_handler(DomainValidationError)

@@ -17,7 +17,7 @@ def test_cors_allows_configured_frontend(client):
 
     assert response.status_code == 200
     assert response.headers["access-control-allow-origin"] == "http://localhost:3000"
-    assert "access-control-allow-credentials" not in response.headers
+    assert response.headers["access-control-allow-credentials"] == "true"
 
 
 def test_cors_rejects_unconfigured_origin(client):

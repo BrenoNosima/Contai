@@ -7,6 +7,7 @@ from sqlalchemy import (
     Numeric,
     Boolean,
     DateTime,
+    ForeignKey,
 )
 
 from app.core.database import Base
@@ -69,7 +70,9 @@ class FixedExpense(Base):
     # Reservado para login futuro
     user_id = Column(
         Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
         nullable=True,
+        index=True,
     )
 
     created_at = Column(

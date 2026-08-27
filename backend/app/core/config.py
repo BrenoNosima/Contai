@@ -24,6 +24,9 @@ class Settings:
     cors_origins: tuple[str, ...]
     ai_timeout_seconds: int
     ai_max_retries: int
+    jwt_secret_key: str
+    jwt_expire_minutes: int
+    cookie_secure: bool
 
     @classmethod
     def from_mapping(cls, values: Mapping[str, str]) -> "Settings":
@@ -45,6 +48,15 @@ class Settings:
             minimum=0,
             maximum=5,
         )
+        jwt_secret_key = values.get("JWT_SECRET_KEY", "").strip()
+        jwt_expire_minutes = _parse_int(
+            values.get("JWT_EXPIRE_MINUTES"), default=10080,
+            name="JWT_EXPIRE_MINUTES", minimum=5, maximum=43200,
+        )
+        secure_default = "true" if values.get("ENVIRONMENT", "development").strip().lower() == "production" else "false"
+        cookie_secure = values.get("COOKIE_SECURE", secure_default).strip().lower() in {
+            "1", "true", "yes", "on",
+        }
 
         if not database_url or "://" not in database_url:
             raise ValueError("DATABASE_URL deve ser uma URL SQLAlchemy válida.")
@@ -58,6 +70,9 @@ class Settings:
             cors_origins=cors_origins,
             ai_timeout_seconds=ai_timeout_seconds,
             ai_max_retries=ai_max_retries,
+            jwt_secret_key=jwt_secret_key,
+            jwt_expire_minutes=jwt_expire_minutes,
+            cookie_secure=cookie_secure,
         )
 
     @property

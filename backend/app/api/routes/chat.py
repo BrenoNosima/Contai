@@ -2,7 +2,10 @@ import logging
 from functools import lru_cache
 
 from fastapi import APIRouter
-from fastapi import HTTPException
+from fastapi import Depends, HTTPException
+from app.core.dependencies import get_current_user
+from app.core.user_context import set_current_user_id
+from app.models.user import User
 
 from app.schemas.chat import (
     ChatRequest,
@@ -28,7 +31,8 @@ def get_agent() -> FinancialAgent:
     "/",
     response_model=ChatResponse,
 )
-def chat(payload: ChatRequest):
+def chat(payload: ChatRequest, current_user: User = Depends(get_current_user)):
+    set_current_user_id(current_user.id)
     try:
         history = [message.model_dump() for message in payload.chat_history]
         response = get_agent().ask(payload.message, history)
