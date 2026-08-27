@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react"
-import { Eye, EyeOff, LoaderCircle, LogIn } from "lucide-react"
+import { ArrowRight, Eye, EyeOff, LoaderCircle, LockKeyhole, Mail, UserRound } from "lucide-react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { AuthLayout } from "@/components/auth-layout"
 import { Button, Input, Label } from "@/components/ui/primitives"
@@ -12,10 +12,9 @@ export default function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const rememberedEmail = localStorage.getItem(REMEMBERED_EMAIL_KEY) ?? ""
-  const [email, setEmail] = useState(rememberedEmail)
+  const [email, setEmail] = useState(() => localStorage.getItem(REMEMBERED_EMAIL_KEY) ?? "")
   const [password, setPassword] = useState("")
-  const [rememberLogin, setRememberLogin] = useState(Boolean(rememberedEmail))
+  const [rememberLogin, setRememberLogin] = useState(() => Boolean(localStorage.getItem(REMEMBERED_EMAIL_KEY)))
   const [show, setShow] = useState(false)
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
@@ -43,37 +42,89 @@ export default function LoginPage() {
   }
 
   return (
-    <AuthLayout title="Bem-vindo de volta" subtitle="Entre para continuar cuidando da sua vida financeira.">
-      <form onSubmit={submit} className="space-y-5" noValidate>
-        {error && <div role="alert" className="rounded-xl border border-expense/30 bg-expense-soft px-4 py-3 text-sm text-expense">{error}</div>}
+    <AuthLayout title="Bem-vindo de volta" subtitle="Entre para continuar cuidando da sua vida financeira." titleIcon={UserRound}>
+      <form onSubmit={submit} className="space-y-5" noValidate aria-describedby={error ? "login-error" : undefined}>
+        {error && (
+          <div id="login-error" role="alert" className="rounded-xl border border-[#f07a83]/25 bg-[#3c2228]/70 px-4 py-3 text-sm leading-5 text-[#ff9ca4]">
+            {error}
+          </div>
+        )}
+
         <div>
-          <Label htmlFor="email">E-mail</Label>
-          <Input id="email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="voce@exemplo.com" />
+          <Label htmlFor="email" className="mb-2 text-[13px] font-medium text-[#c0ccc8]">E-mail</Label>
+          <div className="group relative">
+            <Mail className="pointer-events-none absolute left-4 top-1/2 z-10 h-[18px] w-[18px] -translate-y-1/2 text-[#71817b] transition-colors group-focus-within:text-[#43d6ad]" aria-hidden />
+            <Input
+              id="email"
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="voce@exemplo.com"
+              aria-invalid={Boolean(error)}
+              className="h-12 border-white/[0.09] bg-[#101617] pl-11 pr-4 text-[#edf6f2] shadow-none placeholder:text-[#66746f] hover:border-white/[0.15] focus:border-[#3bd3a7]/70 focus:ring-[#31cda1]/10"
+            />
+          </div>
         </div>
+
         <div>
-          <Label htmlFor="password">Senha</Label>
-          <div className="relative">
-            <Input id="password" type={show ? "text" : "password"} autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} className="pr-12" />
-            <button type="button" onClick={() => setShow((current) => !current)} aria-label={show ? "Ocultar senha" : "Mostrar senha"} aria-pressed={show} className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-xl text-muted transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-[-3px]">
-              {show ? <EyeOff className="h-5 w-5" aria-hidden /> : <Eye className="h-5 w-5" aria-hidden />}
+          <Label htmlFor="password" className="mb-2 text-[13px] font-medium text-[#c0ccc8]">Senha</Label>
+          <div className="group relative">
+            <LockKeyhole className="pointer-events-none absolute left-4 top-1/2 z-10 h-[18px] w-[18px] -translate-y-1/2 text-[#71817b] transition-colors group-focus-within:text-[#43d6ad]" aria-hidden />
+            <Input
+              id="password"
+              type={show ? "text" : "password"}
+              autoComplete="current-password"
+              required
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              aria-invalid={Boolean(error)}
+              className="h-12 border-white/[0.09] bg-[#101617] pl-11 pr-12 text-[#edf6f2] shadow-none hover:border-white/[0.15] focus:border-[#3bd3a7]/70 focus:ring-[#31cda1]/10"
+            />
+            <button
+              type="button"
+              onClick={() => setShow((current) => !current)}
+              aria-label={show ? "Ocultar senha" : "Mostrar senha"}
+              aria-pressed={show}
+              className="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-xl text-[#71817b] transition-colors hover:text-[#d7e4df] focus-visible:outline-[#48d9b0]"
+            >
+              {show ? <EyeOff className="h-[18px] w-[18px]" aria-hidden /> : <Eye className="h-[18px] w-[18px]" aria-hidden />}
             </button>
           </div>
         </div>
-        <label htmlFor="remember-login" className="flex min-h-11 items-start gap-3 rounded-lg py-1 text-sm text-muted">
-          <input id="remember-login" type="checkbox" checked={rememberLogin} onChange={(event) => {
-            setRememberLogin(event.target.checked)
-            if (!event.target.checked) localStorage.removeItem(REMEMBERED_EMAIL_KEY)
-          }} className="mt-0.5 h-5 w-5 shrink-0 accent-foreground" />
-          <span>
-            <span className="block font-medium text-foreground">Lembrar login</span>
-            <span className="mt-0.5 block text-xs text-subtle">Salva somente seu e-mail neste dispositivo.</span>
-          </span>
+
+        <label htmlFor="remember-login" className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg text-sm text-[#9ba9a4]">
+          <input
+            id="remember-login"
+            type="checkbox"
+            checked={rememberLogin}
+            onChange={(event) => {
+              setRememberLogin(event.target.checked)
+              if (!event.target.checked) localStorage.removeItem(REMEMBERED_EMAIL_KEY)
+            }}
+            className="h-[18px] w-[18px] shrink-0 rounded accent-[#42d6aa]"
+          />
+          <span>Lembrar login <span className="hidden text-xs text-[#687873] sm:inline">— salva somente seu e-mail</span></span>
         </label>
-        <Button type="submit" variant="primary" className="w-full" disabled={busy}>
-          {busy ? <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden /> : <LogIn className="h-4 w-4" aria-hidden />}
+
+        <Button
+          type="submit"
+          variant="primary"
+          className="h-12 w-full bg-[linear-gradient(110deg,#16c69a,#82df4f)] text-[#03120d] shadow-[0_14px_32px_-20px_rgba(40,210,155,0.9)] transition-[filter,box-shadow,transform] hover:bg-[linear-gradient(110deg,#1bd2a3,#8be85a)] hover:shadow-[0_16px_36px_-18px_rgba(40,210,155,0.85)] hover:brightness-105 active:translate-y-px active:bg-[linear-gradient(110deg,#12ba90,#75d545)]"
+          disabled={busy}
+        >
+          {busy ? <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden /> : <ArrowRight className="h-4 w-4" aria-hidden />}
           {busy ? "Entrando..." : "Entrar"}
         </Button>
-        <p className="text-center text-sm text-muted">Ainda não tem uma conta? <Link to="/cadastro" className="font-semibold text-foreground underline-offset-4 hover:underline">Criar conta</Link></p>
+
+        <p className="pt-1 text-center text-sm text-[#8b9b95]">
+          Ainda não tem uma conta?{" "}
+          <Link to="/cadastro" className="font-semibold text-[#53dcb5] underline-offset-4 transition-colors hover:text-[#82e16b] hover:underline focus-visible:outline-[#53dcb5]">
+            Criar conta
+          </Link>
+        </p>
       </form>
     </AuthLayout>
   )
