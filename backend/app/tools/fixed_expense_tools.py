@@ -3,7 +3,7 @@ from typing import Annotated
 from langchain_core.tools import tool
 from pydantic import Field
 
-from app.schemas.fixed_expense import FixedExpenseCreate
+from app.tools.actions import propose
 from app.services.fixed_expense_service import FixedExpenseService
 from app.tools.common import tool_db
 
@@ -20,23 +20,8 @@ def create_fixed_expense(
 ) -> dict:
     """Cadastra uma despesa fixa mensal."""
 
-    with tool_db() as db:
-        expense = service.create_fixed_expense(
-            db,
-            FixedExpenseCreate(
-                name=name,
-                category=category,
-                amount=amount,
-                billing_day=billing_day,
-            ),
-        )
-        return {
-            "id": expense.id,
-            "name": expense.name,
-            "category": expense.category,
-            "amount": expense.amount,
-            "billing_day": expense.billing_day,
-        }
+    return propose("create_fixed_expense", {"name": name, "category": category,
+        "amount": amount, "billing_day": billing_day})
 
 
 @tool

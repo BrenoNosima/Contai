@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react"
 import { useMutation } from "@tanstack/react-query"
 import { Bot, Send } from "lucide-react"
-import { chatApi } from "@/lib/api"
+import { assistantActionsApi, chatApi } from "@/lib/api"
+import type { AssistantAction } from "@/lib/types"
 import { useFinanceInvalidation } from "@/lib/query"
 import { PageHeader } from "@/components/page-header"
 import { cn } from "@/lib/utils"
@@ -11,6 +12,7 @@ interface Message {
   role: "user" | "assistant"
   content: string
   error?: boolean
+  actions?: AssistantAction[]
 }
 
 const SUGGESTIONS = [
@@ -45,7 +47,7 @@ export default function ChatPage() {
     onSuccess: (data) => {
       setMessages((prev) => [
         ...prev,
-        { id: crypto.randomUUID(), role: "assistant", content: data.response },
+        { id: crypto.randomUUID(), role: "assistant", content: data.response, actions: data.pending_actions },
       ])
       // The assistant may have changed any financial domain through its tools.
       invalidateFinance()
@@ -96,7 +98,7 @@ export default function ChatPage() {
       >
         <div className="relative z-10 mx-auto flex max-w-2xl flex-col gap-6">
           {messages.map((m) => (
-            <MessageBubble key={m.id} message={m} />
+            <MessageBubble key={m.id} message={m} onChanged={invalidateFinance} />
           ))}
           {mutation.isPending && <TypingBubble />}
           {messages.length <= 1 && (
@@ -128,6 +130,7 @@ export default function ChatPage() {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={onKeyDown}
           rows={1}
+          maxLength={10_000}
           placeholder="Digite uma mensagem..."
           className="max-h-32 min-h-10 flex-1 resize-none bg-transparent px-2 py-2 text-base leading-6 text-foreground outline-none placeholder:text-subtle sm:text-sm"
           aria-label="Mensagem para o assistente"
@@ -145,8 +148,17 @@ export default function ChatPage() {
   )
 }
 
-function MessageBubble({ message }: { message: Message }) {
+function MessageBubble({ message, onChanged }: { message: Message; onChanged: () => void }) {
   const isUser = message.role === "user"
+  const [actions, setActions] = useState(message.actions ?? [])
+  const actionMutation = useMutation({
+    mutationFn: ({ id, confirm }: { id: string; confirm: boolean }) =>
+      confirm ? assistantActionsApi.confirm(id) : assistantActionsApi.reject(id),
+    onSuccess: (updated) => {
+      setActions((items) => items.filter((item) => item.id !== updated.id))
+      onChanged()
+    },
+  })
   return (
     <div className={cn("flex items-start gap-3", isUser && "justify-end")}>
       {!isUser && (
@@ -168,6 +180,16 @@ function MessageBubble({ message }: { message: Message }) {
         )}
       >
         <FormattedMessage content={message.content} />
+        {actions.map((action) => (
+          <div key={action.id} className="mt-3 rounded-xl border border-border bg-surface-2 p-3">
+            <p className="text-xs text-muted">Confirme antes de executar: {action.action}</p>
+            <pre className="mt-1 overflow-x-auto whitespace-pre-wrap text-xs">{JSON.stringify(action.payload, null, 2)}</pre>
+            <div className="mt-2 flex gap-2">
+              <button disabled={actionMutation.isPending} onClick={() => actionMutation.mutate({ id: action.id, confirm: true })} className="rounded-lg bg-primary px-3 py-1.5 text-xs text-primary-foreground">Confirmar</button>
+              <button disabled={actionMutation.isPending} onClick={() => actionMutation.mutate({ id: action.id, confirm: false })} className="rounded-lg border border-border px-3 py-1.5 text-xs">Cancelar</button>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   )

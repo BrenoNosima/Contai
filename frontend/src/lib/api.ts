@@ -19,6 +19,16 @@ import type {
  */
 const RAW_BASE = import.meta.env.VITE_API_URL as string | undefined
 const BASE = RAW_BASE ? RAW_BASE.replace(/\/$/, "") : "/api"
+let csrfToken: string | null = null
+
+async function getCsrfToken(): Promise<string> {
+  if (csrfToken) return csrfToken
+  const response = await fetch(`${BASE}/auth/csrf`, { credentials: "include" })
+  if (!response.ok) throw new ApiError("Não foi possível iniciar uma sessão segura.", response.status)
+  const body = await response.json() as { csrf_token: string }
+  csrfToken = body.csrf_token
+  return csrfToken
+}
 
 export class ApiError extends Error {
   status: number
@@ -29,13 +39,20 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+async function request<T>(path: string, init?: RequestInit, retryAuthentication = true): Promise<T> {
   let res: Response
   try {
+    const method = (init?.method ?? "GET").toUpperCase()
+    const mutating = ["POST", "PUT", "PATCH", "DELETE"].includes(method)
+    const csrf = mutating ? await getCsrfToken() : null
     res = await fetch(`${BASE}${path}`, {
       credentials: "include",
-      headers: { "Content-Type": "application/json" },
       ...init,
+      headers: {
+        "Content-Type": "application/json",
+        ...(csrf ? { "X-CSRF-Token": csrf } : {}),
+        ...init?.headers,
+      },
     })
   } catch {
     throw new ApiError(
@@ -45,6 +62,14 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   if (!res.ok) {
+    if (res.status === 401 && retryAuthentication && (path === "/auth/me" || !path.startsWith("/auth/"))) {
+      try {
+        await request<AuthUser>("/auth/refresh", { method: "POST", body: "{}" }, false)
+        return request<T>(path, init, false)
+      } catch {
+        // The auth provider will move the user back to login below.
+      }
+    }
     if (res.status === 401 && !path.startsWith("/auth/")) {
       window.dispatchEvent(new Event("auth:unauthorized"))
     }
@@ -80,6 +105,7 @@ export const authApi = {
       body: JSON.stringify({ name, email, password, password_confirmation: passwordConfirmation }),
     }),
   logout: () => request<void>("/auth/logout", { method: "POST" }),
+  refresh: () => request<AuthUser>("/auth/refresh", { method: "POST", body: "{}" }, false),
 }
 
 function toQuery(params: Record<string, unknown>): string {
@@ -169,6 +195,11 @@ export const chatApi = {
       method: "POST",
       body: JSON.stringify({ message, chat_history: chatHistory }),
     }),
+}
+
+export const assistantActionsApi = {
+  confirm: (id: string) => request<import("./types").AssistantAction>(`/assistant-actions/${id}/confirm`, { method: "POST", body: "{}" }),
+  reject: (id: string) => request<import("./types").AssistantAction>(`/assistant-actions/${id}`, { method: "DELETE" }),
 }
 
 // ---------- Metadata ----------

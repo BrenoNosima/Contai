@@ -35,11 +35,12 @@ def scope_financial_queries(execute_state):
     from app.models.fixed_expense import FixedExpense
     from app.models.goal import Goal
     from app.models.transaction import Transaction
+    from app.models.assistant_action import AssistantAction
 
     user_id = execute_state.session.info.get("user_id") or get_current_user_id()
     if user_id is None or not execute_state.is_select:
         return
-    for model in (Transaction, Goal, FixedExpense):
+    for model in (Transaction, Goal, FixedExpense, AssistantAction):
         execute_state.statement = execute_state.statement.options(
             with_loader_criteria(
                 model,
@@ -55,10 +56,11 @@ def assign_financial_owner(session, _flush_context, _instances):
     from app.models.fixed_expense import FixedExpense
     from app.models.goal import Goal
     from app.models.transaction import Transaction
+    from app.models.assistant_action import AssistantAction
 
     user_id = session.info.get("user_id") or get_current_user_id()
     if user_id is None:
         return
     for entity in session.new:
-        if isinstance(entity, (Transaction, Goal, FixedExpense)):
+        if isinstance(entity, (Transaction, Goal, FixedExpense, AssistantAction)):
             entity.user_id = user_id

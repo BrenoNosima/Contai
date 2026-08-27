@@ -16,18 +16,18 @@ def test_register_login_me_and_logout(client):
 
     assert client.post("/auth/logout").status_code == 204
     assert client.get("/auth/me").status_code == 401
-    login = client.post("/auth/login", json={"email": "test@example.com", "password": "test-password"})
+    login = client.post("/auth/login", json={"email": "test@example.com", "password": "test-password-secure"})
     assert login.status_code == 200
     cookie = login.cookies.get("access_token")
-    assert cookie and decode_access_token(cookie) == login.json()["id"]
+    assert cookie and decode_access_token(cookie)[0] == login.json()["id"]
 
 
 def test_invalid_credentials_and_duplicate_email(client):
     invalid = client.post("/auth/login", json={"email": "test@example.com", "password": "wrong"})
     assert invalid.status_code == 401
     duplicate = client.post("/auth/register", json={
-        "name": "Duplicate", "email": "TEST@example.com", "password": "password-123",
-        "password_confirmation": "password-123",
+        "name": "Duplicate", "email": "TEST@example.com", "password": "password-123-secure",
+        "password_confirmation": "password-123-secure",
     })
     assert duplicate.status_code == 409
 
@@ -42,8 +42,8 @@ def test_users_cannot_access_each_others_data(client, db_session):
 
     client.post("/auth/logout")
     second = client.post("/auth/register", json={
-        "name": "Second User", "email": "second@example.com", "password": "password-123",
-        "password_confirmation": "password-123",
+        "name": "Second User", "email": "second@example.com", "password": "password-123-secure",
+        "password_confirmation": "password-123-secure",
     })
     assert second.status_code == 201
     assert second.json()["id"] != first_user_id

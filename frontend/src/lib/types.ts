@@ -133,6 +133,15 @@ export interface ReportSummary {
 // ---- Chat ----
 export interface ChatResponse {
   response: string
+  pending_actions: AssistantAction[]
+}
+
+export interface AssistantAction {
+  id: string
+  action: string
+  payload: Record<string, unknown>
+  status: "pending" | "confirmed" | "rejected"
+  expires_at: string
 }
 
 // ---- Domain metadata ----

@@ -3,7 +3,7 @@ from typing import Annotated, Literal
 from langchain_core.tools import tool
 from pydantic import Field
 
-from app.schemas.transaction import TransactionCreate
+from app.tools.actions import propose
 from app.services.transaction_service import TransactionService
 from app.tools.common import parse_iso_date, tool_db
 
@@ -35,31 +35,10 @@ def create_transaction(
         if isinstance(parsed_due_date, dict):
             return parsed_due_date
 
-        transaction = service.create_ai_transaction(
-            db,
-            TransactionCreate(
-                type=type,
-                description=description,
-                category=category,
-                amount=amount,
-                priority=priority,
-                due_date=parsed_due_date,
-                is_recurring=is_recurring,
-                recurrence=recurrence,
-            ),
-        )
-        return {
-            "id": transaction.id,
-            "type": transaction.type,
-            "description": transaction.description,
-            "category": transaction.category,
-            "amount": transaction.amount,
-            "priority": transaction.priority,
-            "due_date": str(transaction.due_date),
-            "status": transaction.status,
-            "is_recurring": transaction.is_recurring,
-            "recurrence": transaction.recurrence,
-        }
+    return propose("create_transaction", {"type": type, "description": description,
+        "category": category, "amount": amount, "priority": priority,
+        "due_date": str(parsed_due_date) if parsed_due_date else None,
+        "is_recurring": is_recurring, "recurrence": recurrence})
 
 
 @tool
@@ -69,15 +48,7 @@ def mark_transaction_status(
 ) -> dict:
     """Marca uma transação existente como paid ou pending usando seu id."""
 
-    with tool_db() as db:
-        transaction = service.update_status(db, transaction_id, status)
-        if not transaction:
-            return {"error": "Transação não encontrada."}
-        return {
-            "id": transaction.id,
-            "description": transaction.description,
-            "status": transaction.status,
-        }
+    return propose("mark_transaction_status", {"transaction_id": transaction_id, "status": status})
 
 
 @tool
@@ -129,17 +100,7 @@ def generate_recurring_occurrences(
 ) -> list:
     """Gera, sem duplicar, cobranças pendentes dos próximos meses."""
 
-    with tool_db() as db:
-        created = service.generate_recurring_occurrences(db, months_ahead)
-        return [
-            {
-                "id": item.id,
-                "description": item.description,
-                "amount": item.amount,
-                "due_date": str(item.due_date),
-            }
-            for item in created
-        ]
+    return propose("generate_recurring_occurrences", {"months_ahead": months_ahead})
 
 
 @tool

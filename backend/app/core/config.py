@@ -27,6 +27,7 @@ class Settings:
     jwt_secret_key: str
     jwt_expire_minutes: int
     cookie_secure: bool
+    refresh_expire_days: int
 
     @classmethod
     def from_mapping(cls, values: Mapping[str, str]) -> "Settings":
@@ -50,13 +51,17 @@ class Settings:
         )
         jwt_secret_key = values.get("JWT_SECRET_KEY", "").strip()
         jwt_expire_minutes = _parse_int(
-            values.get("JWT_EXPIRE_MINUTES"), default=10080,
-            name="JWT_EXPIRE_MINUTES", minimum=5, maximum=43200,
+            values.get("JWT_EXPIRE_MINUTES"), default=15,
+            name="JWT_EXPIRE_MINUTES", minimum=5, maximum=1440,
         )
         secure_default = "true" if values.get("ENVIRONMENT", "development").strip().lower() == "production" else "false"
         cookie_secure = values.get("COOKIE_SECURE", secure_default).strip().lower() in {
             "1", "true", "yes", "on",
         }
+        refresh_expire_days = _parse_int(
+            values.get("REFRESH_EXPIRE_DAYS"), default=30,
+            name="REFRESH_EXPIRE_DAYS", minimum=1, maximum=90,
+        )
 
         if not database_url or "://" not in database_url:
             raise ValueError("DATABASE_URL deve ser uma URL SQLAlchemy válida.")
@@ -73,6 +78,7 @@ class Settings:
             jwt_secret_key=jwt_secret_key,
             jwt_expire_minutes=jwt_expire_minutes,
             cookie_secure=cookie_secure,
+            refresh_expire_days=refresh_expire_days,
         )
 
     @property

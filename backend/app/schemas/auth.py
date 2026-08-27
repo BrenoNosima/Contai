@@ -4,14 +4,16 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 class RegisterRequest(BaseModel):
     name: str = Field(min_length=2, max_length=120)
     email: str = Field(min_length=3, max_length=320)
-    password: str = Field(min_length=8, max_length=128)
-    password_confirmation: str = Field(min_length=8, max_length=128)
+    password: str = Field(min_length=15, max_length=128)
+    password_confirmation: str = Field(min_length=15, max_length=128)
 
     @field_validator("email")
     @classmethod
     def valid_email(cls, value: str) -> str:
         value = value.strip().lower()
-        if "@" not in value or value.startswith("@") or value.endswith("@"):
+        local, separator, domain = value.rpartition("@")
+        if (not separator or not local or "." not in domain or domain.startswith(".")
+                or domain.endswith(".") or any(char.isspace() for char in value)):
             raise ValueError("Informe um e-mail válido.")
         return value
 

@@ -1,6 +1,7 @@
 from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
+from app.schemas.assistant_action import AssistantActionResponse
 
 
 MAX_CHAT_CONTEXT_CHARACTERS = 50_000
@@ -29,3 +30,4 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     response: str
+    pending_actions: list[AssistantActionResponse] = Field(default_factory=list)

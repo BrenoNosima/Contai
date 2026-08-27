@@ -30,18 +30,18 @@ def _b64url(data: bytes) -> str:
 def _decode_b64url(value: str) -> bytes:
     return base64.urlsafe_b64decode(value + "=" * (-len(value) % 4))
 
-def create_access_token(user_id: int) -> str:
+def create_access_token(user_id: int, session_id: str) -> str:
     if len(SETTINGS.jwt_secret_key) < 32 or SETTINGS.jwt_secret_key.startswith("replace-"):
         raise RuntimeError("JWT_SECRET_KEY deve ser um segredo aleatório com ao menos 32 caracteres.")
     now = int(time.time())
     header = _b64url(json.dumps({"alg": "HS256", "typ": "JWT"}, separators=(",", ":")).encode())
-    claims = {"sub": str(user_id), "iat": now, "exp": now + SETTINGS.jwt_expire_minutes * 60, "jti": secrets.token_urlsafe(16)}
+    claims = {"sub": str(user_id), "sid": session_id, "iat": now, "exp": now + SETTINGS.jwt_expire_minutes * 60, "jti": secrets.token_urlsafe(16)}
     payload = _b64url(json.dumps(claims, separators=(",", ":")).encode())
     signing_input = f"{header}.{payload}".encode("ascii")
     signature = _b64url(hmac.new(SETTINGS.jwt_secret_key.encode(), signing_input, hashlib.sha256).digest())
     return f"{header}.{payload}.{signature}"
 
-def decode_access_token(token: str) -> int:
+def decode_access_token(token: str) -> tuple[int, str]:
     if len(SETTINGS.jwt_secret_key) < 32 or SETTINGS.jwt_secret_key.startswith("replace-"):
         raise ValueError("JWT indisponível")
     try:
@@ -54,6 +54,12 @@ def decode_access_token(token: str) -> int:
         if not hmac.compare_digest(expected, _decode_b64url(signature)): raise ValueError("assinatura inválida")
         claims = json.loads(_decode_b64url(payload))
         if claims.get("exp", 0) <= int(time.time()): raise ValueError("token expirado")
-        return int(claims["sub"])
+        return int(claims["sub"]), str(claims["sid"])
     except (KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
         raise ValueError("Token inválido ou expirado") from error
+
+def create_refresh_token() -> str:
+    return secrets.token_urlsafe(48)
+
+def hash_refresh_token(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()

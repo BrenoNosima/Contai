@@ -1,11 +1,12 @@
 import logging
 
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import CORS_ORIGINS
 from app.core.dependencies import get_current_user
+from app.core.web_security import add_security_headers, enforce_rate_limit, validate_csrf_request
 from app.api.routes.auth import router as auth_router
 from app.core.exceptions import (
     DomainValidationError,
@@ -37,6 +38,7 @@ from app.api.routes.reports import (
     router as reports_router,
 )
 from app.api.routes.metadata import router as metadata_router
+from app.api.routes.assistant_actions import router as assistant_actions_router
 
 logger = logging.getLogger(__name__)
 
@@ -51,8 +53,26 @@ app.add_middleware(
     allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Accept", "Content-Type", "X-Requested-With"],
+    allow_headers=["Accept", "Content-Type", "X-Requested-With", "X-CSRF-Token"],
 )
+
+
+@app.middleware("http")
+async def application_security(request: Request, call_next):
+    try:
+        enforce_rate_limit(request)
+        validate_csrf_request(request)
+    except HTTPException as error:
+        response = JSONResponse(
+            status_code=error.status_code,
+            content={"detail": error.detail},
+            headers=error.headers,
+        )
+        add_security_headers(response)
+        return response
+    response = await call_next(request)
+    add_security_headers(response)
+    return response
 
 # Rotas
 app.include_router(auth_router)
@@ -64,6 +84,7 @@ app.include_router(dashboard_router, dependencies=private_dependencies)
 app.include_router(chat_router, dependencies=private_dependencies)
 app.include_router(reports_router, dependencies=private_dependencies)
 app.include_router(metadata_router, dependencies=private_dependencies)
+app.include_router(assistant_actions_router, dependencies=private_dependencies)
 
 
 @app.exception_handler(DomainValidationError)

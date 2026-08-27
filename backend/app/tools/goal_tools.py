@@ -3,7 +3,7 @@ from typing import Annotated
 from langchain_core.tools import tool
 from pydantic import Field
 
-from app.schemas.goal import GoalCreate
+from app.tools.actions import propose
 from app.services.goal_service import GoalService
 from app.tools.common import parse_iso_date, tool_db
 
@@ -25,25 +25,9 @@ def create_goal(
         parsed_deadline = parse_iso_date(deadline, "deadline")
         if isinstance(parsed_deadline, dict):
             return parsed_deadline
-        goal = service.create_goal(
-            db,
-            GoalCreate(
-                name=name,
-                description=description,
-                target_amount=target_amount,
-                current_amount=current_amount,
-                deadline=parsed_deadline,
-            ),
-        )
-        return {
-            "id": goal.id,
-            "name": goal.name,
-            "target_amount": goal.target_amount,
-            "current_amount": goal.current_amount,
-            "progress_percentage": goal.progress_percentage,
-            "deadline": str(goal.deadline) if goal.deadline else None,
-            "status": goal.status,
-        }
+    return propose("create_goal", {"name": name, "description": description,
+        "target_amount": target_amount, "current_amount": current_amount,
+        "deadline": str(parsed_deadline) if parsed_deadline else None})
 
 
 @tool
@@ -73,14 +57,4 @@ def add_goal_progress(
 ) -> dict:
     """Adiciona um valor positivo ao progresso de uma meta existente."""
 
-    with tool_db() as db:
-        goal = service.add_progress(db, goal_id, amount)
-        if not goal:
-            return {"error": "Meta não encontrada."}
-        return {
-            "id": goal.id,
-            "name": goal.name,
-            "current_amount": goal.current_amount,
-            "progress_percentage": goal.progress_percentage,
-            "status": goal.status,
-        }
+    return propose("add_goal_progress", {"goal_id": goal_id, "amount": amount})
