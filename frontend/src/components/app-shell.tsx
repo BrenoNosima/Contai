@@ -17,6 +17,7 @@ import {
 import type { LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/lib/auth"
+import { BrandLogo } from "@/components/brand-logo"
 
 interface NavItem {
   to: string
@@ -37,21 +38,6 @@ const NAV: NavItem[] = [
 
 const MOBILE_NAV_PATHS = new Set(["/", "/calendario", "/lancamentos", "/assistente"])
 const MOBILE_NAV = NAV.filter((item) => MOBILE_NAV_PATHS.has(item.to))
-
-function Logo({ compact = false }: { compact?: boolean }) {
-  return (
-    <div className="flex items-center gap-2.5">
-      <div className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-[14px] bg-primary text-primary-foreground shadow-[0_10px_28px_-12px_var(--color-primary)]">
-        <span className="tnum text-lg font-bold">C</span>
-        <span className="absolute inset-x-1 top-0 h-px bg-white/40" aria-hidden />
-      </div>
-      <div className={cn("leading-tight", compact && "hidden min-[360px]:block")}>
-        <p className="text-sm font-semibold tracking-tight text-foreground">CONTAÍ</p>
-        {!compact && <p className="text-[11px] text-subtle">Agenda financeira</p>}
-      </div>
-    </div>
-  )
-}
 
 export function AppShell() {
   const location = useLocation()
@@ -74,7 +60,7 @@ export function AppShell() {
       {/* Desktop sidebar */}
       <aside className="app-sidebar fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-border bg-surface px-4 py-5 lg:flex">
         <div className="px-2 py-1">
-          <Logo />
+          <BrandLogo imageClassName="h-12 max-w-[190px]" />
         </div>
         <div className="mt-7 px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-subtle">
           Menu principal
