@@ -60,7 +60,7 @@ export function AppShell() {
       {/* Desktop sidebar */}
       <aside className="app-sidebar fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-border bg-surface px-4 py-5 lg:flex">
         <div className="px-2 py-1">
-          <BrandLogo imageClassName="h-12 max-w-[190px]" />
+          <BrandLogo className="justify-center" imageClassName="w-32" />
         </div>
         <div className="mt-7 px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-subtle">
           Menu principal

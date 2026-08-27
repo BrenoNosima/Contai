@@ -13,7 +13,7 @@ export function BrandLogo({ className, imageClassName, showTagline = true }: Bra
   return (
     <div className={cn("flex min-w-0 items-center", className)}>
       {imageAvailable ? (
-        <img src="/brand/contai-logo.png" alt="Contaí" className={cn("h-11 w-auto max-w-[190px] object-contain object-left", imageClassName)} onError={() => setImageAvailable(false)} />
+        <img src="/brand/contai-logo.png" alt="Contaí — Entende. Organiza. Faz crescer." className={cn("h-auto w-36 max-w-full object-contain", imageClassName)} onError={() => setImageAvailable(false)} />
       ) : (
         <div className="flex items-center gap-2.5" aria-label="Contaí">
           <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[14px] bg-primary text-primary-foreground">
