@@ -23,11 +23,12 @@ def create_transaction(
     recurrence: Literal["weekly", "monthly"] | None = None,
 ) -> dict:
     """
-    Cria uma receita ou despesa e salva no banco de dados.
+    Propõe uma receita ou despesa para confirmação do usuário.
 
     Use priority apenas para despesas. due_date usa AAAA-MM-DD; datas futuras
     entram pendentes. recurrence deve ser weekly ou monthly e é obrigatória
-    quando is_recurring for verdadeiro.
+    quando is_recurring for verdadeiro. Infira category e priority pelo
+    contexto; não peça esses campos quando houver uma opção razoável.
     """
 
     with tool_db() as db:

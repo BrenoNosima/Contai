@@ -1,6 +1,7 @@
 from app.api.routes import chat as chat_route
 from app.api.routes import transactions as transaction_routes
 from app.agents.extractor_agent import ExtractorAgent
+from app.agents.financial_agent import SYSTEM_PROMPT
 from app.models.transaction import Transaction
 from app.schemas.natural_language import NaturalLanguageResponse
 
@@ -24,6 +25,11 @@ class FailingExtractor:
     def extract(self, text):
         raise self.error
 
+
+def test_financial_agent_infers_category_and_localized_priority():
+    assert "peixe" in SYSTEM_PROMPT
+    assert "essencial/essential" in SYSTEM_PROMPT
+    assert "não justificam" in SYSTEM_PROMPT
 
 class FakeAgent:
     def ask(self, message, history):
