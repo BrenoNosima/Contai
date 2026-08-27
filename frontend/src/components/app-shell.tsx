@@ -65,6 +65,9 @@ export function AppShell() {
   const active = NAV.find((n) =>
     n.end ? location.pathname === n.to : location.pathname.startsWith(n.to),
   )
+  const firstName = user?.name.trim().split(/\s+/)[0] || "Usuário"
+  const userInitial = firstName.charAt(0).toLocaleUpperCase("pt-BR")
+  const ActiveIcon = active?.icon
 
   return (
     <div className="min-h-dvh bg-transparent">
@@ -124,8 +127,19 @@ export function AppShell() {
 
       {/* Mobile top bar */}
       <header className="app-sidebar sticky top-0 z-20 flex items-center justify-between border-b border-border bg-surface/95 px-4 py-3 shadow-sm backdrop-blur-xl lg:hidden">
-        <Logo compact />
-        <span className="max-w-32 truncate text-sm font-medium text-muted">{active?.label}</span>
+        <div className="flex min-w-0 items-center gap-2.5" aria-label={`Usuário conectado: ${firstName}`}>
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-primary text-sm font-bold text-primary-foreground shadow-[0_10px_28px_-12px_var(--color-primary)]" aria-hidden>
+            {userInitial}
+          </div>
+          <div className="min-w-0 leading-tight">
+            <p className="text-[11px] text-subtle">Olá,</p>
+            <p className="max-w-32 truncate text-sm font-semibold text-foreground">{firstName}</p>
+          </div>
+        </div>
+        <div className="ml-3 flex min-w-0 items-center gap-2 rounded-xl border border-border bg-surface-2 px-3 py-2 text-muted" aria-label={`Página atual: ${active?.label ?? "Página"}`}>
+          {ActiveIcon && <ActiveIcon className="h-4 w-4 shrink-0" aria-hidden />}
+          <span className="max-w-28 truncate text-xs font-medium sm:max-w-40">{active?.label}</span>
+        </div>
       </header>
 
       {/* Content */}
