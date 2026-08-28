@@ -27,10 +27,14 @@ export interface Transaction {
   source: string // "manual" | "ai" | "recurring"
   due_date: string
   status: TransactionStatus
+  settled_at: string | null
   is_recurring: boolean
   recurrence: Recurrence | null
   parent_id: number | null
   fixed_expense_id: number | null
+  installment_group_id: string | null
+  installment_number: number | null
+  installment_count: number | null
   user_id: number | null
   created_at: string
   updated_at: string
@@ -43,6 +47,24 @@ export interface TransactionFilters {
   start_date?: string
   end_date?: string
   is_recurring?: boolean
+  installment?: boolean
+}
+
+export interface InstallmentCreate {
+  description: string
+  category: string
+  total_amount: number
+  installment_count: number
+  first_due_date: string
+  priority?: Priority | null
+}
+
+export interface PeriodSummary {
+  income: number
+  expense: number
+  balance: number
+  pending_income: number
+  pending_expense: number
 }
 
 // ---- Goals ----
@@ -107,6 +129,10 @@ export interface DashboardSummary {
     category: string
     amount: number
     type: TransactionType
+    due_date: string
+    settled_at: string
+    installment_number: number | null
+    installment_count: number | null
   }[]
 }
 

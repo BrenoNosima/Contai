@@ -6,6 +6,8 @@ import type {
   FinanceMetadata,
   Goal,
   GoalCreate,
+  InstallmentCreate,
+  PeriodSummary,
   ReportSummary,
   Transaction,
   TransactionCreate,
@@ -143,6 +145,17 @@ export const transactionsApi = {
     request<Transaction[]>(`/transactions/generate-occurrences?months_ahead=${monthsAhead}`, {
       method: "POST",
     }),
+  periodSummary: (startDate: string, endDate: string) =>
+    request<PeriodSummary>(
+      `/transactions/period-summary?start_date=${startDate}&end_date=${endDate}`,
+    ),
+  createInstallments: (data: InstallmentCreate) =>
+    request<Transaction[]>(`/transactions/installments`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  installments: (groupId: string) =>
+    request<Transaction[]>(`/transactions/installments/${groupId}`),
 }
 
 // ---------- Goals ----------

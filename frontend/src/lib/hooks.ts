@@ -3,6 +3,7 @@ import { transactionsApi } from "./api"
 import { qk, useFinanceInvalidation } from "./query"
 import { useToast } from "@/components/ui/toast"
 import type {
+  InstallmentCreate,
   Transaction,
   TransactionCreate,
   TransactionFilters,
@@ -23,6 +24,21 @@ export function useTransactions(filters: TransactionFilters = {}) {
   })
 }
 
+export function usePeriodSummary(startDate: string, endDate: string) {
+  return useQuery({
+    queryKey: ["transactions", "period-summary", startDate, endDate],
+    queryFn: () => transactionsApi.periodSummary(startDate, endDate),
+  })
+}
+
+export function useInstallments(groupId?: string | null) {
+  return useQuery({
+    queryKey: ["transactions", "installments", groupId],
+    queryFn: () => transactionsApi.installments(groupId!),
+    enabled: Boolean(groupId),
+  })
+}
+
 export function useTransactionMutations() {
   const { transactions: invalidateTransactions } = useFinanceInvalidation()
   const toast = useToast()
@@ -32,6 +48,15 @@ export function useTransactionMutations() {
     onSuccess: () => {
       invalidateTransactions()
       toast("Lançamento adicionado.")
+    },
+    onError: (e) => toast(errMsg(e), "error"),
+  })
+
+  const createInstallments = useMutation({
+    mutationFn: (data: InstallmentCreate) => transactionsApi.createInstallments(data),
+    onSuccess: () => {
+      invalidateTransactions()
+      toast("Compra parcelada adicionada.")
     },
     onError: (e) => toast(errMsg(e), "error"),
   })
@@ -75,5 +100,5 @@ export function useTransactionMutations() {
       status: tx.status === "paid" ? "pending" : "paid",
     })
 
-  return { create, update, remove, setStatus, toggleStatus }
+  return { create, createInstallments, update, remove, setStatus, toggleStatus }
 }

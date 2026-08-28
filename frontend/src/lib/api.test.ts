@@ -18,6 +18,14 @@ function jsonResponse(body: unknown, status = 200) {
   })
 }
 
+function mockMutationResponse(body: unknown, status = 200) {
+  fetchMock.mockImplementation((url: string) =>
+    url.endsWith("/auth/csrf")
+      ? Promise.resolve(jsonResponse({ csrf_token: "test-csrf" }))
+      : Promise.resolve(jsonResponse(body, status)),
+  )
+}
+
 beforeEach(() => {
   fetchMock.mockReset()
 })
@@ -41,7 +49,7 @@ describe("API client contracts", () => {
   })
 
   it("uses PATCH and the status body expected by the transaction route", async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse({ status: "paid" }))
+    mockMutationResponse({ status: "paid" })
 
     await transactionsApi.setStatus(42, "paid")
 
@@ -55,7 +63,7 @@ describe("API client contracts", () => {
   })
 
   it("sends goal progress in the request body", async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse({ id: 7 }))
+    mockMutationResponse({ id: 7 })
 
     await goalsApi.addProgress(7, 150)
 
@@ -69,7 +77,7 @@ describe("API client contracts", () => {
   })
 
   it("maps chat history to the backend field name", async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse({ response: "ok" }))
+    mockMutationResponse({ response: "ok" })
 
     await chatApi.send("Meu saldo?", [
       { role: "user", content: "Olá" },
@@ -92,9 +100,7 @@ describe("API client contracts", () => {
   })
 
   it("preserves a safe API error returned by the backend", async () => {
-    fetchMock.mockResolvedValueOnce(
-      jsonResponse({ detail: "Informe o valor do progresso." }, 422),
-    )
+    mockMutationResponse({ detail: "Informe o valor do progresso." }, 422)
 
     await expect(goalsApi.addProgress(7, 0)).rejects.toMatchObject({
       name: "ApiError",

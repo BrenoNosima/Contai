@@ -1,359 +1,80 @@
-import { useMemo, useState, type ReactNode } from "react"
-import {
-  ArrowDownLeft,
-  ArrowUpRight,
-  ChevronDown,
-  ChevronUp,
-  Filter,
-  Plus,
-  X,
-} from "lucide-react"
-import { format } from "date-fns"
+import { useMemo, useState, type FormEvent, type ReactNode } from "react"
+import { ArrowDownLeft, ArrowUpRight, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Clock3, MoreHorizontal, Plus, SlidersHorizontal, Trash2 } from "lucide-react"
+import { addMonths, endOfMonth, format, startOfMonth } from "date-fns"
 import { ptBR } from "date-fns/locale"
-import { useTransactions, useTransactionMutations } from "@/lib/hooks"
-import type {
-  Transaction,
-  TransactionFilters,
-  TransactionStatus,
-  TransactionType,
-} from "@/lib/types"
+import { useInstallments, usePeriodSummary, useTransactions, useTransactionMutations } from "@/lib/hooks"
+import type { InstallmentCreate, Transaction, TransactionFilters, TransactionStatus, TransactionType } from "@/lib/types"
 import { PageHeader } from "@/components/page-header"
-import { Button, Card, Input, Label, Select } from "@/components/ui/primitives"
+import { Badge, Button, Card, Input, Label, Money, Select } from "@/components/ui/primitives"
 import { Dialog } from "@/components/ui/dialog"
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/states"
-import { TransactionCard } from "@/components/transaction-card"
 import { TransactionForm } from "@/components/transaction-form"
 import { useFinanceMetadata } from "@/lib/metadata"
 import { parseDate } from "@/lib/dates"
-import { cn } from "@/lib/utils"
+import { cn, formatMoney } from "@/lib/utils"
+
+type AdvancedFilters = Pick<TransactionFilters, "category" | "status" | "is_recurring" | "installment"> & {
+  start_date?: string
+  end_date?: string
+  show_future?: boolean
+}
 
 export default function TransactionsPage() {
   const metadata = useFinanceMetadata()
-  const [filters, setFilters] = useState<TransactionFilters>({})
-  const [showFilters, setShowFilters] = useState(false)
+  const [month, setMonth] = useState(startOfMonth(new Date()))
+  const [type, setType] = useState<TransactionType | undefined>()
+  const [advanced, setAdvanced] = useState<AdvancedFilters>({})
+  const [filtersOpen, setFiltersOpen] = useState(false)
   const [adding, setAdding] = useState(false)
+  const [addMode, setAddMode] = useState<"single" | "installment">("single")
+  const [selected, setSelected] = useState<Transaction | null>(null)
   const [editing, setEditing] = useState<Transaction | null>(null)
   const [deleting, setDeleting] = useState<Transaction | null>(null)
-
+  const monthStart = format(startOfMonth(month), "yyyy-MM-dd")
+  const monthEnd = format(endOfMonth(month), "yyyy-MM-dd")
+  const effectiveStart = advanced.start_date || monthStart
+  const effectiveEnd = advanced.show_future ? undefined : advanced.end_date || monthEnd
+  const filters: TransactionFilters = { type, category: advanced.category, status: advanced.status, is_recurring: advanced.is_recurring, installment: advanced.installment, start_date: effectiveStart, end_date: effectiveEnd }
   const query = useTransactions(filters)
-  const { create, update, remove, toggleStatus, setStatus } =
-    useTransactionMutations()
+  const summary = usePeriodSummary(monthStart, monthEnd)
+  const { create, createInstallments, update, remove, setStatus } = useTransactionMutations()
+  const grouped = useMemo(() => groupTransactions(query.data ?? []), [query.data])
+  const advancedCount = Object.values(advanced).filter((value) => value !== undefined && value !== "" && value !== false).length
 
-  const grouped = useMemo(() => {
-    const list = [...(query.data ?? [])].sort(
-      (a, b) => parseDate(b.due_date).getTime() - parseDate(a.due_date).getTime(),
-    )
-    const groups = new Map<string, Transaction[]>()
-    for (const t of list) {
-      const key = format(parseDate(t.due_date), "yyyy-MM-dd")
-      const arr = groups.get(key) ?? []
-      arr.push(t)
-      groups.set(key, arr)
-    }
-    return [...groups.entries()]
-  }, [query.data])
+  return <div className="animate-in">
+    <PageHeader title="Lançamentos" subtitle="Acompanhe entradas e saídas do período sem perder o contexto." actions={<Button size="sm" variant="primary" onClick={() => setAdding(true)}><Plus className="h-4 w-4" /> Adicionar</Button>} />
+    <section className="mb-5 space-y-3" aria-label="Controles do período">
+      <Card elevated={false} className="p-3 sm:p-4"><div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex items-center justify-between gap-2 sm:justify-start"><Button size="icon" variant="ghost" aria-label="Mês anterior" onClick={() => setMonth((v) => addMonths(v, -1))}><ChevronLeft className="h-5 w-5" /></Button><div className="min-w-44 text-center"><p className="text-xs text-subtle">Período selecionado</p><p className="font-semibold capitalize text-foreground">{format(month, "MMMM 'de' yyyy", { locale: ptBR })}</p></div><Button size="icon" variant="ghost" aria-label="Próximo mês" onClick={() => setMonth((v) => addMonths(v, 1))}><ChevronRight className="h-5 w-5" /></Button></div>
+        <div className="grid grid-cols-3 gap-1 rounded-xl border border-border bg-background p-1"><QuickFilter active={!type} onClick={() => setType(undefined)}>Todos</QuickFilter><QuickFilter active={type === "income"} onClick={() => setType("income")}><ArrowDownLeft className="h-4 w-4" /> Entradas</QuickFilter><QuickFilter active={type === "expense"} onClick={() => setType("expense")}><ArrowUpRight className="h-4 w-4" /> Saídas</QuickFilter></div>
+        <Button variant="outline" size="sm" onClick={() => setFiltersOpen(true)}><SlidersHorizontal className="h-4 w-4" /> Filtros avançados {advancedCount > 0 && <span className="rounded-full bg-primary px-1.5 text-[11px] text-primary-foreground">{advancedCount}</span>}</Button>
+      </div></Card>
+      <div className="grid grid-cols-3 gap-2 sm:gap-3"><SummaryCard label="Entradas" value={summary.data?.income ?? 0} tone="income" icon={<ArrowDownLeft />} loading={summary.isLoading} /><SummaryCard label="Saídas" value={summary.data?.expense ?? 0} tone="expense" icon={<ArrowUpRight />} loading={summary.isLoading} /><SummaryCard label="Saldo" value={summary.data?.balance ?? 0} tone="balance" icon={<CalendarDays />} loading={summary.isLoading} /></div>
+    </section>
+    {advanced.show_future && <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-warning/25 bg-warning-soft px-3 py-2 text-xs text-warning"><span>Exibindo lançamentos futuros a partir de {format(parseDate(effectiveStart), "dd/MM/yyyy")}.</span><button className="font-semibold underline" onClick={() => setAdvanced((v) => ({ ...v, show_future: false }))}>Voltar ao período</button></div>}
+    {query.isLoading ? <LoadingState /> : query.isError ? <ErrorState message="Não foi possível carregar os lançamentos." onRetry={() => query.refetch()} /> : grouped.length === 0 ? <Card elevated={false}><EmptyState title="Nenhum lançamento neste período" description="Altere o mês ou os filtros para consultar outros lançamentos." action={<Button variant="primary" size="sm" onClick={() => setAdding(true)}><Plus className="h-4 w-4" /> Adicionar</Button>} /></Card> : <><MobileList grouped={grouped} onOpen={setSelected} /><DesktopTable grouped={grouped} onOpen={setSelected} /></>}
 
-  const activeFilterCount = Object.values(filters).filter(
-    (v) => v !== undefined && v !== "",
-  ).length
-
-  function patch(next: Partial<TransactionFilters>) {
-    setFilters((f) => {
-      const merged = { ...f, ...next }
-      for (const k of Object.keys(merged) as (keyof TransactionFilters)[]) {
-        if (merged[k] === "" || merged[k] === undefined) delete merged[k]
-      }
-      return merged
-    })
-  }
-
-  function setTypeFilter(type?: TransactionType) {
-    patch({ type })
-  }
-
-  const statusLabels =
-    filters.type === "income"
-      ? { all: "Todas", paid: "Recebidas", pending: "A receber" }
-      : filters.type === "expense"
-        ? { all: "Todas", paid: "Pagas", pending: "Pendentes" }
-        : { all: "Todos", paid: "Concluídos", pending: "Em aberto" }
-
-  return (
-    <div className="animate-in">
-      <PageHeader
-        title="Lançamentos"
-        subtitle="Suas receitas e despesas, agrupadas por data."
-        actions={
-          <>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setShowFilters((s) => !s)}
-              aria-expanded={showFilters}
-            >
-              {showFilters ? (
-                <ChevronUp className="h-4 w-4" aria-hidden />
-              ) : (
-                <Filter className="h-4 w-4" aria-hidden />
-              )}
-              Filtros
-              {activeFilterCount > 0 && (
-                <span className="ml-1 rounded-full bg-primary px-1.5 text-[11px] font-semibold text-primary-foreground">
-                  {activeFilterCount}
-                </span>
-              )}
-            </Button>
-            <Button size="sm" variant="primary" onClick={() => setAdding(true)}>
-              <Plus className="h-4 w-4" aria-hidden /> Adicionar
-            </Button>
-          </>
-        }
-      />
-
-      {showFilters && (
-        <Card elevated={false} className="mb-5 overflow-hidden animate-in p-4 sm:p-5">
-          <div className="relative z-10 mb-4 flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold text-foreground">Filtrar lançamentos</p>
-              <p className="mt-0.5 text-xs text-subtle">Refine a lista pelos dados que você precisa.</p>
-            </div>
-            <div className="flex items-center gap-1">
-              {activeFilterCount > 0 && (
-              <button
-                onClick={() => setFilters({})}
-                className="inline-flex h-8 items-center gap-1 rounded-lg px-2 text-xs font-medium text-muted transition-colors hover:bg-surface-3 hover:text-foreground"
-              >
-                <X className="h-3.5 w-3.5" aria-hidden /> Limpar
-              </button>
-              )}
-              <button
-                type="button"
-                onClick={() => setShowFilters(false)}
-                aria-label="Recolher filtros"
-                title="Recolher filtros"
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-3 hover:text-foreground"
-              >
-                <ChevronUp className="h-4 w-4" aria-hidden />
-              </button>
-            </div>
-          </div>
-
-          <div className="relative z-10">
-            <Label>Tipo de lançamento</Label>
-            <div className="grid grid-cols-1 gap-1 rounded-xl border border-border bg-background p-1 min-[380px]:grid-cols-3">
-              <FilterOption active={!filters.type} onClick={() => setTypeFilter()}>
-                Todos
-              </FilterOption>
-              <FilterOption active={filters.type === "income"} onClick={() => setTypeFilter("income")}>
-                <ArrowDownLeft className="h-3.5 w-3.5" aria-hidden /> Receitas
-              </FilterOption>
-              <FilterOption active={filters.type === "expense"} onClick={() => setTypeFilter("expense")}>
-                <ArrowUpRight className="h-3.5 w-3.5" aria-hidden /> Despesas
-              </FilterOption>
-            </div>
-          </div>
-
-          <div className="relative z-10 mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-[1fr_1.2fr_1.5fr]">
-            <div>
-              <Label htmlFor="f-status">Status</Label>
-              <Select
-                id="f-status"
-                value={filters.status ?? ""}
-                onChange={(e) =>
-                  patch({
-                    status: (e.target.value || undefined) as TransactionStatus,
-                  })
-                }
-              >
-                <option value="">{statusLabels.all}</option>
-                <option value="paid">{statusLabels.paid}</option>
-                <option value="pending">{statusLabels.pending}</option>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="f-cat">Categoria</Label>
-              <div className="relative">
-                <Select
-                  id="f-cat"
-                  value={filters.category ?? ""}
-                  onChange={(e) => patch({ category: e.target.value })}
-                  className="cursor-pointer pr-10"
-                >
-                  <option value="">Todas as categorias</option>
-                  {metadata.categories.map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </Select>
-                <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-subtle" aria-hidden />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <Label htmlFor="f-start">De</Label>
-                <Input
-                  id="f-start"
-                  type="date"
-                  value={filters.start_date ?? ""}
-                  max={filters.end_date}
-                  onChange={(e) => patch({ start_date: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="f-end">Até</Label>
-                <Input
-                  id="f-end"
-                  type="date"
-                  value={filters.end_date ?? ""}
-                  min={filters.start_date}
-                  onChange={(e) => patch({ end_date: e.target.value })}
-                />
-              </div>
-            </div>
-          </div>
-        </Card>
-      )}
-
-      {query.isLoading ? (
-        <LoadingState />
-      ) : query.isError ? (
-        <ErrorState
-          message="Não foi possível carregar os lançamentos."
-          onRetry={() => query.refetch()}
-        />
-      ) : grouped.length === 0 ? (
-        <Card elevated={false}>
-          <EmptyState
-            title="Nenhum lançamento"
-            description={
-              activeFilterCount > 0
-                ? "Nenhum resultado para esses filtros."
-                : "Adicione sua primeira receita ou despesa."
-            }
-            action={
-              <Button variant="primary" size="sm" onClick={() => setAdding(true)}>
-                <Plus className="h-4 w-4" aria-hidden /> Adicionar
-              </Button>
-            }
-          />
-        </Card>
-      ) : (
-        <div className="space-y-5">
-          {grouped.map(([day, items]) => (
-            <div key={day}>
-              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-subtle">
-                {format(parseDate(day), "EEEE, dd 'de' MMM", { locale: ptBR })}
-              </p>
-              <div className="space-y-2">
-                {items.map((tx) => (
-                  <TransactionCard
-                    key={tx.id}
-                    tx={tx}
-                    busy={setStatus.isPending}
-                    onToggleStatus={toggleStatus}
-                    onEdit={setEditing}
-                    onDelete={setDeleting}
-                  />
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Add */}
-      <Dialog
-        open={adding}
-        onClose={() => setAdding(false)}
-        title="Novo lançamento"
-      >
-        <TransactionForm
-          submitting={create.isPending}
-          onCancel={() => setAdding(false)}
-          onSubmit={(data) =>
-            create.mutate(data, { onSuccess: () => setAdding(false) })
-          }
-        />
-      </Dialog>
-
-      {/* Edit */}
-      <Dialog
-        open={!!editing}
-        onClose={() => setEditing(null)}
-        title="Editar lançamento"
-      >
-        {editing && (
-          <TransactionForm
-            initial={editing}
-            submitting={update.isPending}
-            onCancel={() => setEditing(null)}
-            onSubmit={(data) =>
-              update.mutate(
-                { id: editing.id, data },
-                { onSuccess: () => setEditing(null) },
-              )
-            }
-          />
-        )}
-      </Dialog>
-
-      {/* Delete confirm */}
-      <Dialog
-        open={!!deleting}
-        onClose={() => setDeleting(null)}
-        title="Excluir lançamento?"
-        description={
-          deleting
-            ? `"${deleting.description}" será removido permanentemente.`
-            : undefined
-        }
-      >
-        <div className="flex gap-2">
-          <Button
-            variant="ghost"
-            className="flex-1"
-            onClick={() => setDeleting(null)}
-          >
-            Cancelar
-          </Button>
-          <Button
-            variant="danger"
-            className="flex-1"
-            disabled={remove.isPending}
-            onClick={() =>
-              deleting &&
-              remove.mutate(deleting.id, { onSuccess: () => setDeleting(null) })
-            }
-          >
-            {remove.isPending ? "Excluindo…" : "Excluir"}
-          </Button>
-        </div>
-      </Dialog>
-    </div>
-  )
+    <Dialog open={filtersOpen} onClose={() => setFiltersOpen(false)} title="Filtros avançados" description="Refine o período e o tipo de lançamento exibido."><AdvancedFilterForm value={advanced} categories={metadata.categories} onChange={setAdvanced} onClear={() => setAdvanced({})} onClose={() => setFiltersOpen(false)} /></Dialog>
+    <Dialog open={adding} onClose={() => setAdding(false)} title={addMode === "single" ? "Novo lançamento" : "Nova compra parcelada"}><div className="mb-5 grid grid-cols-2 gap-1 rounded-xl bg-surface-2 p-1"><QuickFilter active={addMode === "single"} onClick={() => setAddMode("single")}>Único</QuickFilter><QuickFilter active={addMode === "installment"} onClick={() => setAddMode("installment")}>Parcelado</QuickFilter></div>{addMode === "single" ? <TransactionForm submitting={create.isPending} onCancel={() => setAdding(false)} onSubmit={(data) => create.mutate(data, { onSuccess: () => setAdding(false) })} /> : <InstallmentForm categories={metadata.categories} submitting={createInstallments.isPending} onCancel={() => setAdding(false)} onSubmit={(data) => createInstallments.mutate(data, { onSuccess: () => setAdding(false) })} />}</Dialog>
+    <TransactionDetails tx={selected} onClose={() => setSelected(null)} onEdit={(tx) => { setSelected(null); setEditing(tx) }} onDelete={(tx) => { setSelected(null); setDeleting(tx) }} onStatus={(tx, status) => setStatus.mutate({ id: tx.id, status })} busy={setStatus.isPending} />
+    <Dialog open={!!editing} onClose={() => setEditing(null)} title="Editar lançamento">{editing && <TransactionForm initial={editing} submitting={update.isPending} onCancel={() => setEditing(null)} onSubmit={(data) => update.mutate({ id: editing.id, data }, { onSuccess: () => setEditing(null) })} />}</Dialog>
+    <Dialog open={!!deleting} onClose={() => setDeleting(null)} title="Excluir lançamento?" description={deleting ? `“${deleting.description}” será removido permanentemente.` : undefined}><div className="flex gap-2"><Button variant="ghost" className="flex-1" onClick={() => setDeleting(null)}>Cancelar</Button><Button variant="danger" className="flex-1" disabled={remove.isPending} onClick={() => deleting && remove.mutate(deleting.id, { onSuccess: () => setDeleting(null) })}><Trash2 className="h-4 w-4" /> {remove.isPending ? "Excluindo…" : "Excluir"}</Button></div></Dialog>
+  </div>
 }
 
-function FilterOption({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean
-  onClick: () => void
-  children: ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={cn(
-        "flex h-11 items-center justify-center gap-1.5 rounded-lg px-2 text-sm font-medium transition-all sm:h-9",
-        active
-          ? "bg-surface-3 text-foreground shadow-sm"
-          : "text-muted hover:bg-surface-2 hover:text-foreground",
-      )}
-    >
-      {children}
-    </button>
-  )
-}
+function groupTransactions(list: Transaction[]) { const sorted = [...list].sort((a, b) => parseDate(b.due_date).getTime() - parseDate(a.due_date).getTime()); const groups = new Map<string, Transaction[]>(); for (const tx of sorted) { const key = format(parseDate(tx.due_date), "yyyy-MM-dd"); groups.set(key, [...(groups.get(key) ?? []), tx]) } return [...groups.entries()] }
+function SummaryCard({ label, value, tone, icon, loading }: { label: string; value: number; tone: "income" | "expense" | "balance"; icon: ReactNode; loading: boolean }) { return <Card elevated={false} className="min-w-0 p-3 sm:p-4"><div className={cn("mb-2 hidden h-8 w-8 items-center justify-center rounded-lg sm:flex [&>svg]:h-4 [&>svg]:w-4", tone === "income" ? "bg-income-soft text-income" : tone === "expense" ? "bg-expense-soft text-expense" : "bg-surface-3 text-foreground")}>{icon}</div><p className="truncate text-[11px] text-subtle sm:text-xs">{label}</p><p className={cn("mt-0.5 truncate text-sm font-semibold tnum sm:text-lg", tone === "income" ? "text-income" : tone === "expense" ? "text-expense" : "text-foreground")}>{loading ? "—" : formatMoney(value)}</p></Card> }
+function QuickFilter({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) { return <button type="button" aria-pressed={active} onClick={onClick} className={cn("flex h-10 items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-medium transition-colors sm:h-9 sm:text-sm", active ? "bg-surface-3 text-foreground shadow-sm" : "text-muted hover:bg-surface-2 hover:text-foreground")}>{children}</button> }
+
+function MobileList({ grouped, onOpen }: { grouped: [string, Transaction[]][]; onOpen: (tx: Transaction) => void }) { return <div className="space-y-5 md:hidden">{grouped.map(([day, items]) => <section key={day}><p className="mb-2 text-xs font-medium uppercase tracking-wide text-subtle">{format(parseDate(day), "EEEE, dd 'de' MMM", { locale: ptBR })}</p><div className="overflow-hidden rounded-2xl border border-border bg-surface">{items.map((tx, index) => <button key={tx.id} onClick={() => onOpen(tx)} className={cn("flex w-full items-center gap-3 px-3 py-3.5 text-left transition-colors hover:bg-surface-2", index > 0 && "border-t border-border")}><span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-xl", tx.type === "income" ? "bg-income-soft text-income" : "bg-expense-soft text-expense")}>{tx.type === "income" ? <ArrowDownLeft className="h-4 w-4" /> : <ArrowUpRight className="h-4 w-4" />}</span><span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium text-foreground">{tx.description}</span><span className="mt-0.5 block truncate text-xs text-subtle">{tx.category}{installmentLabel(tx) ? ` · ${installmentLabel(tx)}` : ""} · {format(parseDate(tx.due_date), "dd/MM")}</span></span><span className="text-right"><Money value={tx.amount} type={tx.type} signed className="block text-sm" /><span className={cn("text-[11px]", tx.status === "paid" ? "text-income" : "text-warning")}>{tx.status === "paid" ? "Concluído" : "Pendente"}</span></span><MoreHorizontal className="h-4 w-4 shrink-0 text-subtle" /></button>)}</div></section>)}</div> }
+
+function DesktopTable({ grouped, onOpen }: { grouped: [string, Transaction[]][]; onOpen: (tx: Transaction) => void }) { return <Card elevated={false} className="hidden overflow-hidden p-0 md:block"><table className="w-full text-left"><thead className="border-b border-border bg-surface-2/60 text-xs uppercase tracking-wide text-subtle"><tr><th className="px-5 py-3 font-medium">Lançamento</th><th className="px-4 py-3 font-medium">Categoria / parcela</th><th className="px-4 py-3 font-medium">Data</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 text-right font-medium">Valor</th><th className="w-14"><span className="sr-only">Ações</span></th></tr></thead><tbody>{grouped.flatMap(([day, items]) => [<tr key={`date-${day}`} className="border-b border-border bg-background/40"><td colSpan={6} className="px-5 py-2 text-xs font-semibold capitalize text-subtle">{format(parseDate(day), "EEEE, dd 'de' MMMM", { locale: ptBR })}</td></tr>, ...items.map((tx) => <tr key={tx.id} className="border-b border-border/70 transition-colors last:border-0 hover:bg-surface-2/60"><td className="px-5 py-3.5"><div className="flex items-center gap-3"><span className={cn("flex h-8 w-8 items-center justify-center rounded-lg", tx.type === "income" ? "bg-income-soft text-income" : "bg-expense-soft text-expense")}>{tx.type === "income" ? <ArrowDownLeft className="h-4 w-4" /> : <ArrowUpRight className="h-4 w-4" />}</span><span className="font-medium text-foreground">{tx.description}</span></div></td><td className="px-4 py-3 text-sm text-muted">{tx.category}{installmentLabel(tx) && <span className="ml-2 text-subtle">{installmentLabel(tx)}</span>}</td><td className="px-4 py-3 text-sm text-muted">{format(parseDate(tx.due_date), "dd/MM/yyyy")}</td><td className="px-4 py-3"><StatusBadge status={tx.status} /></td><td className="px-4 py-3 text-right"><Money value={tx.amount} type={tx.type} signed /></td><td className="pr-3"><Button size="icon" variant="ghost" aria-label={`Ver detalhes de ${tx.description}`} onClick={() => onOpen(tx)}><MoreHorizontal className="h-4 w-4" /></Button></td></tr>)])}</tbody></table></Card> }
+
+function AdvancedFilterForm({ value, categories, onChange, onClear, onClose }: { value: AdvancedFilters; categories: string[]; onChange: (value: AdvancedFilters) => void; onClear: () => void; onClose: () => void }) { const patch = (next: Partial<AdvancedFilters>) => onChange({ ...value, ...next }); return <div className="space-y-4"><div className="grid grid-cols-2 gap-3"><div><Label htmlFor="filter-start">De</Label><Input id="filter-start" type="date" value={value.start_date ?? ""} onChange={(e) => patch({ start_date: e.target.value || undefined })} /></div><div><Label htmlFor="filter-end">Até</Label><Input id="filter-end" type="date" value={value.end_date ?? ""} disabled={value.show_future} onChange={(e) => patch({ end_date: e.target.value || undefined })} /></div></div><div className="grid gap-4 sm:grid-cols-2"><div><Label htmlFor="filter-category">Categoria</Label><Select id="filter-category" value={value.category ?? ""} onChange={(e) => patch({ category: e.target.value || undefined })}><option value="">Todas</option>{categories.map((category) => <option key={category}>{category}</option>)}</Select></div><div><Label htmlFor="filter-status">Status</Label><Select id="filter-status" value={value.status ?? ""} onChange={(e) => patch({ status: (e.target.value || undefined) as TransactionStatus | undefined })}><option value="">Todos</option><option value="paid">Concluído</option><option value="pending">Pendente</option></Select></div><TriState label="Recorrência" value={value.is_recurring} onChange={(next) => patch({ is_recurring: next })} /><TriState label="Parcelamento" value={value.installment} onChange={(next) => patch({ installment: next })} /></div><label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-surface-2 p-3"><input type="checkbox" className="mt-0.5 h-4 w-4 accent-current" checked={value.show_future ?? false} onChange={(e) => patch({ show_future: e.target.checked })} /><span><span className="block text-sm font-medium text-foreground">Visualizar lançamentos futuros</span><span className="block text-xs text-subtle">Inclui os próximos meses a partir do início do período.</span></span></label><div className="flex gap-2 pt-2"><Button variant="ghost" className="flex-1" onClick={onClear}>Limpar</Button><Button variant="primary" className="flex-1" onClick={onClose}>Aplicar filtros</Button></div></div> }
+function TriState({ label, value, onChange }: { label: string; value?: boolean; onChange: (value?: boolean) => void }) { return <div><Label>{label}</Label><Select value={value === undefined ? "" : String(value)} onChange={(e) => onChange(e.target.value === "" ? undefined : e.target.value === "true")}><option value="">Todos</option><option value="true">Sim</option><option value="false">Não</option></Select></div> }
+
+function TransactionDetails({ tx, onClose, onEdit, onDelete, onStatus, busy }: { tx: Transaction | null; onClose: () => void; onEdit: (tx: Transaction) => void; onDelete: (tx: Transaction) => void; onStatus: (tx: Transaction, status: TransactionStatus) => void; busy: boolean }) { const installments = useInstallments(tx?.installment_group_id); return <Dialog open={!!tx} onClose={onClose} title={tx?.description ?? "Detalhes do lançamento"}>{tx && <div className="space-y-5"><div className="rounded-2xl bg-surface-2 p-4"><div className="flex items-start justify-between gap-4"><div><p className="text-xs text-subtle">{tx.category}</p><Money value={tx.amount} type={tx.type} signed className="mt-1 block text-2xl" /></div><StatusBadge status={tx.status} /></div><dl className="mt-4 grid grid-cols-2 gap-3 text-sm"><div><dt className="text-xs text-subtle">Vencimento</dt><dd className="mt-0.5 text-foreground">{format(parseDate(tx.due_date), "dd/MM/yyyy")}</dd></div><div><dt className="text-xs text-subtle">Tipo</dt><dd className="mt-0.5 text-foreground">{tx.type === "income" ? "Entrada" : "Saída"}</dd></div>{tx.installment_number && <div><dt className="text-xs text-subtle">Parcela</dt><dd className="mt-0.5 text-foreground">{tx.installment_number}/{tx.installment_count}</dd></div>}{tx.is_recurring && <div><dt className="text-xs text-subtle">Recorrência</dt><dd className="mt-0.5 text-foreground">{tx.recurrence === "weekly" ? "Semanal" : "Mensal"}</dd></div>}</dl></div>{tx.installment_group_id && <div><h3 className="mb-2 text-sm font-semibold text-foreground">Parcelamento completo</h3>{installments.isLoading ? <p className="text-sm text-subtle">Carregando parcelas…</p> : <div className="max-h-64 divide-y divide-border overflow-y-auto rounded-xl border border-border">{installments.data?.map((item) => <div key={item.id} className="flex items-center gap-3 px-3 py-2.5"><span className={cn("flex h-7 w-7 items-center justify-center rounded-full", item.status === "paid" ? "bg-income-soft text-income" : "bg-warning-soft text-warning")}>{item.status === "paid" ? <CheckCircle2 className="h-4 w-4" /> : <Clock3 className="h-4 w-4" />}</span><span className="min-w-0 flex-1 text-sm text-foreground">{item.installment_number}/{item.installment_count}<span className="ml-2 text-xs text-subtle">{format(parseDate(item.due_date), "dd/MM/yyyy")}</span></span><Money value={item.amount} className="text-sm" /></div>)}</div>}</div>}<div className="grid gap-2 sm:grid-cols-3"><Button variant="outline" disabled={busy} onClick={() => onStatus(tx, tx.status === "paid" ? "pending" : "paid")}>{tx.status === "paid" ? "Marcar pendente" : "Marcar concluído"}</Button><Button variant="secondary" onClick={() => onEdit(tx)}>Editar</Button><Button variant="danger" onClick={() => onDelete(tx)}>Excluir</Button></div></div>}</Dialog> }
+
+function InstallmentForm({ categories, submitting, onCancel, onSubmit }: { categories: string[]; submitting: boolean; onCancel: () => void; onSubmit: (data: InstallmentCreate) => void }) { const [form, setForm] = useState<InstallmentCreate>({ description: "", category: categories[0] ?? "Outros", total_amount: 0, installment_count: 2, first_due_date: format(new Date(), "yyyy-MM-dd") }); function submit(event: FormEvent) { event.preventDefault(); onSubmit(form) } const installmentValue = form.installment_count ? form.total_amount / form.installment_count : 0; return <form onSubmit={submit} className="space-y-4"><div><Label htmlFor="installment-description">Descrição</Label><Input id="installment-description" required value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Ex.: Roupa" /></div><div><Label htmlFor="installment-category">Categoria</Label><Select id="installment-category" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>{categories.map((category) => <option key={category}>{category}</option>)}</Select></div><div className="grid grid-cols-2 gap-3"><div><Label htmlFor="installment-total">Valor total</Label><Input id="installment-total" required min="0.01" step="0.01" type="number" value={form.total_amount || ""} onChange={(e) => setForm({ ...form, total_amount: Number(e.target.value) })} /></div><div><Label htmlFor="installment-count">Número de parcelas</Label><Input id="installment-count" required min="2" max="120" type="number" value={form.installment_count} onChange={(e) => setForm({ ...form, installment_count: Number(e.target.value) })} /></div></div><div><Label htmlFor="installment-date">Vencimento da primeira</Label><Input id="installment-date" required type="date" value={form.first_due_date} onChange={(e) => setForm({ ...form, first_due_date: e.target.value })} /></div><div className="rounded-xl bg-surface-2 px-3 py-2 text-sm text-muted">Estimativa por parcela: <strong className="text-foreground">{formatMoney(installmentValue)}</strong></div><div className="flex gap-2 pt-2"><Button type="button" variant="ghost" className="flex-1" onClick={onCancel}>Cancelar</Button><Button type="submit" variant="primary" className="flex-1" disabled={submitting}>{submitting ? "Adicionando…" : "Adicionar parcelas"}</Button></div></form> }
+function StatusBadge({ status }: { status: TransactionStatus }) { return <Badge tone={status === "paid" ? "income" : "warning"}>{status === "paid" ? "Concluído" : "Pendente"}</Badge> }
+function installmentLabel(tx: Transaction) { return tx.installment_number && tx.installment_count ? `Parcela ${tx.installment_number}/${tx.installment_count}` : "" }
