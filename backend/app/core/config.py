@@ -14,6 +14,7 @@ DEFAULT_CORS_ORIGINS = (
 )
 DEFAULT_AI_TIMEOUT_SECONDS = 30
 DEFAULT_AI_MAX_RETRIES = 1
+DEFAULT_REFRESH_EXPIRE_DAYS = 10
 
 
 @dataclass(frozen=True)
@@ -59,7 +60,7 @@ class Settings:
             "1", "true", "yes", "on",
         }
         refresh_expire_days = _parse_int(
-            values.get("REFRESH_EXPIRE_DAYS"), default=30,
+            values.get("REFRESH_EXPIRE_DAYS"), default=DEFAULT_REFRESH_EXPIRE_DAYS,
             name="REFRESH_EXPIRE_DAYS", minimum=1, maximum=90,
         )
 
