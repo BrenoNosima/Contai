@@ -2,28 +2,11 @@ from app.repositories.transaction_repository import (
     TransactionRepository,
 )
 
-from app.repositories.fixed_expense_repository import (
-    FixedExpenseRepository,
-)
-
-from app.repositories.goal_repository import (
-    GoalRepository,
-)
-
-
 class DashboardService:
 
     def __init__(self):
         self.transaction_repository = (
             TransactionRepository()
-        )
-
-        self.fixed_expense_repository = (
-            FixedExpenseRepository()
-        )
-
-        self.goal_repository = (
-            GoalRepository()
         )
 
     def get_dashboard_summary(
@@ -45,39 +28,6 @@ class DashboardService:
             - total_expense
         )
 
-        fixed_expenses = (
-            self.fixed_expense_repository
-            .get_active(db)
-        )
-
-        fixed_expenses_total = sum(
-            expense.amount
-            for expense in fixed_expenses
-        )
-
-        goals = (
-            self.goal_repository
-            .get_all(db)
-        )
-
-        categories = (
-            self.transaction_repository
-            .get_expenses_by_category(
-                db
-            )
-        )
-
-        expenses_by_category = []
-
-        for category, total in categories:
-
-            expenses_by_category.append(
-                {
-                    "category": category,
-                    "amount": total,
-                }
-            )
-
         recent_transactions = (
             self.transaction_repository
             .get_recent_transactions(db)
@@ -89,9 +39,6 @@ class DashboardService:
                 "total_expense": total_expense,
                 "balance": balance,
             },
-            "fixed_expenses_total": fixed_expenses_total,
-            "goals_count": len(goals),
-            "expenses_by_category": expenses_by_category,
             "recent_transactions": [
                 {
                     "id": transaction.id,

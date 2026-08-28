@@ -120,9 +120,6 @@ export interface DashboardSummary {
     total_expense: number
     balance: number
   }
-  fixed_expenses_total: number
-  goals_count: number
-  expenses_by_category: { category: string; amount: number }[]
   recent_transactions: {
     id: number
     description: string
