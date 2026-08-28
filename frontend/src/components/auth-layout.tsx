@@ -8,15 +8,19 @@ interface AuthLayoutProps {
   title: string
   subtitle: string
   titleIcon?: LucideIcon
+  mobileIntro?: ReactNode
 }
 
-export function AuthLayout({ children, title, subtitle, titleIcon: TitleIcon }: AuthLayoutProps) {
+export function AuthLayout({ children, title, subtitle, titleIcon: TitleIcon, mobileIntro }: AuthLayoutProps) {
   return (
-    <main className="relative grid min-h-dvh overflow-hidden bg-[#050809] lg:grid-cols-[minmax(0,1.08fr)_minmax(430px,0.92fr)]">
+    <main className="relative grid min-h-dvh overflow-x-hidden bg-[#050809] lg:grid-cols-[minmax(0,1.08fr)_minmax(430px,0.92fr)]">
       <section className="relative hidden min-h-dvh overflow-hidden border-r border-white/[0.07] bg-[#05090a] lg:flex lg:flex-col lg:justify-between lg:px-10 lg:py-9 xl:px-16 xl:py-12 2xl:px-20">
         <FinancialBackdrop />
 
-        <BrandLogo className="auth-brand-logo relative z-10 shrink-0" imageClassName="w-44 mix-blend-screen xl:w-48" />
+        <BrandLogo
+          className="auth-brand-logo relative z-10 shrink-0 justify-center self-center"
+          imageClassName="w-60 mix-blend-screen xl:w-64 2xl:w-72"
+        />
 
         <div className="relative z-10 max-w-[640px] pb-8 xl:pb-12">
           <div className="mb-6 flex items-center gap-3">
@@ -38,23 +42,30 @@ export function AuthLayout({ children, title, subtitle, titleIcon: TitleIcon }: 
         </div>
       </section>
 
-      <section className="relative flex min-h-dvh items-center justify-center bg-[#0b1011] px-5 py-10 sm:px-10 lg:px-10 xl:px-16">
+      <section className="relative flex min-h-dvh items-start justify-center bg-[#0b1011] px-5 py-6 sm:px-10 sm:py-10 lg:items-center lg:px-10 xl:px-16">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-[radial-gradient(ellipse_at_top,rgba(41,207,157,0.06),transparent_70%)]" aria-hidden />
         <div className="relative w-full max-w-[440px] animate-in">
-          <BrandLogo className="auth-brand-logo mb-8 lg:hidden" imageClassName="w-28 mix-blend-screen sm:w-32" />
+          {mobileIntro && <div className="lg:hidden">{mobileIntro}</div>}
 
-          <div className="mb-8 flex items-start gap-4">
-            {TitleIcon && (
-              <div className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#3ad3a7]/20 bg-[#113128] text-[#50d9b2] shadow-[0_0_28px_-18px_rgba(52,211,153,0.7)]" aria-hidden>
-                <TitleIcon className="h-5 w-5" />
+          <div className={mobileIntro ? "hidden lg:block" : undefined}>
+            <BrandLogo
+              className="auth-brand-logo mb-8 justify-center lg:hidden"
+              imageClassName="w-36 mix-blend-screen sm:w-40"
+            />
+
+            <div className="mb-8 flex items-start gap-4">
+              {TitleIcon && (
+                <div className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#3ad3a7]/20 bg-[#113128] text-[#50d9b2] shadow-[0_0_28px_-18px_rgba(52,211,153,0.7)]" aria-hidden>
+                  <TitleIcon className="h-5 w-5" />
+                </div>
+              )}
+              <div>
+                <h1 className="text-3xl font-semibold tracking-[-0.04em] text-[#f4faf7] sm:text-[2rem]">{title}</h1>
+                <p className="mt-2 max-w-sm text-sm leading-6 text-[#91a09b]">{subtitle}</p>
               </div>
-            )}
-            <div>
-              <h1 className="text-3xl font-semibold tracking-[-0.04em] text-[#f4faf7] sm:text-[2rem]">{title}</h1>
-              <p className="mt-2 max-w-sm text-sm leading-6 text-[#91a09b]">{subtitle}</p>
             </div>
+            {children}
           </div>
-          {children}
         </div>
       </section>
     </main>
