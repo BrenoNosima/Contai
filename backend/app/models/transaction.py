@@ -89,6 +89,10 @@ class Transaction(Base):
         index=True,
     )
 
+    # Momento em que o dinheiro efetivamente entrou ou saiu. Diferente de
+    # due_date (vencimento/competência) e updated_at (qualquer edição).
+    settled_at = Column(DateTime, nullable=True, index=True)
+
     # Marca um lançamento como um "modelo" recorrente (ex: assinatura
     # mensal lançada diretamente como transação, sem passar por
     # FixedExpense).
@@ -120,9 +124,20 @@ class Transaction(Base):
         nullable=True,
     )
 
+    # Parcelamentos são finitos e independentes de recorrência. Todas as
+    # parcelas compartilham o mesmo grupo, mas mantêm data e status próprios.
+    installment_group_id = Column(String(36), nullable=True, index=True)
+    installment_number = Column(Integer, nullable=True)
+    installment_count = Column(Integer, nullable=True)
+
     __table_args__ = (
         UniqueConstraint(
             "parent_id", "due_date", name="uq_transaction_parent_due_date"
+        ),
+        UniqueConstraint(
+            "installment_group_id",
+            "installment_number",
+            name="uq_transaction_installment_number",
         ),
         UniqueConstraint(
             "fixed_expense_id",

@@ -1,5 +1,7 @@
 from calendar import monthrange
-from datetime import date, timedelta
+from datetime import UTC, date, datetime, time, timedelta
+from decimal import Decimal, ROUND_DOWN
+from uuid import uuid4
 
 from sqlalchemy.orm import Session
 
@@ -13,6 +15,7 @@ from app.repositories.fixed_expense_repository import FixedExpenseRepository
 
 from app.schemas.transaction import (
     TransactionCreate,
+    InstallmentCreate,
     TransactionUpdate,
 )
 
@@ -46,6 +49,7 @@ class TransactionService:
             source=transaction_data.source,
             due_date=due_date,
             status=status,
+            settled_at=(datetime.now(UTC).replace(tzinfo=None) if status == "paid" else None),
             is_recurring=transaction_data.is_recurring,
             recurrence=transaction_data.recurrence,
         )
@@ -87,11 +91,12 @@ class TransactionService:
         start_date: date | None = None,
         end_date: date | None = None,
         is_recurring: bool | None = None,
+        installment: bool | None = None,
     ):
         """Lista com filtros — usada pela tela de Lançamentos e pelo agente."""
 
         if not any(
-            [type, category, status, start_date, end_date, is_recurring is not None]
+            [type, category, status, start_date, end_date, is_recurring is not None, installment is not None]
         ):
             return self.repository.get_all(db)
 
@@ -103,7 +108,50 @@ class TransactionService:
             start_date=start_date,
             end_date=end_date,
             is_recurring=is_recurring,
+            installment=installment,
         )
+
+    def create_installments(self, db: Session, data: InstallmentCreate) -> list[Transaction]:
+        group_id = str(uuid4())
+        total = Decimal(str(data.total_amount)).quantize(Decimal("0.01"))
+        base = (total / data.installment_count).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
+        remainder = total - (base * data.installment_count)
+        items: list[Transaction] = []
+        for index in range(data.installment_count):
+            due_date = _add_months(data.first_due_date, index)
+            amount = base + (remainder if index == data.installment_count - 1 else Decimal("0"))
+            items.append(Transaction(
+                type="expense",
+                description=data.description,
+                category=data.category,
+                amount=amount,
+                priority=data.priority,
+                source="manual",
+                due_date=due_date,
+                status="pending" if due_date > date.today() else "paid",
+                settled_at=(
+                    None
+                    if due_date > date.today()
+                    else datetime.combine(due_date, time.min)
+                ),
+                is_recurring=False,
+                recurrence=None,
+                installment_group_id=group_id,
+                installment_number=index + 1,
+                installment_count=data.installment_count,
+            ))
+        return self.repository.create_many(db, items)
+
+    def get_installments(self, db: Session, group_id: str) -> list[Transaction]:
+        return self.repository.get_installments(db, group_id)
+
+    def get_period_summary(self, db: Session, start_date: date, end_date: date):
+        items = self.repository.filter(db, start_date=start_date, end_date=end_date)
+        income = sum((item.amount for item in items if item.type == "income" and item.status == "paid"), Decimal("0"))
+        expense = sum((item.amount for item in items if item.type == "expense" and item.status == "paid"), Decimal("0"))
+        pending_income = sum((item.amount for item in items if item.type == "income" and item.status == "pending"), Decimal("0"))
+        pending_expense = sum((item.amount for item in items if item.type == "expense" and item.status == "pending"), Decimal("0"))
+        return {"income": float(income), "expense": float(expense), "balance": float(income - expense), "pending_income": float(pending_income), "pending_expense": float(pending_expense)}
 
     def update_transaction(
         self,
@@ -131,6 +179,13 @@ class TransactionService:
         if resulting_recurring != (resulting_recurrence is not None):
             raise DomainValidationError(
                 "is_recurring e recurrence devem ser informados juntos."
+            )
+
+        if "status" in changes and changes["status"] != transaction.status:
+            transaction.settled_at = (
+                datetime.now(UTC).replace(tzinfo=None)
+                if changes["status"] == "paid"
+                else None
             )
 
         for field, value in changes.items():

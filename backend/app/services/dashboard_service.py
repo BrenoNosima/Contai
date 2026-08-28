@@ -99,6 +99,10 @@ class DashboardService:
                     "category": transaction.category,
                     "amount": transaction.amount,
                     "type": transaction.type,
+                    "due_date": transaction.due_date,
+                    "settled_at": transaction.settled_at,
+                    "installment_number": transaction.installment_number,
+                    "installment_count": transaction.installment_count,
                 }
                 for transaction in recent_transactions
             ],

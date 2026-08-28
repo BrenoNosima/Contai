@@ -35,6 +35,9 @@ def test_dashboard_and_reports_ignore_pending_transactions(client, db_session):
         "total_expense": 250.0,
         "balance": 750.0,
     }
+    recent = dashboard.json()["recent_transactions"]
+    assert len(recent) == 2
+    assert all(item["settled_at"] for item in recent)
 
     trend = client.get("/reports/monthly-trend", params={"months": 1})
     assert trend.status_code == 200

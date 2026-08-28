@@ -17,6 +17,8 @@ from app.schemas.transaction import (
     TransactionUpdate,
     TransactionResponse,
     TransactionStatusUpdate,
+    InstallmentCreate,
+    PeriodSummary,
 )
 
 from app.services.transaction_service import (
@@ -90,6 +92,7 @@ def get_all_transactions(
         default=None,
         description="Filtra apenas modelos recorrentes (true) ou não (false).",
     ),
+    installment: bool | None = Query(default=None),
 ):
     """
     Lista transações. Sem parâmetros, retorna tudo (comportamento
@@ -104,7 +107,23 @@ def get_all_transactions(
         start_date=start_date,
         end_date=end_date,
         is_recurring=is_recurring,
+        installment=installment,
     )
+
+
+@router.get("/period-summary", response_model=PeriodSummary)
+def get_period_summary(start_date: date, end_date: date, db: Session = Depends(get_db)):
+    return service.get_period_summary(db, start_date, end_date)
+
+
+@router.post("/installments", response_model=list[TransactionResponse])
+def create_installments(payload: InstallmentCreate, db: Session = Depends(get_db)):
+    return service.create_installments(db, payload)
+
+
+@router.get("/installments/{group_id}", response_model=list[TransactionResponse])
+def get_installments(group_id: str, db: Session = Depends(get_db)):
+    return service.get_installments(db, group_id)
 
 
 @router.get(

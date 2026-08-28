@@ -1,5 +1,6 @@
 from calendar import monthrange
 from datetime import date
+from datetime import UTC, datetime
 
 from sqlalchemy import func, extract
 from sqlalchemy.orm import Session
@@ -82,6 +83,7 @@ class TransactionRepository:
         start_date: date | None = None,
         end_date: date | None = None,
         is_recurring: bool | None = None,
+        installment: bool | None = None,
     ):
         """
         Lista transações com filtros opcionais — usada pela tela de
@@ -108,7 +110,20 @@ class TransactionRepository:
         if is_recurring is not None:
             query = query.filter(Transaction.is_recurring == is_recurring)
 
+        if installment is True:
+            query = query.filter(Transaction.installment_group_id.isnot(None))
+        elif installment is False:
+            query = query.filter(Transaction.installment_group_id.is_(None))
+
         return query.order_by(Transaction.due_date.desc()).all()
+
+    def get_installments(self, db: Session, group_id: str):
+        return (
+            db.query(Transaction)
+            .filter(Transaction.installment_group_id == group_id)
+            .order_by(Transaction.installment_number.asc())
+            .all()
+        )
 
     def update(
         self,
@@ -126,6 +141,9 @@ class TransactionRepository:
     ) -> Transaction:
 
         transaction.status = status
+        transaction.settled_at = (
+            datetime.now(UTC).replace(tzinfo=None) if status == "paid" else None
+        )
 
         return commit(db, transaction)
 
@@ -200,8 +218,12 @@ class TransactionRepository:
 
         return (
             db.query(Transaction)
+            .filter(
+                Transaction.status == "paid",
+                Transaction.settled_at.isnot(None),
+            )
             .order_by(
-                Transaction.created_at.desc()
+                Transaction.settled_at.desc()
             )
             .limit(limit)
             .all()

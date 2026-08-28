@@ -68,12 +68,33 @@ class TransactionResponse(BaseModel):
     source: str
     due_date: date
     status: TransactionStatus
+    settled_at: datetime | None
     is_recurring: bool
     recurrence: RecurrenceType | None
     parent_id: int | None
     fixed_expense_id: int | None
+    installment_group_id: str | None
+    installment_number: int | None
+    installment_count: int | None
     user_id: int | None
     created_at: datetime
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class InstallmentCreate(BaseModel):
+    description: str = Field(min_length=1, max_length=255)
+    category: str = Field(min_length=1, max_length=100)
+    total_amount: float = Field(gt=0)
+    installment_count: int = Field(ge=2, le=120)
+    first_due_date: date
+    priority: Literal["essential", "desirable", "superfluous"] | None = None
+
+
+class PeriodSummary(BaseModel):
+    income: float
+    expense: float
+    balance: float
+    pending_income: float
+    pending_expense: float

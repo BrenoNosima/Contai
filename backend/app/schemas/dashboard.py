@@ -1,5 +1,7 @@
 from typing import Literal
 
+from datetime import date, datetime
+
 from pydantic import BaseModel
 
 from app.schemas.report import ReportCategoryTotal
@@ -17,6 +19,10 @@ class DashboardRecentTransaction(BaseModel):
     category: str
     amount: float
     type: Literal["income", "expense"]
+    due_date: date
+    settled_at: datetime
+    installment_number: int | None
+    installment_count: int | None
 
 
 class DashboardSummaryResponse(BaseModel):

@@ -20,6 +20,7 @@ def test_transaction_crud_and_filters(client):
     created = expense.json()
     assert created["id"] > 0
     assert created["source"] == "manual"
+    assert created["settled_at"] is not None
 
     income = client.post(
         "/transactions/",
@@ -55,8 +56,16 @@ def test_transaction_crud_and_filters(client):
         f"/transactions/{created['id']}/status",
         json={"status": "pending"},
     )
-    assert status.status_code == 200
+    assert status.status_code == 200, status.text
     assert status.json()["status"] == "pending"
+    assert status.json()["settled_at"] is None
+
+    paid_again = client.patch(
+        f"/transactions/{created['id']}/status",
+        json={"status": "paid"},
+    )
+    assert paid_again.status_code == 200
+    assert paid_again.json()["settled_at"] is not None
 
     removed = client.delete(f"/transactions/{created['id']}")
     assert removed.status_code == 200
@@ -98,6 +107,44 @@ def test_transaction_update_rejects_invalid_resulting_domain_state(client):
     persisted = client.get(f"/transactions/{transaction['id']}").json()
     assert persisted["type"] == "expense"
     assert persisted["priority"] == "essential"
+
+
+def test_installments_are_split_by_month_and_expose_complete_schedule(client):
+    response = client.post(
+        "/transactions/installments",
+        json={
+            "description": "Roupa",
+            "category": "Compras",
+            "total_amount": 100,
+            "installment_count": 3,
+            "first_due_date": "2026-01-15",
+        },
+    )
+    assert response.status_code == 200
+    installments = response.json()
+    assert [item["installment_number"] for item in installments] == [1, 2, 3]
+    assert [item["due_date"] for item in installments] == [
+        "2026-01-15", "2026-02-15", "2026-03-15",
+    ]
+    assert round(sum(item["amount"] for item in installments), 2) == 100
+
+    january = client.get(
+        "/transactions/",
+        params={"start_date": "2026-01-01", "end_date": "2026-01-31"},
+    )
+    assert january.status_code == 200
+    assert [(item["installment_number"], item["installment_count"]) for item in january.json()] == [(1, 3)]
+
+    schedule = client.get(f"/transactions/installments/{installments[0]['installment_group_id']}")
+    assert schedule.status_code == 200
+    assert [item["id"] for item in schedule.json()] == [item["id"] for item in installments]
+
+    summary = client.get(
+        "/transactions/period-summary",
+        params={"start_date": "2026-01-01", "end_date": "2026-01-31"},
+    )
+    assert summary.status_code == 200
+    assert summary.json()["expense"] == installments[0]["amount"]
 
 
 def test_goals_contract(client):
