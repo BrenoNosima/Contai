@@ -152,7 +152,7 @@ function MobileIntroduction({ onContinue }: { onContinue: () => void }) {
       <div>
         <div className="mx-auto mb-5 flex w-[60%] max-w-[240px] items-center justify-center sm:max-w-[260px]">
           <img
-            src="/brand/contai-logo.png"
+            src="/brand/contai-logo.png?v=20260828"
             alt="Contaí — Entende. Organiza. Faz crescer."
             width="1536"
             height="1024"
