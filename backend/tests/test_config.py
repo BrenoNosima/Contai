@@ -5,6 +5,7 @@ from app.core.config import (
     DEFAULT_AI_TIMEOUT_SECONDS,
     DEFAULT_CORS_ORIGINS,
     DEFAULT_DATABASE_URL,
+    DEFAULT_JWT_EXPIRE_MINUTES,
     DEFAULT_REFRESH_EXPIRE_DAYS,
     Settings,
 )
@@ -18,6 +19,7 @@ def test_settings_use_safe_local_defaults():
     assert settings.groq_configured is False
     assert settings.ai_timeout_seconds == DEFAULT_AI_TIMEOUT_SECONDS
     assert settings.ai_max_retries == DEFAULT_AI_MAX_RETRIES
+    assert settings.jwt_expire_minutes == DEFAULT_JWT_EXPIRE_MINUTES == 14400
     assert settings.refresh_expire_days == DEFAULT_REFRESH_EXPIRE_DAYS == 10
 
 

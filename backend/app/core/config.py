@@ -14,6 +14,7 @@ DEFAULT_CORS_ORIGINS = (
 )
 DEFAULT_AI_TIMEOUT_SECONDS = 30
 DEFAULT_AI_MAX_RETRIES = 1
+DEFAULT_JWT_EXPIRE_MINUTES = 10 * 24 * 60
 DEFAULT_REFRESH_EXPIRE_DAYS = 10
 
 
@@ -52,8 +53,8 @@ class Settings:
         )
         jwt_secret_key = values.get("JWT_SECRET_KEY", "").strip()
         jwt_expire_minutes = _parse_int(
-            values.get("JWT_EXPIRE_MINUTES"), default=15,
-            name="JWT_EXPIRE_MINUTES", minimum=5, maximum=1440,
+            values.get("JWT_EXPIRE_MINUTES"), default=DEFAULT_JWT_EXPIRE_MINUTES,
+            name="JWT_EXPIRE_MINUTES", minimum=5, maximum=43200,
         )
         secure_default = "true" if values.get("ENVIRONMENT", "development").strip().lower() == "production" else "false"
         cookie_secure = values.get("COOKIE_SECURE", secure_default).strip().lower() in {
