@@ -98,15 +98,25 @@ As principais variáveis do backend ficam em `backend/.env`:
 | `ENVIRONMENT` | Ambiente atual; em `production`, cookies seguros são ativados por padrão |
 | `JWT_SECRET_KEY` | Segredo longo e aleatório usado para assinar os tokens JWT |
 | `JWT_EXPIRE_MINUTES` | Tempo de validade da sessão em minutos |
+| `REFRESH_EXPIRE_DAYS` | Tempo máximo da sessão renovável em dias |
 | `COOKIE_SECURE` | Força o envio do cookie somente por HTTPS |
 
 No frontend, `VITE_API_URL` define o endereço público da API. Ela pode permanecer vazia no desenvolvimento local.
 
 Nunca envie arquivos `.env` ou chaves de API para o repositório.
 
-Como a aplicação ainda não possui autenticação, mantenha a API acessível apenas
-em uma rede confiável. O Docker Compose publica o PostgreSQL somente em
-`127.0.0.1`; para exposição pública, adicione autenticação antes de publicar a API.
+## Publicação segura
+
+A API exige autenticação em todas as rotas financeiras e restringe os dados pelo
+usuário autenticado. O Docker Compose publica o PostgreSQL somente em
+`127.0.0.1`, configuração adequada para desenvolvimento local.
+
+Em produção, não publique a porta do PostgreSQL na internet. Use uma rede privada
+entre a API e o banco, credenciais exclusivas e backups automáticos. Configure
+também `ENVIRONMENT=production`, `COOKIE_SECURE=true`, HTTPS, uma
+`JWT_SECRET_KEY` aleatória e `CORS_ORIGINS` com apenas o endereço real do
+frontend. Execute `python -m alembic upgrade head` antes de iniciar a nova versão
+da API.
 
 ## Estrutura do projeto
 
