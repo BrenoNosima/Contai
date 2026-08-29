@@ -5,6 +5,7 @@ import hmac
 import secrets
 import threading
 import time
+from urllib.parse import urlsplit
 
 from fastapi import HTTPException, Request
 
@@ -44,7 +45,7 @@ def validate_csrf_request(request: Request) -> None:
     if fetch_site == "cross-site":
         raise HTTPException(403, "Origem da requisição não autorizada.")
     origin = request.headers.get("origin")
-    if origin and origin.rstrip("/") not in SETTINGS.cors_origins:
+    if origin and not _is_allowed_origin(request, origin):
         raise HTTPException(403, "Origem da requisição não autorizada.")
     cookie_token = request.cookies.get(CSRF_COOKIE_NAME, "")
     header_token = request.headers.get(CSRF_HEADER_NAME, "")
@@ -52,6 +53,16 @@ def validate_csrf_request(request: Request) -> None:
         raise HTTPException(403, "Token CSRF ausente ou inválido.")
     if not validate_csrf_token(cookie_token):
         raise HTTPException(403, "Token CSRF ausente ou inválido.")
+
+
+def _is_allowed_origin(request: Request, origin: str) -> bool:
+    normalized_origin = origin.rstrip("/")
+    if normalized_origin in SETTINGS.cors_origins:
+        return True
+
+    parsed = urlsplit(normalized_origin)
+    request_host = request.headers.get("host", "").lower()
+    return parsed.scheme in {"http", "https"} and parsed.netloc.lower() == request_host
 
 
 @dataclass(frozen=True)

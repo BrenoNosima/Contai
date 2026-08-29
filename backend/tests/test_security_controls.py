@@ -1,6 +1,10 @@
+from dataclasses import replace
+
 import pytest
 
+import app.core.web_security as web_security
 from app.core.ai_guardrails import validate_prompt
+from app.core.config import SETTINGS
 
 
 def test_security_headers_are_present(client):
@@ -16,6 +20,38 @@ def test_csrf_is_required_for_mutation(client):
         assert client.post("/transactions/", json={}).status_code == 403
     finally:
         client.headers["X-CSRF-Token"] = token
+
+
+def test_csrf_accepts_same_origin_when_cors_is_empty(client, monkeypatch):
+    monkeypatch.setattr(web_security, "SETTINGS", replace(SETTINGS, cors_origins=()))
+    response = client.post(
+        "/auth/register",
+        headers={"Origin": "http://testserver"},
+        json={
+            "name": "Same Origin",
+            "email": "same-origin@example.com",
+            "password": "12345678",
+            "password_confirmation": "12345678",
+        },
+    )
+
+    assert response.status_code == 201
+
+
+def test_csrf_rejects_external_origin_when_cors_is_empty(client, monkeypatch):
+    monkeypatch.setattr(web_security, "SETTINGS", replace(SETTINGS, cors_origins=()))
+    response = client.post(
+        "/auth/register",
+        headers={"Origin": "https://attacker.example"},
+        json={
+            "name": "External Origin",
+            "email": "external-origin@example.com",
+            "password": "12345678",
+            "password_confirmation": "12345678",
+        },
+    )
+
+    assert response.status_code == 403
 
 
 def test_prompt_injection_is_rejected():
