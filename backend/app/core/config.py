@@ -103,6 +103,8 @@ class Settings:
 
 
 def _parse_cors_origins(raw: str | None, *, allow_empty: bool = False) -> tuple[str, ...]:
+    if raw is None and allow_empty:
+        return ()
     origins = (
         tuple(origin.strip().rstrip("/") for origin in raw.split(",") if origin.strip())
         if raw is not None

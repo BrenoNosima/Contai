@@ -70,6 +70,16 @@ def test_settings_accept_same_origin_production_without_cors():
     assert settings.cors_origins == ()
 
 
+def test_settings_accept_same_origin_production_without_cors_variable():
+    settings = Settings.from_mapping({
+        "ENVIRONMENT": "production",
+        "DATABASE_URL": "postgresql://user:password@private-db:5432/finance",
+        "JWT_SECRET_KEY": "a-production-secret-with-enough-entropy",
+    })
+
+    assert settings.cors_origins == ()
+
+
 @pytest.mark.parametrize("scheme", ["postgres://", "postgresql://"])
 def test_settings_select_psycopg3_for_provider_database_urls(scheme):
     settings = Settings.from_mapping({
