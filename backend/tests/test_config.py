@@ -47,6 +47,18 @@ def test_settings_normalize_environment_values():
     assert settings.ai_max_retries == 2
 
 
+def test_settings_accept_hardened_production_configuration():
+    settings = Settings.from_mapping({
+        "ENVIRONMENT": "production",
+        "DATABASE_URL": "postgresql+psycopg://user:password@private-db:5432/finance",
+        "JWT_SECRET_KEY": "a-production-secret-with-enough-entropy",
+        "CORS_ORIGINS": "https://app.example.com",
+    })
+
+    assert settings.cookie_secure is True
+    assert settings.cors_origins == ("https://app.example.com",)
+
+
 @pytest.mark.parametrize(
     ("values", "message"),
     [
@@ -57,6 +69,23 @@ def test_settings_normalize_environment_values():
         ({"AI_TIMEOUT_SECONDS": "0"}, "AI_TIMEOUT_SECONDS"),
         ({"AI_TIMEOUT_SECONDS": "slow"}, "AI_TIMEOUT_SECONDS"),
         ({"AI_MAX_RETRIES": "6"}, "AI_MAX_RETRIES"),
+        ({"ENVIRONMENT": "production"}, "DATABASE_URL"),
+        ({
+            "ENVIRONMENT": "production",
+            "DATABASE_URL": "postgresql+psycopg://user:password@db:5432/finance",
+        }, "JWT_SECRET_KEY"),
+        ({
+            "ENVIRONMENT": "production",
+            "DATABASE_URL": "postgresql+psycopg://user:password@db:5432/finance",
+            "JWT_SECRET_KEY": "a-production-secret-with-enough-entropy",
+            "COOKIE_SECURE": "false",
+        }, "COOKIE_SECURE"),
+        ({
+            "ENVIRONMENT": "production",
+            "DATABASE_URL": "postgresql+psycopg://user:password@db:5432/finance",
+            "JWT_SECRET_KEY": "a-production-secret-with-enough-entropy",
+            "CORS_ORIGINS": "http://localhost:3000",
+        }, "CORS_ORIGINS"),
     ],
 )
 def test_settings_reject_invalid_values(values, message):

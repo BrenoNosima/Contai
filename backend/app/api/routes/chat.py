@@ -6,7 +6,7 @@ from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.dependencies import get_current_user
 from app.core.dependencies import get_db
-from app.core.user_context import set_current_user_id
+from app.core.user_context import reset_current_user_id, set_current_user_id
 from app.models.user import User
 
 from app.schemas.chat import (
@@ -36,10 +36,11 @@ def get_agent() -> FinancialAgent:
     response_model_exclude_defaults=True,
 )
 def chat(payload: ChatRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    set_current_user_id(current_user.id)
+    context_token = set_current_user_id(current_user.id)
     try:
         history = [message.model_dump() for message in payload.chat_history]
         response = get_agent().ask(payload.message, history)
+        pending_actions = AssistantActionService().pending(db)
 
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
@@ -49,5 +50,7 @@ def chat(payload: ChatRequest, current_user: User = Depends(get_current_user), d
             status_code=502,
             detail="Não foi possível falar com o assistente agora. Tente novamente em instantes.",
         )
+    finally:
+        reset_current_user_id(context_token)
 
-    return ChatResponse(response=response, pending_actions=AssistantActionService().pending(db))
+    return ChatResponse(response=response, pending_actions=pending_actions)

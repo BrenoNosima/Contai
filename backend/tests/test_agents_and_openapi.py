@@ -3,6 +3,9 @@ from app.api.routes import transactions as transaction_routes
 from app.agents.extractor_agent import ExtractorAgent
 from app.agents.financial_agent import SYSTEM_PROMPT
 from app.models.transaction import Transaction
+from app.models.user import User
+from app.core.user_context import get_current_user_id
+from app.schemas.chat import ChatRequest
 from app.schemas.natural_language import NaturalLanguageResponse
 
 
@@ -140,6 +143,23 @@ def test_chat_contract_without_calling_llm(client, monkeypatch):
 
     assert response.status_code == 200
     assert response.json() == {"response": "Seu saldo é R$ 100,00."}
+
+
+def test_chat_resets_user_context_after_agent_call(client, db_session, monkeypatch):
+    monkeypatch.setattr(chat_route, "get_agent", lambda: FakeAgent())
+    user = db_session.query(User).first()
+
+    result = chat_route.chat(
+        ChatRequest(
+            message="Qual meu saldo?",
+            chat_history=[{"role": "user", "content": "Oi"}],
+        ),
+        user,
+        db_session,
+    )
+
+    assert result.response == "Seu saldo é R$ 100,00."
+    assert get_current_user_id() is None
 
 
 def test_chat_handles_provider_failure(client, monkeypatch):

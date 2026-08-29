@@ -2,7 +2,6 @@ from fastapi import Cookie, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.database import SessionLocal
 from app.core.security import decode_access_token
-from app.core.user_context import set_current_user_id
 from app.repositories.user_repository import UserRepository
 from app.repositories.auth_session_repository import AuthSessionRepository
 from datetime import UTC, datetime
@@ -33,5 +32,4 @@ def get_current_user(access_token: str | None = Cookie(default=None), db: Sessio
     user = UserRepository().get_by_id(db, user_id)
     if not user or not user.is_active: raise unauthorized
     db.info["user_id"] = user.id
-    set_current_user_id(user.id)
     yield user

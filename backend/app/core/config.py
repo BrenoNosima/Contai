@@ -56,7 +56,8 @@ class Settings:
             values.get("JWT_EXPIRE_MINUTES"), default=DEFAULT_JWT_EXPIRE_MINUTES,
             name="JWT_EXPIRE_MINUTES", minimum=5, maximum=43200,
         )
-        secure_default = "true" if values.get("ENVIRONMENT", "development").strip().lower() == "production" else "false"
+        environment = values.get("ENVIRONMENT", "development").strip().lower()
+        secure_default = "true" if environment == "production" else "false"
         cookie_secure = values.get("COOKIE_SECURE", secure_default).strip().lower() in {
             "1", "true", "yes", "on",
         }
@@ -69,6 +70,15 @@ class Settings:
             raise ValueError("DATABASE_URL deve ser uma URL SQLAlchemy válida.")
         if not groq_model:
             raise ValueError("GROQ_MODEL não pode ser vazio.")
+        if environment == "production":
+            if database_url == DEFAULT_DATABASE_URL or database_url.startswith("sqlite"):
+                raise ValueError("DATABASE_URL de produção deve apontar para um PostgreSQL privado.")
+            if len(jwt_secret_key) < 32 or jwt_secret_key.startswith("replace-"):
+                raise ValueError("JWT_SECRET_KEY de produção deve ser aleatória e ter ao menos 32 caracteres.")
+            if not cookie_secure:
+                raise ValueError("COOKIE_SECURE deve estar ativo em produção.")
+            if any("localhost" in origin or "127.0.0.1" in origin for origin in cors_origins):
+                raise ValueError("CORS_ORIGINS de produção não pode conter endereços locais.")
 
         return cls(
             database_url=database_url,

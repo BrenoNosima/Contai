@@ -21,7 +21,6 @@ def test_register_login_me_and_logout(client):
     cookie = login.cookies.get("access_token")
     assert cookie and decode_access_token(cookie)[0] == login.json()["id"]
 
-
 def test_invalid_credentials_and_duplicate_email(client):
     invalid = client.post("/auth/login", json={"email": "test@example.com", "password": "wrong"})
     assert invalid.status_code == 401
@@ -39,6 +38,10 @@ def test_users_cannot_access_each_others_data(client, db_session):
     })
     assert created.status_code == 200
     first_user_id = created.json()["user_id"]
+    assert client.post("/goals/", json={"name": "Reserva", "target_amount": 500}).status_code == 200
+    assert client.post("/fixed-expenses/", json={
+        "name": "Internet", "category": "Moradia", "amount": 100, "billing_day": 10,
+    }).status_code == 200
 
     client.post("/auth/logout")
     second = client.post("/auth/register", json={
@@ -48,4 +51,6 @@ def test_users_cannot_access_each_others_data(client, db_session):
     assert second.status_code == 201
     assert second.json()["id"] != first_user_id
     assert client.get("/transactions/").json() == []
+    assert client.get("/goals/").json() == []
+    assert client.get("/fixed-expenses/").json() == []
     assert client.get(f"/transactions/{created.json()['id']}").status_code == 404
