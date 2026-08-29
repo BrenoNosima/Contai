@@ -1,7 +1,8 @@
 import logging
+from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import CORS_ORIGINS
@@ -41,6 +42,23 @@ from app.api.routes.metadata import router as metadata_router
 from app.api.routes.assistant_actions import router as assistant_actions_router
 
 logger = logging.getLogger(__name__)
+STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
+SPA_INDEX = STATIC_DIR / "index.html"
+API_ROUTE_PREFIXES = {
+    "assistant-actions",
+    "auth",
+    "chat",
+    "dashboard",
+    "docs",
+    "fixed-expenses",
+    "goals",
+    "health",
+    "metadata",
+    "openapi.json",
+    "redoc",
+    "reports",
+    "transactions",
+}
 
 app = FastAPI(
     title="Contaí",
@@ -132,6 +150,8 @@ def persistence_unavailable_handler(
 
 @app.get("/")
 def root():
+    if SPA_INDEX.is_file():
+        return FileResponse(SPA_INDEX)
     return {
         "status": "online",
         "project": "Contaí",
@@ -144,3 +164,18 @@ def health_check():
     return {
         "status": "healthy"
     }
+
+
+@app.get("/{path:path}", include_in_schema=False)
+def serve_spa(path: str):
+    """Serve Vite assets and let React Router handle client-side routes."""
+    first_segment = path.partition("/")[0]
+    if first_segment in API_ROUTE_PREFIXES:
+        raise HTTPException(status_code=404, detail="Endpoint nao encontrado.")
+
+    requested_file = (STATIC_DIR / path).resolve()
+    if STATIC_DIR.resolve() in requested_file.parents and requested_file.is_file():
+        return FileResponse(requested_file)
+    if SPA_INDEX.is_file():
+        return FileResponse(SPA_INDEX)
+    raise HTTPException(status_code=404, detail="Frontend nao compilado.")

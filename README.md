@@ -118,6 +118,36 @@ também `ENVIRONMENT=production`, `COOKIE_SECURE=true`, HTTPS, uma
 frontend. Execute `python -m alembic upgrade head` antes de iniciar a nova versão
 da API.
 
+### Imagem de producao
+
+O `Dockerfile` da raiz compila o React em um estagio Node e copia o resultado para
+o container Python. O FastAPI serve a interface e a API na mesma origem, incluindo
+o fallback para rotas do React Router. A inicializacao aplica as migracoes do
+Alembic antes de subir o servidor.
+
+Para validar a imagem localmente:
+
+```bash
+docker build -t contai .
+docker run --rm -p 8000:8000 --env-file backend/.env contai
+```
+
+Abra `http://localhost:8000` e use `http://localhost:8000/health` para verificar a
+saude do servico. Em uma plataforma de hospedagem, configure `PORT` apenas se ela
+nao o fornecer automaticamente. Nao envie o arquivo usado em `--env-file` ao Git.
+
+No deploy em origem unica, `VITE_API_URL` deve permanecer vazio durante o build.
+Configure no servico, no minimo:
+
+```env
+ENVIRONMENT=production
+DATABASE_URL=postgresql+psycopg://usuario:senha@host/banco?sslmode=require
+JWT_SECRET_KEY=uma-chave-aleatoria-com-pelo-menos-32-caracteres
+COOKIE_SECURE=true
+CORS_ORIGINS=
+GROQ_API_KEY=sua-chave
+```
+
 ## Estrutura do projeto
 
 ```text

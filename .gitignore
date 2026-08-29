@@ -9,6 +9,7 @@ Thumbs.db
 .env.*
 !.env.example
 *.log
+backend/static/
 
 # Generated caches anywhere in the repository
 **/__pycache__/

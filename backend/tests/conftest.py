@@ -1,8 +1,15 @@
+import os
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
+
+# Tests must not inherit production cookie/CORS settings from a developer .env.
+os.environ["ENVIRONMENT"] = "testing"
+os.environ["COOKIE_SECURE"] = "false"
+os.environ["CORS_ORIGINS"] = "http://localhost:3000,http://127.0.0.1:3000"
 
 from app.core.database import Base
 from app.core.dependencies import get_db

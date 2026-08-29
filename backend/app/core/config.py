@@ -33,10 +33,15 @@ class Settings:
 
     @classmethod
     def from_mapping(cls, values: Mapping[str, str]) -> "Settings":
-        database_url = values.get("DATABASE_URL", DEFAULT_DATABASE_URL).strip()
+        database_url = _normalize_database_url(
+            values.get("DATABASE_URL", DEFAULT_DATABASE_URL).strip()
+        )
         groq_api_key = values.get("GROQ_API_KEY", "").strip()
         groq_model = values.get("GROQ_MODEL", "openai/gpt-oss-20b").strip()
-        cors_origins = _parse_cors_origins(values.get("CORS_ORIGINS"))
+        environment = values.get("ENVIRONMENT", "development").strip().lower()
+        cors_origins = _parse_cors_origins(
+            values.get("CORS_ORIGINS"), allow_empty=environment == "production"
+        )
         ai_timeout_seconds = _parse_int(
             values.get("AI_TIMEOUT_SECONDS"),
             default=DEFAULT_AI_TIMEOUT_SECONDS,
@@ -56,7 +61,6 @@ class Settings:
             values.get("JWT_EXPIRE_MINUTES"), default=DEFAULT_JWT_EXPIRE_MINUTES,
             name="JWT_EXPIRE_MINUTES", minimum=5, maximum=43200,
         )
-        environment = values.get("ENVIRONMENT", "development").strip().lower()
         secure_default = "true" if environment == "production" else "false"
         cookie_secure = values.get("COOKIE_SECURE", secure_default).strip().lower() in {
             "1", "true", "yes", "on",
@@ -98,17 +102,26 @@ class Settings:
         return bool(self.groq_api_key)
 
 
-def _parse_cors_origins(raw: str | None) -> tuple[str, ...]:
+def _parse_cors_origins(raw: str | None, *, allow_empty: bool = False) -> tuple[str, ...]:
     origins = (
         tuple(origin.strip().rstrip("/") for origin in raw.split(",") if origin.strip())
         if raw is not None
         else DEFAULT_CORS_ORIGINS
     )
-    if not origins:
+    if not origins and not allow_empty:
         raise ValueError("CORS_ORIGINS deve conter ao menos uma origem.")
     if any(not origin.startswith(("http://", "https://")) for origin in origins):
         raise ValueError("CORS_ORIGINS aceita apenas origens HTTP ou HTTPS explícitas.")
     return origins
+
+
+def _normalize_database_url(url: str) -> str:
+    """Use the installed psycopg 3 driver with provider-style PostgreSQL URLs."""
+    if url.startswith("postgres://"):
+        return "postgresql+psycopg://" + url.removeprefix("postgres://")
+    if url.startswith("postgresql://"):
+        return "postgresql+psycopg://" + url.removeprefix("postgresql://")
+    return url
 
 
 def _parse_int(

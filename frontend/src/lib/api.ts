@@ -16,11 +16,12 @@ import type {
 } from "./types"
 
 /**
- * In dev we hit the Vite proxy at `/api` -> VITE_API_URL (default http://localhost:8000).
- * In prod, VITE_API_URL can point directly at the backend.
+ * In development we hit the Vite proxy at `/api` -> VITE_API_URL.
+ * The production build is served by FastAPI, so API calls use the same origin.
+ * VITE_API_URL remains available for deployments that intentionally separate them.
  */
 const RAW_BASE = import.meta.env.VITE_API_URL as string | undefined
-const BASE = RAW_BASE ? RAW_BASE.replace(/\/$/, "") : "/api"
+const BASE = RAW_BASE ? RAW_BASE.replace(/\/$/, "") : import.meta.env.DEV ? "/api" : ""
 let csrfToken: string | null = null
 
 async function getCsrfToken(): Promise<string> {
