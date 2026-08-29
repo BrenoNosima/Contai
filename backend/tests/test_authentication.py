@@ -31,6 +31,20 @@ def test_invalid_credentials_and_duplicate_email(client):
     assert duplicate.status_code == 409
 
 
+def test_registration_accepts_eight_characters_and_rejects_seven(client):
+    accepted = client.post("/auth/register", json={
+        "name": "Eight Chars", "email": "eight@example.com", "password": "12345678",
+        "password_confirmation": "12345678",
+    })
+    assert accepted.status_code == 201
+
+    rejected = client.post("/auth/register", json={
+        "name": "Seven Chars", "email": "seven@example.com", "password": "1234567",
+        "password_confirmation": "1234567",
+    })
+    assert rejected.status_code == 422
+
+
 def test_users_cannot_access_each_others_data(client, db_session):
     created = client.post("/transactions/", json={
         "type": "expense", "description": "Privado", "category": "Outros",
