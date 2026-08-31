@@ -7,6 +7,7 @@ import { AppShell } from "@/components/app-shell"
 import { ToastProvider } from "@/components/ui/toast"
 import { AuthProvider } from "@/lib/auth"
 import { PrivateGuard, PublicOnlyGuard } from "@/components/auth-guard"
+import { BackendStartupGate } from "@/components/backend-startup-gate"
 import "@fontsource-variable/geist"
 import "@fontsource-variable/geist-mono"
 import "./index.css"
@@ -49,12 +50,14 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <ToastProvider>
-          <RouterProvider router={router} />
-        </ToastProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <BackendStartupGate>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <ToastProvider>
+            <RouterProvider router={router} />
+          </ToastProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </BackendStartupGate>
   </StrictMode>,
 )
