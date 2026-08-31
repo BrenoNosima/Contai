@@ -4,6 +4,7 @@ from langchain_core.tools import tool
 from pydantic import Field
 
 from app.tools.actions import propose
+from app.core.ai_guardrails import redact_for_ai
 from app.services.fixed_expense_service import FixedExpenseService
 from app.tools.common import tool_db
 
@@ -34,7 +35,7 @@ def list_fixed_expenses(only_active: bool = True) -> list:
             if only_active
             else service.get_all_fixed_expenses(db)
         )
-        return [
+        return redact_for_ai([
             {
                 "id": expense.id,
                 "name": expense.name,
@@ -44,4 +45,4 @@ def list_fixed_expenses(only_active: bool = True) -> list:
                 "active": expense.active,
             }
             for expense in expenses
-        ]
+        ])

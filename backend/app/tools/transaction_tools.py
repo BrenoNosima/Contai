@@ -4,6 +4,7 @@ from langchain_core.tools import tool
 from pydantic import Field
 
 from app.tools.actions import propose
+from app.core.ai_guardrails import redact_for_ai
 from app.services.transaction_service import TransactionService
 from app.tools.common import parse_iso_date, tool_db
 
@@ -81,7 +82,7 @@ def search_transactions(
             start_date=parsed_start,
             end_date=parsed_end,
         )
-        return [
+        return redact_for_ai([
             {
                 "id": item.id,
                 "type": item.type,
@@ -92,7 +93,7 @@ def search_transactions(
                 "status": item.status,
             }
             for item in transactions
-        ]
+        ])
 
 
 @tool
@@ -110,11 +111,11 @@ def get_balance() -> dict:
 
     with tool_db() as db:
         total_income, total_expense = service.get_totals(db)
-        return {
+        return redact_for_ai({
             "total_income": total_income,
             "total_expense": total_expense,
             "balance": total_income - total_expense,
-        }
+        })
 
 
 @tool
@@ -124,7 +125,7 @@ def list_recent_transactions(
     """Lista as transações cadastradas mais recentemente."""
 
     with tool_db() as db:
-        return [
+        return redact_for_ai([
             {
                 "id": item.id,
                 "type": item.type,
@@ -134,7 +135,7 @@ def list_recent_transactions(
                 "status": item.status,
             }
             for item in service.get_recent_transactions(db, limit)
-        ]
+        ])
 
 
 @tool
@@ -142,7 +143,7 @@ def get_expenses_by_category() -> list:
     """Retorna despesas pagas do histórico agrupadas por categoria."""
 
     with tool_db() as db:
-        return [
+        return redact_for_ai([
             {"category": category, "amount": total}
             for category, total in service.get_expenses_by_category(db)
-        ]
+        ])

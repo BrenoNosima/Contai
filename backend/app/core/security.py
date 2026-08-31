@@ -50,8 +50,20 @@ def decode_access_token(token: str) -> tuple[int, str]:
         if header_data.get("alg") != "HS256" or header_data.get("typ") != "JWT":
             raise ValueError("cabeçalho inválido")
         signing_input = f"{header}.{payload}".encode("ascii")
-        expected = hmac.new(SETTINGS.jwt_secret_key.encode(), signing_input, hashlib.sha256).digest()
-        if not hmac.compare_digest(expected, _decode_b64url(signature)): raise ValueError("assinatura inválida")
+        supplied_signature = _decode_b64url(signature)
+        signing_keys = (
+            SETTINGS.jwt_secret_key,
+            SETTINGS.jwt_previous_secret_key,
+            SETTINGS.jwt_next_secret_key,
+        )
+        if not any(
+            key and hmac.compare_digest(
+                hmac.new(key.encode(), signing_input, hashlib.sha256).digest(),
+                supplied_signature,
+            )
+            for key in signing_keys
+        ):
+            raise ValueError("assinatura inválida")
         claims = json.loads(_decode_b64url(payload))
         if claims.get("exp", 0) <= int(time.time()): raise ValueError("token expirado")
         return int(claims["sub"]), str(claims["sid"])

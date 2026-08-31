@@ -4,11 +4,20 @@ from pydantic import ValidationError
 
 from app.agents.llm import create_chat_model
 from app.tools.registry import FINANCE_TOOLS
-from app.core.ai_guardrails import sanitize_model_output, validate_prompt
+from app.core.ai_guardrails import (
+    redact_sensitive_input,
+    restore_sensitive_data,
+    sanitize_model_output,
+    sensitive_redaction_scope,
+    validate_prompt,
+)
 from app.core.financial_domain import FINANCIAL_CATEGORIES
 
 
 SYSTEM_PROMPT = f"""
+Preserve exatamente qualquer marcador no formato [DADO_SENSIVEL_...]. Ele representa
+um valor privado temporariamente ocultado e nunca deve ser traduzido ou modificado.
+
 Você é o assistente financeiro pessoal da Contaí.
 
 Você tem acesso a ferramentas (tools) que leem e escrevem diretamente no
@@ -99,6 +108,15 @@ class FinancialAgent:
         message: str,
         chat_history: list[dict] | None = None,
     ) -> str:
+        validate_prompt(message)
+        with sensitive_redaction_scope():
+            return self._ask_sanitized(message, chat_history)
+
+    def _ask_sanitized(
+        self,
+        message: str,
+        chat_history: list[dict] | None = None,
+    ) -> str:
         """
         Envia uma mensagem ao agente e retorna a resposta final em texto,
         já refletindo qualquer leitura/escrita feita no banco de dados.
@@ -108,12 +126,15 @@ class FinancialAgent:
         de conversas anteriores.
         """
 
-        messages = list(chat_history or [])
+        messages = [
+            {**item, "content": redact_sensitive_input(str(item.get("content", "")))}
+            for item in (chat_history or [])
+        ]
         validate_prompt(message)
         messages.append(
             {
                 "role": "user",
-                "content": message,
+                "content": redact_sensitive_input(message),
             }
         )
 
@@ -142,5 +163,5 @@ class FinancialAgent:
 
         final_message = result["messages"][-1]
 
-        content = str(final_message.content)
+        content = restore_sensitive_data(str(final_message.content))
         return sanitize_model_output(content.replace("\u202f", " ").replace("\u00a0", " "))

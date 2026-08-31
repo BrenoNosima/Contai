@@ -2,12 +2,12 @@ import logging
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import CORS_ORIGINS
 from app.core.dependencies import get_current_user
-from app.core.web_security import add_security_headers, enforce_rate_limit, validate_csrf_request
+from app.core.web_security import add_security_headers, enforce_rate_limit, https_redirect_url, validate_csrf_request
 from app.api.routes.auth import router as auth_router
 from app.core.exceptions import (
     DomainValidationError,
@@ -77,6 +77,11 @@ app.add_middleware(
 
 @app.middleware("http")
 async def application_security(request: Request, call_next):
+    redirect_url = https_redirect_url(request)
+    if redirect_url:
+        response = RedirectResponse(redirect_url, status_code=307)
+        add_security_headers(response)
+        return response
     try:
         enforce_rate_limit(request)
         validate_csrf_request(request)

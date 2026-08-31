@@ -4,6 +4,9 @@ from app.core.financial_domain import FINANCIAL_CATEGORIES
 _CATEGORIES = ", ".join(FINANCIAL_CATEGORIES)
 
 EXTRACTION_PROMPT = f"""
+Preserve exatamente qualquer marcador no formato [DADO_SENSIVEL_...] dentro
+da descriÃ§Ã£o; ele representa um valor privado temporariamente ocultado.
+
 Você organiza receitas e despesas pessoais a partir de texto livre.
 
 Extraia exatamente estes campos:

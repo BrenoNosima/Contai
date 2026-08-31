@@ -20,6 +20,7 @@ DEFAULT_REFRESH_EXPIRE_DAYS = 10
 
 @dataclass(frozen=True)
 class Settings:
+    environment: str
     database_url: str
     groq_api_key: str
     groq_model: str
@@ -27,18 +28,24 @@ class Settings:
     ai_timeout_seconds: int
     ai_max_retries: int
     jwt_secret_key: str
+    jwt_previous_secret_key: str
+    jwt_next_secret_key: str
     jwt_expire_minutes: int
     cookie_secure: bool
+    enforce_https: bool
     refresh_expire_days: int
 
     @classmethod
     def from_mapping(cls, values: Mapping[str, str]) -> "Settings":
-        database_url = _normalize_database_url(
-            values.get("DATABASE_URL", DEFAULT_DATABASE_URL).strip()
-        )
+        environment = values.get("ENVIRONMENT", "development").strip().lower()
+        raw_database_url = values.get("DATABASE_URL", DEFAULT_DATABASE_URL).strip()
+        database_url = _normalize_database_url(raw_database_url)
+        if environment == "production":
+            if database_url == DEFAULT_DATABASE_URL or not database_url.startswith("postgresql+psycopg://"):
+                raise ValueError("DATABASE_URL de produção deve apontar para um PostgreSQL privado.")
+            database_url = _require_database_tls(database_url)
         groq_api_key = values.get("GROQ_API_KEY", "").strip()
         groq_model = values.get("GROQ_MODEL", "openai/gpt-oss-20b").strip()
-        environment = values.get("ENVIRONMENT", "development").strip().lower()
         cors_origins = _parse_cors_origins(
             values.get("CORS_ORIGINS"), allow_empty=environment == "production"
         )
@@ -57,12 +64,18 @@ class Settings:
             maximum=5,
         )
         jwt_secret_key = values.get("JWT_SECRET_KEY", "").strip()
+        jwt_previous_secret_key = values.get("JWT_PREVIOUS_SECRET_KEY", "").strip()
+        jwt_next_secret_key = values.get("JWT_NEXT_SECRET_KEY", "").strip()
         jwt_expire_minutes = _parse_int(
             values.get("JWT_EXPIRE_MINUTES"), default=DEFAULT_JWT_EXPIRE_MINUTES,
             name="JWT_EXPIRE_MINUTES", minimum=5, maximum=43200,
         )
         secure_default = "true" if environment == "production" else "false"
         cookie_secure = values.get("COOKIE_SECURE", secure_default).strip().lower() in {
+            "1", "true", "yes", "on",
+        }
+        https_default = "true" if environment == "production" else "false"
+        enforce_https = values.get("ENFORCE_HTTPS", https_default).strip().lower() in {
             "1", "true", "yes", "on",
         }
         refresh_expire_days = _parse_int(
@@ -75,16 +88,29 @@ class Settings:
         if not groq_model:
             raise ValueError("GROQ_MODEL não pode ser vazio.")
         if environment == "production":
-            if database_url == DEFAULT_DATABASE_URL or database_url.startswith("sqlite"):
-                raise ValueError("DATABASE_URL de produção deve apontar para um PostgreSQL privado.")
             if len(jwt_secret_key) < 32 or jwt_secret_key.startswith("replace-"):
                 raise ValueError("JWT_SECRET_KEY de produção deve ser aleatória e ter ao menos 32 caracteres.")
             if not cookie_secure:
                 raise ValueError("COOKIE_SECURE deve estar ativo em produção.")
+            if not enforce_https:
+                raise ValueError("ENFORCE_HTTPS deve estar ativo em produção.")
+            if jwt_previous_secret_key and (
+                len(jwt_previous_secret_key) < 32
+                or jwt_previous_secret_key.startswith("replace-")
+                or jwt_previous_secret_key == jwt_secret_key
+            ):
+                raise ValueError("JWT_PREVIOUS_SECRET_KEY deve ser diferente e ter ao menos 32 caracteres.")
+            if jwt_next_secret_key and (
+                len(jwt_next_secret_key) < 32
+                or jwt_next_secret_key.startswith("replace-")
+                or jwt_next_secret_key in {jwt_secret_key, jwt_previous_secret_key}
+            ):
+                raise ValueError("JWT_NEXT_SECRET_KEY deve ser diferente e ter ao menos 32 caracteres.")
             if any("localhost" in origin or "127.0.0.1" in origin for origin in cors_origins):
                 raise ValueError("CORS_ORIGINS de produção não pode conter endereços locais.")
 
         return cls(
+            environment=environment,
             database_url=database_url,
             groq_api_key=groq_api_key,
             groq_model=groq_model,
@@ -92,8 +118,11 @@ class Settings:
             ai_timeout_seconds=ai_timeout_seconds,
             ai_max_retries=ai_max_retries,
             jwt_secret_key=jwt_secret_key,
+            jwt_previous_secret_key=jwt_previous_secret_key,
+            jwt_next_secret_key=jwt_next_secret_key,
             jwt_expire_minutes=jwt_expire_minutes,
             cookie_secure=cookie_secure,
+            enforce_https=enforce_https,
             refresh_expire_days=refresh_expire_days,
         )
 
@@ -123,6 +152,22 @@ def _normalize_database_url(url: str) -> str:
         return "postgresql+psycopg://" + url.removeprefix("postgres://")
     if url.startswith("postgresql://"):
         return "postgresql+psycopg://" + url.removeprefix("postgresql://")
+    return url
+
+
+def _require_database_tls(url: str) -> str:
+    """Force encrypted PostgreSQL transport in production."""
+    if not url.startswith("postgresql+psycopg://"):
+        return url
+    separator = "&" if "?" in url else "?"
+    if "sslmode=" not in url.lower():
+        return f"{url}{separator}sslmode=require"
+    sslmode = next(
+        (part.split("=", 1)[1].lower() for part in url.split("?", 1)[1].split("&") if part.lower().startswith("sslmode=")),
+        "",
+    )
+    if sslmode not in {"require", "verify-ca", "verify-full"}:
+        raise ValueError("DATABASE_URL de produção deve exigir TLS com sslmode=require ou mais forte.")
     return url
 
 

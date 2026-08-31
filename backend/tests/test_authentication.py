@@ -1,4 +1,5 @@
-from app.core.security import decode_access_token
+from app.core.config import SETTINGS
+from app.core.security import create_access_token, decode_access_token
 
 
 def test_private_routes_require_authentication(client):
@@ -29,6 +30,40 @@ def test_invalid_credentials_and_duplicate_email(client):
         "password_confirmation": "password-123-secure",
     })
     assert duplicate.status_code == 409
+
+
+def test_previous_jwt_key_remains_valid_during_rotation():
+    original_current = SETTINGS.jwt_secret_key
+    original_previous = SETTINGS.jwt_previous_secret_key
+    old_key = "old-test-signing-key-with-enough-entropy"
+    new_key = "new-test-signing-key-with-enough-entropy"
+    try:
+        object.__setattr__(SETTINGS, "jwt_secret_key", old_key)
+        token = create_access_token(42, "rotation-session")
+        object.__setattr__(SETTINGS, "jwt_secret_key", new_key)
+        object.__setattr__(SETTINGS, "jwt_previous_secret_key", old_key)
+
+        assert decode_access_token(token) == (42, "rotation-session")
+    finally:
+        object.__setattr__(SETTINGS, "jwt_secret_key", original_current)
+        object.__setattr__(SETTINGS, "jwt_previous_secret_key", original_previous)
+
+
+def test_next_jwt_key_is_accepted_before_rotation_cutover():
+    original_current = SETTINGS.jwt_secret_key
+    original_next = SETTINGS.jwt_next_secret_key
+    old_key = "old-test-signing-key-with-enough-entropy"
+    new_key = "new-test-signing-key-with-enough-entropy"
+    try:
+        object.__setattr__(SETTINGS, "jwt_secret_key", new_key)
+        token = create_access_token(42, "next-rotation-session")
+        object.__setattr__(SETTINGS, "jwt_secret_key", old_key)
+        object.__setattr__(SETTINGS, "jwt_next_secret_key", new_key)
+
+        assert decode_access_token(token) == (42, "next-rotation-session")
+    finally:
+        object.__setattr__(SETTINGS, "jwt_secret_key", original_current)
+        object.__setattr__(SETTINGS, "jwt_next_secret_key", original_next)
 
 
 def test_registration_accepts_eight_characters_and_rejects_seven(client):

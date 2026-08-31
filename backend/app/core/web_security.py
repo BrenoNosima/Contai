@@ -28,10 +28,17 @@ def create_csrf_token() -> str:
 def validate_csrf_token(token: str) -> bool:
     try:
         nonce, supplied = token.rsplit(".", 1)
-        expected = hmac.new(
-            SETTINGS.jwt_secret_key.encode("utf-8"), nonce.encode("ascii"), hashlib.sha256
-        ).hexdigest()
-        return hmac.compare_digest(expected, supplied)
+        return any(
+            key and hmac.compare_digest(
+                hmac.new(key.encode("utf-8"), nonce.encode("ascii"), hashlib.sha256).hexdigest(),
+                supplied,
+            )
+            for key in (
+                SETTINGS.jwt_secret_key,
+                SETTINGS.jwt_previous_secret_key,
+                SETTINGS.jwt_next_secret_key,
+            )
+        )
     except (ValueError, UnicodeEncodeError):
         return False
 
@@ -129,3 +136,16 @@ def add_security_headers(response) -> None:
     response.headers["X-XSS-Protection"] = "0"
     if SETTINGS.cookie_secure:
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+
+
+def https_redirect_url(request: Request) -> str | None:
+    """Return the HTTPS URL for an insecure public request behind a trusted proxy."""
+    if not SETTINGS.enforce_https:
+        return None
+    forwarded_proto = request.headers.get("x-forwarded-proto", "").split(",", 1)[0].strip().lower()
+    if forwarded_proto == "https" or (not forwarded_proto and request.url.scheme == "https"):
+        return None
+    client_host = request.client.host if request.client else ""
+    if not forwarded_proto and client_host in {"127.0.0.1", "::1", "testclient"}:
+        return None
+    return str(request.url.replace(scheme="https"))

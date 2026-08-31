@@ -97,9 +97,12 @@ As principais variáveis do backend ficam em `backend/.env`:
 | `AI_MAX_RETRIES` | Número de novas tentativas do cliente de IA (0 a 5) |
 | `ENVIRONMENT` | Ambiente atual; em `production`, cookies seguros são ativados por padrão |
 | `JWT_SECRET_KEY` | Segredo longo e aleatório usado para assinar os tokens JWT |
+| `JWT_PREVIOUS_SECRET_KEY` | Chave JWT anterior, usada temporariamente durante rotação sem derrubar sessões |
+| `JWT_NEXT_SECRET_KEY` | Próxima chave JWT, aceita antes da troca para permitir deploy gradual seguro |
 | `JWT_EXPIRE_MINUTES` | Tempo de validade da sessão em minutos |
 | `REFRESH_EXPIRE_DAYS` | Tempo máximo da sessão renovável em dias |
 | `COOKIE_SECURE` | Força o envio do cookie somente por HTTPS |
+| `ENFORCE_HTTPS` | Redireciona tráfego público HTTP para HTTPS; obrigatório em produção |
 
 No frontend, `VITE_API_URL` define o endereço público da API. Ela pode permanecer vazia no desenvolvimento local.
 
@@ -117,6 +120,30 @@ também `ENVIRONMENT=production`, `COOKIE_SECURE=true`, HTTPS, uma
 `JWT_SECRET_KEY` aleatória e `CORS_ORIGINS` com apenas o endereço real do
 frontend. Execute `python -m alembic upgrade head` antes de iniciar a nova versão
 da API.
+
+Use sempre a URL interna do Render Postgres quando aplicação e banco estiverem
+na mesma região. Em **Postgres > Networking**, desative o acesso externo ou
+restrinja-o aos CIDRs administrativos indispensáveis. A aplicação adiciona
+`sslmode=require` automaticamente à conexão PostgreSQL em produção e rejeita
+configurações que permitam transporte sem TLS.
+
+Segredos devem existir apenas nas variáveis protegidas do ambiente de produção,
+nunca no repositório, imagem Docker ou banco. Para rotacionar a chave JWT durante
+um deploy gradual, faça em duas etapas: primeiro mantenha `JWT_SECRET_KEY` atual e
+publique a nova chave em `JWT_NEXT_SECRET_KEY`; depois do deploy, mova a nova chave
+para `JWT_SECRET_KEY`, a antiga para `JWT_PREVIOUS_SECRET_KEY` e esvazie
+`JWT_NEXT_SECRET_KEY`. Após o prazo máximo das sessões antigas, remova a chave
+anterior. Esse fluxo permite que instâncias antigas e novas validem os tokens
+durante toda a transição. Rotacione também
+`GROQ_API_KEY` no Console da Groq e atualize a variável no Render.
+
+As mensagens enviadas ao provedor de IA passam por remoção defensiva de e-mail,
+CPF e sequências longas semelhantes a cartão. Valores, categorias, descrições e
+dados retornados pelas tools ainda podem ser necessários para responder às
+consultas financeiras. Ative **Zero Data Retention** em **Groq Console > Data
+Controls** e mantenha desabilitados Batch e Fine-tuning para esta aplicação.
+Informe os usuários, na política de privacidade, de que dados enviados ao
+assistente são processados por um provedor de IA.
 
 ### Imagem de producao
 
@@ -144,6 +171,7 @@ ENVIRONMENT=production
 DATABASE_URL=postgresql+psycopg://usuario:senha@host/banco?sslmode=require
 JWT_SECRET_KEY=uma-chave-aleatoria-com-pelo-menos-32-caracteres
 COOKIE_SECURE=true
+ENFORCE_HTTPS=true
 CORS_ORIGINS=
 GROQ_API_KEY=sua-chave
 ```

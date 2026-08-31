@@ -15,6 +15,8 @@ def test_settings_use_safe_local_defaults():
     settings = Settings.from_mapping({})
 
     assert settings.database_url == DEFAULT_DATABASE_URL
+    assert settings.environment == "development"
+    assert settings.enforce_https is False
     assert settings.cors_origins == DEFAULT_CORS_ORIGINS
     assert settings.groq_configured is False
     assert settings.ai_timeout_seconds == DEFAULT_AI_TIMEOUT_SECONDS
@@ -56,6 +58,8 @@ def test_settings_accept_hardened_production_configuration():
     })
 
     assert settings.cookie_secure is True
+    assert settings.enforce_https is True
+    assert settings.database_url.endswith("?sslmode=require")
     assert settings.cors_origins == ("https://app.example.com",)
 
 
@@ -68,6 +72,7 @@ def test_settings_accept_same_origin_production_without_cors():
     })
 
     assert settings.cors_origins == ()
+    assert settings.database_url.endswith("?sslmode=require")
 
 
 def test_settings_accept_same_origin_production_without_cors_variable():
@@ -118,6 +123,29 @@ def test_settings_select_psycopg3_for_provider_database_urls(scheme):
             "JWT_SECRET_KEY": "a-production-secret-with-enough-entropy",
             "CORS_ORIGINS": "http://localhost:3000",
         }, "CORS_ORIGINS"),
+        ({
+            "ENVIRONMENT": "production",
+            "DATABASE_URL": "postgresql+psycopg://user:password@db:5432/finance?sslmode=disable",
+            "JWT_SECRET_KEY": "a-production-secret-with-enough-entropy",
+        }, "sslmode"),
+        ({
+            "ENVIRONMENT": "production",
+            "DATABASE_URL": "postgresql+psycopg://user:password@db:5432/finance",
+            "JWT_SECRET_KEY": "a-production-secret-with-enough-entropy",
+            "ENFORCE_HTTPS": "false",
+        }, "ENFORCE_HTTPS"),
+        ({
+            "ENVIRONMENT": "production",
+            "DATABASE_URL": "postgresql+psycopg://user:password@db:5432/finance",
+            "JWT_SECRET_KEY": "a-production-secret-with-enough-entropy",
+            "JWT_PREVIOUS_SECRET_KEY": "short",
+        }, "JWT_PREVIOUS_SECRET_KEY"),
+        ({
+            "ENVIRONMENT": "production",
+            "DATABASE_URL": "postgresql+psycopg://user:password@db:5432/finance",
+            "JWT_SECRET_KEY": "a-production-secret-with-enough-entropy",
+            "JWT_NEXT_SECRET_KEY": "short",
+        }, "JWT_NEXT_SECRET_KEY"),
     ],
 )
 def test_settings_reject_invalid_values(values, message):

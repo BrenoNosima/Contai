@@ -4,6 +4,7 @@ from langchain_core.tools import tool
 from pydantic import Field
 
 from app.tools.actions import propose
+from app.core.ai_guardrails import redact_for_ai
 from app.services.goal_service import GoalService
 from app.tools.common import parse_iso_date, tool_db
 
@@ -35,7 +36,7 @@ def list_goals() -> list:
     """Lista metas financeiras com progresso, valor restante e status."""
 
     with tool_db() as db:
-        return [
+        return redact_for_ai([
             {
                 "id": goal.id,
                 "name": goal.name,
@@ -47,7 +48,7 @@ def list_goals() -> list:
                 "status": goal.status,
             }
             for goal in service.get_all_goals(db)
-        ]
+        ])
 
 
 @tool
