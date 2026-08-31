@@ -8,17 +8,25 @@ import { useAuth } from "@/lib/auth"
 
 const REMEMBERED_EMAIL_KEY = "contai.remembered-email"
 
+interface LoginLocationState {
+  from?: string
+  showLogin?: boolean
+}
+
 export default function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const locationState = location.state as LoginLocationState | null
   const [email, setEmail] = useState(() => localStorage.getItem(REMEMBERED_EMAIL_KEY) ?? "")
   const [password, setPassword] = useState("")
   const [rememberLogin, setRememberLogin] = useState(() => Boolean(localStorage.getItem(REMEMBERED_EMAIL_KEY)))
   const [show, setShow] = useState(false)
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
-  const [mobileStep, setMobileStep] = useState<"intro" | "login">("intro")
+  const [mobileStep, setMobileStep] = useState<"intro" | "login">(() =>
+    locationState?.showLogin || locationState?.from ? "login" : "intro",
+  )
 
   async function submit(event: FormEvent) {
     event.preventDefault()
@@ -34,7 +42,7 @@ export default function LoginPage() {
       await login(email, password)
       if (rememberLogin) localStorage.setItem(REMEMBERED_EMAIL_KEY, email.trim().toLowerCase())
       else localStorage.removeItem(REMEMBERED_EMAIL_KEY)
-      navigate((location.state as { from?: string } | null)?.from ?? "/", { replace: true })
+      navigate(locationState?.from ?? "/", { replace: true })
     } catch (cause) {
       setError(cause instanceof ApiError ? cause.message : "Não foi possível entrar. Tente novamente.")
     } finally {
