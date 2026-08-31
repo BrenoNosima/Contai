@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react"
 import { useMutation } from "@tanstack/react-query"
-import { Bot, Check, LoaderCircle, ReceiptText, Send, X } from "lucide-react"
+import { ArrowUp, Check, LoaderCircle, ReceiptText, X } from "lucide-react"
 import { assistantActionsApi, chatApi } from "@/lib/api"
 import type { AssistantAction } from "@/lib/types"
 import { useFinanceInvalidation } from "@/lib/query"
-import { PageHeader } from "@/components/page-header"
+import { AnimatedLogo } from "@/components/animated-logo"
+import { useAuth } from "@/lib/auth"
 import { cn, formatMoney } from "@/lib/utils"
 
 interface Message {
@@ -16,32 +17,27 @@ interface Message {
 }
 
 const SUGGESTIONS = [
-  "Gastei 45 reais no mercado hoje",
-  "Quanto gastei esse mês?",
-  "Recebi meu salário de 3200",
+  "Quanto gastei este mês?",
   "Quais são minhas maiores despesas?",
+  "Como estão minhas metas?",
+  "Onde posso economizar?",
 ]
 
-const GREETING: Message = {
-  id: "greeting",
-  role: "assistant",
-  content:
-    "Olá! Posso registrar movimentações, consultar seus números e ajudar a organizar sua rotina financeira. O que você precisa?",
-}
-
 export default function ChatPage() {
-  const [messages, setMessages] = useState<Message[]>([GREETING])
+  const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
+  const { user } = useAuth()
   const { allFinance: invalidateFinance } = useFinanceInvalidation()
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const shouldAutoScrollRef = useRef(true)
 
   const mutation = useMutation({
     mutationFn: ({ message, history }: { message: string; history: Message[] }) =>
       chatApi.send(
         message,
         history
-          .filter((item) => item.id !== "greeting" && !item.error)
+          .filter((item) => !item.error)
           .map(({ role, content }) => ({ role, content })),
       ),
     onSuccess: (data) => {
@@ -66,12 +62,14 @@ export default function ChatPage() {
   })
 
   useEffect(() => {
+    if (!shouldAutoScrollRef.current) return
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" })
   }, [messages, mutation.isPending])
 
   function submit(text: string) {
     const trimmed = text.trim()
     if (!trimmed || mutation.isPending) return
+    shouldAutoScrollRef.current = true
     setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "user", content: trimmed }])
     setInput("")
     mutation.mutate({ message: trimmed, history: messages })
@@ -85,48 +83,42 @@ export default function ChatPage() {
     }
   }
 
-  return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden">
-      <PageHeader
-        title="Assistente Contaí"
-        subtitle="Registre e consulte suas finanças em linguagem natural."
-      />
+  function trackScroll() {
+    const container = scrollRef.current
+    if (!container) return
+    shouldAutoScrollRef.current = container.scrollHeight - container.scrollTop - container.clientHeight < 120
+  }
 
+  const hasMessages = messages.length > 0
+
+  return (
+    <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
       <div
         ref={scrollRef}
-        className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-2xl border border-border bg-surface px-3 py-4 sm:px-6 sm:py-6"
+        onScroll={trackScroll}
+        className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 sm:px-4"
       >
-        <div className="relative z-10 mx-auto flex max-w-2xl flex-col gap-6">
-          {messages.map((m) => (
-            <MessageBubble
-              key={m.id}
-              message={m}
-              onActionResolved={(action) => {
-                setMessages((current) => [
-                  ...current,
-                  {
-                    id: crypto.randomUUID(),
-                    role: "assistant",
-                    content: action.status === "confirmed" ? confirmedActionMessage(action) : cancelledActionMessage(action),
-                  },
-                ])
-                if (action.status === "confirmed") invalidateFinance()
-              }}
-            />
-          ))}
-          {mutation.isPending && <TypingBubble />}
-          {messages.length <= 1 && (
-            <div className="ml-10 grid gap-2 pt-1 sm:ml-11 sm:grid-cols-2">
-              {SUGGESTIONS.map((suggestion) => (
-                <button
-                  key={suggestion}
-                  onClick={() => submit(suggestion)}
-                  className="min-h-11 rounded-xl border border-border bg-background/35 px-3 py-2.5 text-left text-xs leading-relaxed text-muted transition-colors hover:border-border-strong hover:bg-surface-2 hover:text-foreground"
-                >
-                  {suggestion}
-                </button>
+        <div className={cn("relative z-10 mx-auto flex min-h-full max-w-3xl flex-col", hasMessages ? "gap-6 py-5 sm:py-8" : "justify-center py-8")}>
+          {!hasMessages ? (
+            <ChatWelcome firstName={user?.name.trim().split(/\s+/)[0]} onSuggestion={submit} />
+          ) : (
+            <>
+              {messages.map((message) => (
+                <MessageBubble
+                  key={message.id}
+                  message={message}
+                  onActionResolved={(action) => {
+                    setMessages((current) => [...current, {
+                      id: crypto.randomUUID(),
+                      role: "assistant",
+                      content: action.status === "confirmed" ? confirmedActionMessage(action) : cancelledActionMessage(action),
+                    }])
+                    if (action.status === "confirmed") invalidateFinance()
+                  }}
+                />
               ))}
-            </div>
+              {mutation.isPending && <TypingIndicator />}
+            </>
           )}
         </div>
       </div>
@@ -136,7 +128,7 @@ export default function ChatPage() {
           e.preventDefault()
           submit(input)
         }}
-        className="mt-2 flex items-end gap-2 rounded-2xl border border-border bg-surface p-2 transition-colors focus-within:border-border-strong"
+        className="mx-auto mt-2 flex w-full max-w-3xl items-end gap-2 rounded-[1.35rem] border border-border bg-surface-2 p-2 shadow-[0_18px_45px_-28px_rgba(0,0,0,0.9)] transition-colors focus-within:border-income/60"
       >
         <textarea
           ref={inputRef}
@@ -145,20 +137,39 @@ export default function ChatPage() {
           onKeyDown={onKeyDown}
           rows={1}
           maxLength={10_000}
-          placeholder="Digite uma mensagem..."
-          className="max-h-32 min-h-10 flex-1 resize-none bg-transparent px-2 py-2 text-base leading-6 text-foreground outline-none placeholder:text-subtle sm:text-sm"
+          placeholder="Pergunte ao Contaí..."
+          className="max-h-32 min-h-11 flex-1 resize-none bg-transparent px-3 py-2.5 text-base leading-6 text-foreground outline-none placeholder:text-subtle"
           aria-label="Mensagem para o assistente"
         />
         <button
           type="submit"
           disabled={!input.trim() || mutation.isPending}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg transition-colors hover:bg-[color:#f1f3f2] disabled:opacity-40"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-income text-background shadow-[0_8px_22px_-10px_var(--color-income)] transition-[background-color,opacity] hover:bg-income/90 disabled:cursor-not-allowed disabled:opacity-35"
           aria-label="Enviar mensagem"
         >
-          <Send className="h-4 w-4" />
+          <ArrowUp className="h-5 w-5" aria-hidden />
         </button>
       </form>
     </div>
+  )
+}
+
+function ChatWelcome({ firstName, onSuggestion }: { firstName?: string; onSuggestion: (text: string) => void }) {
+  return (
+    <section className="animate-in mx-auto flex w-full max-w-2xl flex-col items-center px-2 text-center" aria-labelledby="chat-welcome-title">
+      <AnimatedLogo className="mb-8" imageClassName="w-32 sm:w-36" />
+      <p className="text-sm font-medium text-income">Olá{firstName ? `, ${firstName}` : ""}</p>
+      <h1 id="chat-welcome-title" className="mt-3 max-w-lg text-balance text-3xl font-semibold tracking-[-0.045em] text-foreground sm:text-4xl">
+        Como posso te ajudar com suas finanças hoje?
+      </h1>
+      <div className="mt-8 grid w-full grid-cols-1 gap-2 sm:grid-cols-2" aria-label="Sugestões de perguntas">
+        {SUGGESTIONS.map((suggestion) => (
+          <button key={suggestion} type="button" onClick={() => onSuggestion(suggestion)} className="min-h-12 rounded-2xl border border-border bg-surface/45 px-4 py-3 text-left text-sm leading-5 text-muted transition-colors hover:border-border-strong hover:bg-surface-2 hover:text-foreground active:bg-surface-3">
+            {suggestion}
+          </button>
+        ))}
+      </div>
+    </section>
   )
 }
 
@@ -182,21 +193,18 @@ function MessageBubble({
   return (
     <div className={cn("flex items-start gap-3", isUser && "justify-end")}>
       {!isUser && (
-        <div
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground"
-          aria-hidden
-        >
-          <span className="text-xs font-bold">C</span>
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-surface-2" aria-hidden>
+          <AnimatedLogo imageClassName="w-7" />
         </div>
       )}
       <div
         className={cn(
           "max-w-[88%] whitespace-pre-wrap text-sm leading-6 sm:max-w-[78%]",
           isUser
-            ? "rounded-2xl rounded-br-md bg-surface-3 px-4 py-2.5 text-foreground"
+            ? "rounded-2xl rounded-br-md border border-income/15 bg-income-soft px-4 py-2.5 text-foreground"
             : message.error
               ? "rounded-xl border border-danger/40 bg-danger/10 px-4 py-3 text-foreground"
-              : "py-1 text-foreground",
+              : "rounded-2xl rounded-bl-md bg-surface-2 px-4 py-3 text-foreground",
         )}
       >
         <FormattedMessage content={message.content} />
@@ -389,22 +397,18 @@ function FormattedMessage({ content }: { content: string }) {
   )
 }
 
-function TypingBubble() {
+function TypingIndicator() {
   return (
     <div className="flex items-center gap-3" role="status" aria-live="polite">
-      <div
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground"
-        aria-hidden
-      >
-        <span className="text-xs font-bold">C</span>
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-surface-2" aria-hidden>
+        <AnimatedLogo imageClassName="w-7" />
       </div>
-      <div className="flex items-center gap-2 text-sm text-muted">
-        <Bot className="h-4 w-4" aria-hidden />
-        <span>Organizando sua resposta</span>
-        <span className="flex items-center gap-1" aria-hidden>
-          <span className="h-1 w-1 animate-pulse rounded-full bg-muted" />
-          <span className="h-1 w-1 animate-pulse rounded-full bg-muted [animation-delay:150ms]" />
-          <span className="h-1 w-1 animate-pulse rounded-full bg-muted [animation-delay:300ms]" />
+      <div className="rounded-2xl rounded-bl-md bg-surface-2 px-4 py-3 text-sm text-muted">
+        <span className="sr-only">Contaí está pensando</span>
+        <span className="flex items-center gap-1.5" aria-hidden>
+          <span className="typing-dot" />
+          <span className="typing-dot [animation-delay:160ms]" />
+          <span className="typing-dot [animation-delay:320ms]" />
         </span>
       </div>
     </div>

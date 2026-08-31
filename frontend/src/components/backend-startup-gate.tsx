@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react"
 import { RefreshCw, Server } from "lucide-react"
-import { BrandLogo } from "@/components/brand-logo"
+import { AnimatedLogo } from "@/components/animated-logo"
 import { Button } from "@/components/ui/primitives"
 import { waitForBackend, type BackendAvailability } from "@/lib/backend-health"
 
@@ -51,7 +51,7 @@ export function BackendStartupGate({ children }: { children: ReactNode }) {
         aria-live="polite"
         aria-busy={!failed}
       >
-        <BrandLogo className="mb-9 justify-center" imageClassName="w-36 mix-blend-screen sm:w-40" />
+        <AnimatedLogo className="mb-9" imageClassName="w-36 sm:w-40" />
 
         <div className="relative mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-border-strong bg-surface-2 text-income">
           {!failed && <span className="startup-pulse absolute inset-[-9px] rounded-[1.35rem] border border-income/25" aria-hidden />}

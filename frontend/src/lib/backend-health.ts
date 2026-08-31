@@ -1,7 +1,7 @@
 const RAW_BASE = import.meta.env.VITE_API_URL as string | undefined
 const API_BASE = RAW_BASE ? RAW_BASE.replace(/\/$/, "") : import.meta.env.DEV ? "/api" : ""
 
-export const BACKEND_STARTUP_TIMEOUT_MS = 90_000
+export const BACKEND_STARTUP_TIMEOUT_MS = 60_000
 export const BACKEND_RETRY_INTERVAL_MS = 3_000
 export const HEALTH_REQUEST_TIMEOUT_MS = 8_000
 
