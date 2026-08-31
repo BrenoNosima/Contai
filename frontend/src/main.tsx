@@ -8,6 +8,7 @@ import { ToastProvider } from "@/components/ui/toast"
 import { AuthProvider } from "@/lib/auth"
 import { PrivateGuard, PublicOnlyGuard } from "@/components/auth-guard"
 import { BackendStartupGate } from "@/components/backend-startup-gate"
+import { AnimatedLogo } from "@/components/animated-logo"
 import "@fontsource-variable/geist"
 import "@fontsource-variable/geist-mono"
 import "./index.css"
@@ -15,9 +16,22 @@ import "./index.css"
 const lazyPage = (loader: () => Promise<{ default: ComponentType }>) =>
   async () => ({ Component: (await loader()).default })
 
+function RouteHydrateFallback() {
+  return (
+    <main
+      className="flex min-h-dvh items-center justify-center bg-background px-5"
+      role="status"
+      aria-label="Carregando o Contaí"
+    >
+      <AnimatedLogo imageClassName="w-28 sm:w-32" />
+    </main>
+  )
+}
+
 const router = createBrowserRouter([
   {
     element: <PublicOnlyGuard />,
+    HydrateFallback: RouteHydrateFallback,
     children: [
       { path: "/login", lazy: lazyPage(() => import("@/pages/login")) },
       { path: "/cadastro", lazy: lazyPage(() => import("@/pages/register")) },
@@ -25,6 +39,7 @@ const router = createBrowserRouter([
   },
   {
     element: <PrivateGuard />,
+    HydrateFallback: RouteHydrateFallback,
     children: [{
       path: "/",
       element: <AppShell />,
