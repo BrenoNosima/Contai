@@ -44,8 +44,8 @@ export default function LoginPage() {
 
   return (
     <AuthLayout
-      title="Bem-vindo de volta"
-      subtitle="Entre para continuar cuidando da sua vida financeira."
+      title="Bem-vindo"
+      subtitle="Entre para acessar e organizar sua vida financeira."
       titleIcon={UserRound}
       mobileIntro={mobileStep === "intro" ? <MobileIntroduction onContinue={() => setMobileStep("login")} /> : undefined}
     >
@@ -122,7 +122,7 @@ export default function LoginPage() {
             }}
             className="h-[18px] w-[18px] shrink-0 rounded accent-[#42d6aa]"
           />
-          <span>Lembrar login <span className="hidden text-xs text-[#687873] sm:inline">— salva somente seu e-mail</span></span>
+          <span>Lembrar meu e-mail <span className="hidden text-xs text-[#687873] sm:inline">— sua senha não será salva</span></span>
         </label>
 
         <Button

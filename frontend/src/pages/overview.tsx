@@ -88,7 +88,7 @@ function MonthCard({ expenses }: { expenses: Transaction[] }) {
 
   return <Card elevated={false} className="min-w-0 overflow-hidden p-3.5 sm:p-5">
     <div className="flex min-w-0 items-center justify-between gap-3">
-      <p className="truncate text-[11px] font-medium uppercase tracking-[0.12em] text-subtle sm:text-xs">Resumo de <span className="capitalize">{monthName}</span></p>
+      <p className="truncate text-[11px] font-medium text-subtle sm:text-xs">Resumo de <span className="capitalize">{monthName}</span></p>
       <Link to="/relatorios" className="flex min-h-8 shrink-0 items-center gap-1 text-[11px] font-medium text-muted hover:text-foreground sm:text-xs">Ver detalhes<ArrowRight className="h-3.5 w-3.5" aria-hidden /></Link>
     </div>
     <div className="mt-2 flex items-baseline justify-between gap-3 border-t border-border pt-2.5 sm:mt-3 sm:pt-3">
