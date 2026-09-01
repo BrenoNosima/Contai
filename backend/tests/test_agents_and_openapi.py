@@ -36,6 +36,14 @@ def test_financial_agent_infers_category_and_localized_priority():
     assert "essencial/essential" in SYSTEM_PROMPT
     assert "não justificam" in SYSTEM_PROMPT
 
+
+def test_financial_agent_distinguishes_one_time_and_recurring_income():
+    assert '"ganhei 50 reais no trabalho hoje" é uma receita única' in SYSTEM_PROMPT
+    assert "is_recurring=false e recurrence=null" in SYSTEM_PROMPT
+    assert '"ganho 1500 reais todo mês"' in SYSTEM_PROMPT
+    assert "type=income, is_recurring=true e recurrence=monthly" in SYSTEM_PROMPT
+    assert "nunca use\n  create_fixed_expense para receitas" in SYSTEM_PROMPT
+
 class FakeAgent:
     def ask(self, message, history):
         assert message == "Qual meu saldo?"
