@@ -126,6 +126,10 @@ class FinancialAgent:
         de conversas anteriores.
         """
 
+        for item in chat_history or []:
+            if item.get("role") == "user":
+                validate_prompt(str(item.get("content", "")))
+
         messages = [
             {**item, "content": redact_sensitive_input(str(item.get("content", "")))}
             for item in (chat_history or [])

@@ -1,4 +1,5 @@
 import re
+import unicodedata
 from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -8,10 +9,14 @@ from app.core.config import SETTINGS
 
 
 INJECTION_PATTERNS = (
-    r"ignore (all |any )?(previous|prior) instructions",
-    r"(reveal|show|print|repeat).{0,30}(system prompt|developer message|hidden instructions)",
-    r"(exfiltrate|reveal|show).{0,30}(api key|jwt secret|password|cookie)",
-    r"bypass.{0,30}(guardrail|safety|authorization)",
+    r"^ignore$",
+    r"\b(ignore|disregard|forget|override)\b.{0,80}\b(instructions?|prompts?|rules?|guardrails?|system|developer)\b",
+    r"\b(ignore|ignora|desconsidere|esqueca|anule|substitua|nao respeite|deixe de respeitar)\b.{0,80}\b(instrucoes?|prompts?|regras?|guardrails?|sistema|desenvolvedor)\b",
+    r"\b(reveal|show|print|repeat|expose)\b.{0,60}\b(system prompt|developer message|hidden instructions?)\b",
+    r"\b(revele|mostre|imprima|repita|exponha)\b.{0,60}\b(prompt do sistema|mensagem do desenvolvedor|instrucoes? ocultas?)\b",
+    r"\b(exfiltrate|reveal|show|exfiltre|revele|mostre)\b.{0,60}\b(api key|jwt secret|password|cookie|chave de api|segredo jwt|senha)\b",
+    r"\b(bypass|circumvent|contorne|burle)\b.{0,60}\b(guardrails?|safety|authorization|protecao|seguranca|autorizacao)\b",
+    r"\b(pretend|act as if|finja)\b.{0,80}\b(no rules?|rules? do not exist|sem regras?|regras? nao existem|nao (ha|existem) regras?)\b",
 )
 
 SENSITIVE_INPUT_PATTERNS = (
@@ -36,7 +41,13 @@ def sensitive_redaction_scope() -> Iterator[None]:
 
 
 def validate_prompt(message: str) -> None:
-    normalized = " ".join(message.lower().split())
+    normalized = unicodedata.normalize("NFKD", message.casefold())
+    normalized = "".join(
+        character
+        for character in normalized
+        if not unicodedata.combining(character)
+    )
+    normalized = re.sub(r"[^a-z0-9]+", " ", normalized).strip()
     if any(re.search(pattern, normalized) for pattern in INJECTION_PATTERNS):
         raise ValueError("A mensagem contém uma tentativa de alterar ou revelar instruções protegidas.")
 
