@@ -65,7 +65,7 @@ function PositionCard({ data }: { data: DashboardSummary }) {
   return <Card className="min-w-0 overflow-hidden p-3.5 sm:p-5">
     <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.12em] text-subtle sm:text-xs"><WalletCards className="h-4 w-4" aria-hidden /> Posição atual</div>
     <p className="mt-2 text-xs text-muted sm:mt-2.5 sm:text-sm">Saldo disponível</p>
-    <Money value={balance} type={balance < 0 ? "expense" : undefined} className="mt-0.5 block max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-[clamp(1.55rem,8vw,2.25rem)] font-semibold tracking-[-0.035em]" />
+    <Money value={balance} type={balance < 0 ? "expense" : undefined} signed={balance < 0} className="mt-0.5 block max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-[clamp(1.55rem,8vw,2.25rem)] font-semibold tracking-[-0.035em]" />
     <div className="mt-3.5 grid grid-cols-2 divide-x divide-border border-t border-border pt-3 sm:mt-4 sm:pt-3.5">
       <CompactTotal label="Receitas" value={data.summary.total_income} type="income" icon={<ArrowDownLeft />} />
       <CompactTotal className="pl-3 sm:pl-5" label="Despesas" value={data.summary.total_expense} type="expense" icon={<ArrowUpRight />} />
