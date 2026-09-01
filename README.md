@@ -200,6 +200,18 @@ GROQ_API_KEY=sua-chave
 
 As rotas do backend delegam as regras de negócio aos serviços, que acessam os dados por meio dos repositórios. Alterações no banco devem ser registradas como migrações do Alembic.
 
+## Desenvolvimento orientado por especificações
+
+O projeto adota Spec-Driven Development para mudanças de comportamento. Antes
+de implementar uma funcionalidade ou alterar uma regra de negócio, crie ou
+atualize a especificação correspondente em [`specs/`](specs/README.md), defina
+critérios de aceitação verificáveis e derive os testes desses critérios.
+
+Use [`specs/templates/feature-spec.md`](specs/templates/feature-spec.md) como
+ponto de partida. Mudanças financeiras, de autenticação, persistência ou IA
+sempre devem manter sua especificação atualizada. O commit ou pull request deve
+indicar a spec atendida quando aplicável.
+
 ## Comandos úteis
 
 ### Backend
