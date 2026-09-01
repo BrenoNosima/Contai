@@ -48,6 +48,7 @@ specs/
 - [Receitas e despesas recorrentes](features/transactions/recurring-transactions.md)
 - [Ações da assistente com confirmação](features/assistant/confirmed-actions.md)
 - [Isolamento de dados financeiros](features/authentication/data-isolation.md)
+- [Rodapé do menu lateral desktop](features/navigation/desktop-sidebar.md)
 
 Para iniciar uma funcionalidade, copie
 [o template de feature](templates/feature-spec.md).

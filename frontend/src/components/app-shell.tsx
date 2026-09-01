@@ -8,7 +8,6 @@ import {
   BarChart3,
   Repeat,
   Sparkles,
-  Plus,
   MoreHorizontal,
   X,
   LogOut,
@@ -99,15 +98,6 @@ export function AppShell() {
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-surface-3 text-muted"><UserRound className="h-4 w-4" aria-hidden /></div>
           <div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold text-foreground">{user?.name}</p><p className="truncate text-[11px] text-subtle">{user?.email}</p></div>
           <button type="button" onClick={handleLogout} disabled={loggingOut} aria-label="Sair da conta" title="Sair" className="flex h-9 w-9 items-center justify-center rounded-xl text-muted hover:bg-expense-soft hover:text-expense disabled:opacity-50"><LogOut className="h-4 w-4" aria-hidden /></button>
-        </div>
-        <NavLink
-          to="/lancamentos"
-          className="mb-3 flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-3 py-2.5 text-sm font-semibold text-primary-foreground shadow-[0_12px_28px_-20px_rgba(255,255,255,0.35)] transition-colors hover:bg-[color:#f1f3f2]"
-        >
-          <Plus className="h-4 w-4" aria-hidden /> Novo lançamento
-        </NavLink>
-        <div className="rounded-xl border border-border bg-surface-2 p-3 text-xs leading-relaxed text-muted">
-          Organize vencimentos, metas e movimentações em uma única agenda.
         </div>
       </aside>
 
