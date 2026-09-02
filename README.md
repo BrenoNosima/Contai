@@ -232,3 +232,7 @@ npm run preview   # visualização local do build
 ```
 
 Os valores realizados do dashboard e dos relatórios consideram apenas transações marcadas como pagas. Chamadas reais ao modelo da Groq dependem de uma chave válida e não fazem parte da suíte automática de testes.
+
+## Licença
+
+Este projeto está disponível sob a [licença MIT](LICENSE).
