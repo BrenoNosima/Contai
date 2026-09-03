@@ -1,19 +1,4 @@
 import { useMemo, useState } from "react"
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Legend,
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts"
 import { useQuery } from "@tanstack/react-query"
 import { ArrowDownLeft, ArrowUpRight, Wallet } from "lucide-react"
 import { qk } from "@/lib/query"
@@ -112,7 +97,7 @@ export default function ReportsPage() {
                 key={opt.value}
                 onClick={() => setRange(opt.value)}
                 aria-pressed={range === opt.value}
-                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-all ${
+                className={`min-h-11 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
                   range === opt.value ? "bg-primary text-primary-foreground shadow-sm" : "text-muted hover:bg-surface-3 hover:text-foreground"
                 }`}
               >
@@ -159,55 +144,27 @@ export default function ReportsPage() {
         <Card className="p-5 transition-colors hover:border-border-strong">
           <h2 className="font-sans text-base font-semibold text-foreground">Entradas x Saídas</h2>
           <p className="mb-4 text-sm text-muted">Comparativo mensal dos últimos {range} meses.</p>
-          <div className="h-56 sm:h-72" role="img" aria-label="Gráfico comparando entradas e saídas mensais">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={monthly} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
-                <XAxis dataKey="label" stroke="var(--color-muted)" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis
-                  stroke="var(--color-muted)"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
-                />
-                <Tooltip content={<ChartTooltip />} cursor={{ fill: "var(--color-surface-2)" }} />
-                <Legend wrapperStyle={{ fontSize: 12, color: "var(--color-muted)" }} />
-                <Bar dataKey="income" name="Entradas" fill="var(--color-income)" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="expense" name="Saídas" fill="var(--color-danger)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          <MonthlyBars data={monthly} />
+          <table className="sr-only">
+            <caption>Entradas e saídas mensais dos últimos {range} meses</caption>
+            <thead><tr><th scope="col">Mês</th><th scope="col">Entradas</th><th scope="col">Saídas</th></tr></thead>
+            <tbody>
+              {monthly.map((item) => <tr key={item.month}><th scope="row">{item.label}</th><td>{formatMoney(item.income)}</td><td>{formatMoney(item.expense)}</td></tr>)}
+            </tbody>
+          </table>
         </Card>
 
         <Card className="p-5 transition-colors hover:border-border-strong">
           <h2 className="font-sans text-base font-semibold text-foreground">Evolução do saldo</h2>
           <p className="mb-4 text-sm text-muted">Saldo acumulado ao longo do período.</p>
-          <div className="h-56 sm:h-72" role="img" aria-label="Gráfico da evolução do saldo acumulado">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={trend} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
-                <XAxis dataKey="label" stroke="var(--color-muted)" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis
-                  stroke="var(--color-muted)"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
-                />
-                <Tooltip content={<ChartTooltip />} cursor={{ stroke: "var(--color-border)" }} />
-                <Line
-                  type="monotone"
-                  dataKey="balance"
-                  name="Saldo"
-                  stroke="var(--color-primary)"
-                  strokeWidth={2.5}
-                  dot={{ fill: "var(--color-primary)", r: 3 }}
-                  activeDot={{ r: 5 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+          <BalanceTrend data={trend} />
+          <table className="sr-only">
+            <caption>Evolução mensal do saldo acumulado</caption>
+            <thead><tr><th scope="col">Mês</th><th scope="col">Saldo acumulado</th></tr></thead>
+            <tbody>
+              {trend.map((item) => <tr key={item.label}><th scope="row">{item.label}</th><td>{formatMoney(item.balance)}</td></tr>)}
+            </tbody>
+          </table>
         </Card>
 
         <Card className="p-5 transition-colors hover:border-border-strong lg:col-span-2">
@@ -221,27 +178,7 @@ export default function ReportsPage() {
             <p className="py-8 text-center text-sm text-muted">Nenhuma saída paga no período selecionado.</p>
           ) : (
             <div className="grid items-center gap-6 md:grid-cols-2">
-              <div className="h-56 sm:h-72" role="img" aria-label="Gráfico da distribuição de gastos por categoria">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={categories}
-                      dataKey="value"
-                      nameKey="label"
-                      innerRadius={60}
-                      outerRadius={100}
-                      paddingAngle={2}
-                      stroke="var(--color-surface)"
-                      strokeWidth={2}
-                    >
-                      {categories.map((_, i) => (
-                        <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip content={<ChartTooltip />} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
+              <CategoryDonut data={categories} total={totals.expense} />
               <ul className="flex flex-col gap-2">
                 {categories.map((c, i) => {
                   const pct = totals.expense > 0 ? (c.value / totals.expense) * 100 : 0
@@ -295,18 +232,90 @@ function PeriodMetric({
   )
 }
 
-function ChartTooltip({ active, payload, label }: any) {
-  if (!active || !payload?.length) return null
+type MonthlyPoint = { month: string; label: string; income: number; expense: number }
+type TrendPoint = { label: string; balance: number }
+type CategoryPoint = { category: string; label: string; value: number }
+
+function MonthlyBars({ data }: { data: MonthlyPoint[] }) {
+  const maximum = Math.max(1, ...data.flatMap((item) => [item.income, item.expense]))
+
   return (
-    <div className="rounded-lg border border-border bg-surface-2 px-3 py-2 shadow-lg">
-      {label && <p className="mb-1 text-xs font-medium text-muted">{label}</p>}
-      {payload.map((entry: any) => (
-        <p key={entry.name} className="flex items-center gap-2 text-sm text-foreground">
-          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: entry.color }} aria-hidden />
-          <span>{entry.name}:</span>
-          <span className="font-mono font-medium">{formatMoney(entry.value)}</span>
-        </p>
-      ))}
+    <div className="h-56 sm:h-72" role="img" aria-label="Gráfico comparando entradas e saídas mensais">
+      <div className="mb-3 flex justify-end gap-4 text-xs text-muted" aria-hidden>
+        <ChartKey color="bg-income" label="Entradas" />
+        <ChartKey color="bg-expense" label="Saídas" />
+      </div>
+      <div className="relative flex h-[calc(100%-2rem)] items-end gap-2 border-b border-border px-1" aria-hidden>
+        <div className="pointer-events-none absolute inset-x-0 top-0 grid h-full grid-rows-4">
+          {[0, 1, 2, 3].map((line) => <span key={line} className="border-t border-dashed border-border" />)}
+        </div>
+        {data.map((item) => (
+          <div key={item.month} className="relative flex h-full min-w-0 flex-1 flex-col justify-end">
+            <div className="flex min-h-0 flex-1 items-end justify-center gap-1 px-0.5">
+              <span className="w-full max-w-5 rounded-t bg-income" style={{ height: item.income > 0 ? `${Math.max(2, (item.income / maximum) * 100)}%` : 0 }} />
+              <span className="w-full max-w-5 rounded-t bg-expense" style={{ height: item.expense > 0 ? `${Math.max(2, (item.expense / maximum) * 100)}%` : 0 }} />
+            </div>
+            <span className="mt-2 truncate text-center text-[10px] text-muted sm:text-xs">{item.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function ChartKey({ color, label }: { color: string; label: string }) {
+  return <span className="flex items-center gap-1.5"><span className={`h-2.5 w-2.5 rounded-sm ${color}`} />{label}</span>
+}
+
+function BalanceTrend({ data }: { data: TrendPoint[] }) {
+  const width = 640
+  const height = 240
+  const padding = 18
+  const values = data.map((item) => item.balance)
+  const minimum = Math.min(0, ...values)
+  const maximum = Math.max(0, ...values)
+  const span = Math.max(1, maximum - minimum)
+  const points = data.map((item, index) => ({
+    ...item,
+    x: data.length === 1 ? width / 2 : padding + (index / Math.max(1, data.length - 1)) * (width - padding * 2),
+    y: padding + ((maximum - item.balance) / span) * (height - padding * 2 - 26),
+  }))
+
+  return (
+    <div className="h-56 sm:h-72" role="img" aria-label="Gráfico da evolução do saldo acumulado">
+      <svg viewBox={`0 0 ${width} ${height}`} className="h-full w-full" aria-hidden preserveAspectRatio="xMidYMid meet">
+        {[0, 1, 2, 3].map((line) => {
+          const y = padding + line * ((height - padding * 2 - 26) / 3)
+          return <line key={line} x1={padding} y1={y} x2={width - padding} y2={y} stroke="var(--color-border)" strokeDasharray="5 5" />
+        })}
+        {points.length > 1 && <polyline points={points.map((point) => `${point.x},${point.y}`).join(" ")} fill="none" stroke="var(--color-primary)" strokeWidth="3" vectorEffect="non-scaling-stroke" />}
+        {points.map((point) => (
+          <g key={point.label}>
+            <circle cx={point.x} cy={point.y} r="4" fill="var(--color-primary)"><title>{`${point.label}: ${formatMoney(point.balance)}`}</title></circle>
+            <text x={point.x} y={height - 5} textAnchor="middle" fill="var(--color-muted)" fontSize="12">{point.label}</text>
+          </g>
+        ))}
+      </svg>
+    </div>
+  )
+}
+
+function CategoryDonut({ data, total }: { data: CategoryPoint[]; total: number }) {
+  let offset = 0
+  const stops = data.map((item, index) => {
+    const start = offset
+    offset += total > 0 ? (item.value / total) * 100 : 0
+    return `${PIE_COLORS[index % PIE_COLORS.length]} ${start}% ${offset}%`
+  })
+
+  return (
+    <div className="flex h-56 items-center justify-center sm:h-72" role="img" aria-label="Gráfico da distribuição de gastos por categoria">
+      <div className="relative aspect-square h-44 rounded-full sm:h-52" style={{ background: `conic-gradient(${stops.join(", ")})` }} aria-hidden>
+        <div className="absolute inset-[22%] flex flex-col items-center justify-center rounded-full bg-surface text-center shadow-inner">
+          <span className="text-xs text-muted">Total</span>
+          <span className="mt-1 max-w-28 truncate font-mono text-sm font-semibold text-foreground">{formatMoney(total)}</span>
+        </div>
+      </div>
     </div>
   )
 }

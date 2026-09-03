@@ -9,7 +9,6 @@ import {
   Repeat,
   Sparkles,
   MoreHorizontal,
-  X,
   LogOut,
   UserRound,
   ShieldCheck,
@@ -18,6 +17,7 @@ import type { LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/lib/auth"
 import { BrandLogo } from "@/components/brand-logo"
+import { Dialog } from "@/components/ui/dialog"
 
 interface NavItem {
   to: string
@@ -99,7 +99,7 @@ export function AppShell() {
         <div className="mb-3 flex items-center gap-3 rounded-xl border border-border bg-surface-2 p-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-surface-3 text-muted"><UserRound className="h-4 w-4" aria-hidden /></div>
           <div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold text-foreground">{user?.name}</p><p className="truncate text-[11px] text-subtle">{user?.email}</p></div>
-          <button type="button" onClick={handleLogout} disabled={loggingOut} aria-label="Sair da conta" title="Sair" className="flex h-9 w-9 items-center justify-center rounded-xl text-muted hover:bg-expense-soft hover:text-expense disabled:opacity-50"><LogOut className="h-4 w-4" aria-hidden /></button>
+          <button type="button" onClick={handleLogout} disabled={loggingOut} aria-label="Sair da conta" title="Sair" className="flex h-11 w-11 items-center justify-center rounded-xl text-muted hover:bg-expense-soft hover:text-expense disabled:opacity-50"><LogOut className="h-4 w-4" aria-hidden /></button>
         </div>
       </aside>
 
@@ -172,7 +172,6 @@ export function AppShell() {
             onClick={() => setMoreOpen(true)}
             className="flex min-h-[60px] flex-1 flex-col items-center justify-center gap-1 px-1 py-2 text-[10px] font-medium text-subtle transition-colors hover:text-foreground"
             aria-expanded={moreOpen}
-            aria-controls="mobile-more-menu"
           >
             <MoreHorizontal className="h-5 w-5" aria-hidden />
             <span>Mais</span>
@@ -180,46 +179,33 @@ export function AppShell() {
         </div>
       </nav>
 
-      {moreOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden" id="mobile-more-menu">
-          <button
-            className="absolute inset-0 bg-slate-950/45 backdrop-blur-sm"
-            onClick={() => setMoreOpen(false)}
-            aria-label="Fechar menu"
-          />
-          <div className="animate-dialog-in absolute inset-x-3 bottom-20 rounded-3xl border border-border bg-surface p-3 shadow-2xl">
-            <div className="flex items-center justify-between px-2 pb-2 pt-1">
-              <p className="text-sm font-semibold text-foreground">Mais opções</p>
-              <button
-                onClick={() => setMoreOpen(false)}
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-muted hover:bg-surface-2 hover:text-foreground"
-                aria-label="Fechar"
-              >
-                <X className="h-4 w-4" aria-hidden />
-              </button>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {NAV.filter((item) => !MOBILE_NAV.includes(item)).map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  onClick={() => setMoreOpen(false)}
-                  className={({ isActive }) => cn(
-                    "flex items-center gap-3 rounded-2xl border p-3 text-sm font-medium transition-colors",
-                    isActive
-                      ? "border-primary/30 bg-primary/10 text-primary"
-                      : "border-border bg-surface-2 text-muted hover:text-foreground",
-                  )}
-                >
-                  <item.icon className="h-5 w-5" aria-hidden />
-                  {item.label}
-                </NavLink>
-              ))}
-              <button type="button" onClick={handleLogout} disabled={loggingOut} className="flex min-h-12 items-center gap-3 rounded-2xl border border-expense/25 bg-expense-soft p-3 text-sm font-medium text-expense disabled:opacity-50"><LogOut className="h-5 w-5" aria-hidden /> Sair</button>
-            </div>
-          </div>
+      <Dialog
+        open={moreOpen}
+        onClose={() => setMoreOpen(false)}
+        title="Mais opções"
+        description="Acesse as demais áreas da Contaí."
+        className="lg:hidden"
+      >
+        <div className="grid grid-cols-2 gap-2">
+          {NAV.filter((item) => !MOBILE_NAV.includes(item)).map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              onClick={() => setMoreOpen(false)}
+              className={({ isActive }) => cn(
+                "flex items-center gap-3 rounded-2xl border p-3 text-sm font-medium transition-colors",
+                isActive
+                  ? "border-primary/30 bg-primary/10 text-primary"
+                  : "border-border bg-surface-2 text-muted hover:text-foreground",
+              )}
+            >
+              <item.icon className="h-5 w-5" aria-hidden />
+              {item.label}
+            </NavLink>
+          ))}
+          <button type="button" onClick={handleLogout} disabled={loggingOut} className="flex min-h-12 items-center gap-3 rounded-2xl border border-expense/25 bg-expense-soft p-3 text-sm font-medium text-expense disabled:opacity-50"><LogOut className="h-5 w-5" aria-hidden /> Sair</button>
         </div>
-      )}
+      </Dialog>
     </div>
   )
 }

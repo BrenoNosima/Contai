@@ -354,10 +354,10 @@ function CalendarItem({ transaction }: { transaction: Transaction }) {
   return (
     <span
       className={cn(
-        "flex min-w-0 items-center gap-1.5 rounded-md border-l-2 px-1.5 py-1 text-[11px] leading-tight",
+        "flex min-w-0 items-center gap-1.5 rounded-md px-1.5 py-1 text-[11px] leading-tight",
         isExpense
-          ? "border-l-[color:var(--color-calendar-expense)] bg-[color:var(--color-calendar-expense-soft)] text-[color:var(--color-calendar-expense-text)]"
-          : "border-l-[color:var(--color-calendar-income)] bg-[color:var(--color-calendar-income-soft)] text-[color:var(--color-calendar-income-text)]",
+          ? "bg-[color:var(--color-calendar-expense-soft)] text-[color:var(--color-calendar-expense-text)]"
+          : "bg-[color:var(--color-calendar-income-soft)] text-[color:var(--color-calendar-income-text)]",
         !pending && "opacity-55",
       )}
     >

@@ -16,7 +16,7 @@ import { ApiError } from "@/lib/api"
 import { useAuth } from "@/lib/auth"
 
 const fieldClassName =
-  "h-12 border-white/[0.09] bg-[#101617] pl-11 text-[#edf6f2] shadow-none placeholder:text-[#66746f] hover:border-white/[0.15] focus:border-[#3bd3a7]/70 focus:ring-[#31cda1]/10"
+  "h-12 border-white/[0.09] bg-auth-field pl-11 text-auth-text shadow-none placeholder:text-auth-subtle hover:border-white/[0.15] focus:border-auth-accent/70 focus:ring-auth-accent/10"
 
 export default function RegisterPage() {
   const { register } = useAuth()
@@ -77,7 +77,7 @@ export default function RegisterPage() {
           <div
             id="register-error"
             role="alert"
-            className="rounded-xl border border-[#f07a83]/25 bg-[#3c2228]/70 px-4 py-3 text-sm leading-5 text-[#ff9ca4]"
+            className="rounded-xl border border-expense/25 bg-expense-soft/70 px-4 py-3 text-sm leading-5 text-expense"
           >
             {error}
           </div>
@@ -127,7 +127,7 @@ export default function RegisterPage() {
             onClick={() => setShow((current) => !current)}
             aria-label={show ? "Ocultar senhas" : "Mostrar senhas"}
             aria-pressed={show}
-            className="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-xl text-[#71817b] transition-colors hover:text-[#d7e4df] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#48d9b0]"
+            className="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-xl text-auth-subtle transition-colors hover:text-auth-label focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-auth-accent"
           >
             {show ? (
               <EyeOff className="h-[18px] w-[18px]" aria-hidden />
@@ -136,7 +136,7 @@ export default function RegisterPage() {
             )}
           </button>
         </AuthField>
-        <p id="password-hint" className="-mt-2 text-xs text-[#71817b]">
+        <p id="password-hint" className="-mt-2 text-xs text-auth-subtle">
           Use de 8 a 128 caracteres, com maiúscula, minúscula, número e caractere especial.
         </p>
 
@@ -156,7 +156,7 @@ export default function RegisterPage() {
         <Button
           type="submit"
           variant="primary"
-          className="h-12 w-full bg-[linear-gradient(110deg,#16c69a,#82df4f)] text-[#03120d] shadow-[0_14px_32px_-20px_rgba(40,210,155,0.9)] transition-[filter,box-shadow,transform] hover:bg-[linear-gradient(110deg,#1bd2a3,#8be85a)] hover:shadow-[0_16px_36px_-18px_rgba(40,210,155,0.85)] hover:brightness-105 active:translate-y-px active:bg-[linear-gradient(110deg,#12ba90,#75d545)]"
+          className="h-12 w-full bg-[linear-gradient(110deg,var(--color-auth-accent-strong),var(--color-auth-accent-lime))] text-auth-accent-foreground shadow-[0_14px_32px_-20px_var(--color-auth-accent)] transition-[filter,box-shadow,transform] hover:brightness-105 active:translate-y-px"
           disabled={busy}
         >
           {busy ? (
@@ -167,16 +167,16 @@ export default function RegisterPage() {
           {busy ? "Criando conta..." : "Criar conta"}
         </Button>
 
-        <p className="text-center text-xs leading-5 text-[#71817b]">
-          Ao criar a conta, você declara ter lido a <Link to="/privacidade" className="underline underline-offset-4 hover:text-[#b8c7c2]">Política de Privacidade</Link>. O tratamento necessário à conta ocorre para prestar o serviço, não com base em consentimento genérico.
+        <p className="text-center text-xs leading-5 text-auth-subtle">
+          Ao criar a conta, você declara ter lido a <Link to="/privacidade" className="underline underline-offset-4 hover:text-auth-label">Política de Privacidade</Link>. O tratamento necessário à conta ocorre para prestar o serviço, não com base em consentimento genérico.
         </p>
 
-        <p className="pt-1 text-center text-sm text-[#8b9b95]">
+        <p className="pt-1 text-center text-sm text-auth-muted">
           Já tem uma conta?{" "}
           <Link
             to="/login"
             state={{ showLogin: true }}
-            className="font-semibold text-[#53dcb5] underline-offset-4 transition-colors hover:text-[#82e16b] hover:underline focus-visible:outline-[#53dcb5]"
+            className="font-semibold text-auth-accent underline-offset-4 transition-colors hover:text-auth-accent-hover hover:underline focus-visible:outline-auth-accent"
           >
             Entrar
           </Link>
@@ -199,12 +199,12 @@ function AuthField({
 }) {
   return (
     <div>
-      <Label htmlFor={htmlFor} className="mb-2 text-[13px] font-medium text-[#c0ccc8]">
+      <Label htmlFor={htmlFor} className="mb-2 text-[13px] font-medium text-auth-label">
         {label}
       </Label>
       <div className="group relative">
         <Icon
-          className="pointer-events-none absolute left-4 top-6 z-10 h-[18px] w-[18px] -translate-y-1/2 text-[#71817b] transition-colors group-focus-within:text-[#43d6ad]"
+          className="pointer-events-none absolute left-4 top-6 z-10 h-[18px] w-[18px] -translate-y-1/2 text-auth-subtle transition-colors group-focus-within:text-auth-accent"
           aria-hidden
         />
         {children}

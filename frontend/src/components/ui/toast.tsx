@@ -63,7 +63,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               <button
                 onClick={() => remove(t.id)}
                 aria-label="Fechar aviso"
-                className="text-muted hover:text-foreground"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-muted hover:bg-surface-2 hover:text-foreground"
               >
                 <X className="h-4 w-4" aria-hidden />
               </button>

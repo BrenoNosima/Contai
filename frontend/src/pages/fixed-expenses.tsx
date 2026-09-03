@@ -135,14 +135,14 @@ export default function FixedExpensesPage() {
                     <button
                       onClick={() => setForm({ open: true, item })}
                       aria-label="Editar gasto fixo"
-                      className="flex h-10 w-10 items-center justify-center rounded-lg text-muted transition-all hover:bg-surface-3 hover:text-foreground sm:h-9 sm:w-9 sm:opacity-0 sm:focus-visible:opacity-100 sm:group-hover:opacity-100"
+                      className="flex h-11 w-11 items-center justify-center rounded-xl text-muted transition-all hover:bg-surface-3 hover:text-foreground sm:opacity-0 sm:focus-visible:opacity-100 sm:group-hover:opacity-100"
                     >
                       <Pencil className="h-4 w-4" aria-hidden />
                     </button>
                     <button
                       onClick={() => setDeleting(item)}
                       aria-label="Excluir gasto fixo"
-                      className="flex h-10 w-10 items-center justify-center rounded-lg text-muted transition-all hover:bg-expense-soft hover:text-expense sm:h-9 sm:w-9 sm:opacity-0 sm:focus-visible:opacity-100 sm:group-hover:opacity-100"
+                      className="flex h-11 w-11 items-center justify-center rounded-xl text-muted transition-all hover:bg-expense-soft hover:text-expense sm:opacity-0 sm:focus-visible:opacity-100 sm:group-hover:opacity-100"
                     >
                       <Trash2 className="h-4 w-4" aria-hidden />
                     </button>

@@ -62,6 +62,21 @@
   --color-primary: #e2e5e3;
   --color-primary-foreground: #111415;
 
+  /* Authentication world: deep canvas with a restrained teal-to-lime action path */
+  --color-auth-canvas: #050809;
+  --color-auth-panel: #0b1011;
+  --color-auth-field: #101617;
+  --color-auth-heading: #f4faf7;
+  --color-auth-text: #edf6f2;
+  --color-auth-label: #c0ccc8;
+  --color-auth-muted: #9baaa5;
+  --color-auth-subtle: #80908a;
+  --color-auth-accent: #53dcb5;
+  --color-auth-accent-strong: #16c69a;
+  --color-auth-accent-lime: #82df4f;
+  --color-auth-accent-hover: #82e16b;
+  --color-auth-accent-foreground: #03120d;
+
   --radius: 0.875rem;
 }
 
@@ -306,8 +321,48 @@ input[type="password"]::-ms-clear {
   *::before,
   *::after {
     scroll-behavior: auto !important;
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    transition-duration: 120ms !important;
+    transition-property: color, background-color, border-color, opacity !important;
+  }
+
+  .animate-in,
+  .animate-dialog-in {
+    animation: reduced-fade 140ms ease-out both;
+  }
+
+  .animated-logo {
+    animation: none;
+  }
+
+  .animated-logo__glow {
+    animation: none;
+    filter: blur(14px);
+    opacity: 0.12;
+  }
+
+  .startup-pulse,
+  .startup-spinner,
+  .animate-spin {
+    animation: reduced-status-pulse 1.4s ease-in-out infinite;
+    transform: none;
+  }
+
+  .typing-dot {
+    animation: reduced-typing 1.4s ease-in-out infinite;
+  }
+
+  @keyframes reduced-fade {
+    from { opacity: 0.65; }
+    to { opacity: 1; }
+  }
+
+  @keyframes reduced-status-pulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+
+  @keyframes reduced-typing {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.9; }
   }
 }

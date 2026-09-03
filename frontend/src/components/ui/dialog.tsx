@@ -87,7 +87,7 @@ export function Dialog({
           </div>
           <button
             onClick={onClose}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-2 hover:text-foreground sm:h-9 sm:w-9"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-muted transition-colors hover:bg-surface-2 hover:text-foreground"
             aria-label="Fechar"
           >
             <X className="h-5 w-5" aria-hidden />

@@ -61,7 +61,7 @@ export default function LoginPage() {
         <button
           type="button"
           onClick={() => setMobileStep("intro")}
-          className="mb-6 inline-flex min-h-11 items-center gap-2 rounded-lg pr-3 text-sm font-medium text-[#9ba9a4] transition-colors hover:text-[#e7f4ef] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#53dcb5] lg:hidden"
+          className="mb-6 inline-flex min-h-11 items-center gap-2 rounded-lg pr-3 text-sm font-medium text-auth-muted transition-colors hover:text-auth-heading focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-auth-accent lg:hidden"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden />
           Voltar à apresentação
@@ -69,15 +69,15 @@ export default function LoginPage() {
       )}
       <form onSubmit={submit} className="space-y-5" noValidate aria-describedby={error ? "login-error" : undefined}>
         {error && (
-          <div id="login-error" role="alert" className="rounded-xl border border-[#f07a83]/25 bg-[#3c2228]/70 px-4 py-3 text-sm leading-5 text-[#ff9ca4]">
+          <div id="login-error" role="alert" className="rounded-xl border border-expense/25 bg-expense-soft/70 px-4 py-3 text-sm leading-5 text-expense">
             {error}
           </div>
         )}
 
         <div>
-          <Label htmlFor="email" className="mb-2 text-[13px] font-medium text-[#c0ccc8]">E-mail</Label>
+          <Label htmlFor="email" className="mb-2 text-[13px] font-medium text-auth-label">E-mail</Label>
           <div className="group relative">
-            <Mail className="pointer-events-none absolute left-4 top-1/2 z-10 h-[18px] w-[18px] -translate-y-1/2 text-[#71817b] transition-colors group-focus-within:text-[#43d6ad]" aria-hidden />
+            <Mail className="pointer-events-none absolute left-4 top-1/2 z-10 h-[18px] w-[18px] -translate-y-1/2 text-auth-subtle transition-colors group-focus-within:text-auth-accent" aria-hidden />
             <Input
               id="email"
               type="email"
@@ -88,15 +88,15 @@ export default function LoginPage() {
               onChange={(event) => setEmail(event.target.value)}
               placeholder="voce@exemplo.com"
               aria-invalid={Boolean(error)}
-              className="h-12 border-white/[0.09] bg-[#101617] pl-11 pr-4 text-[#edf6f2] shadow-none placeholder:text-[#66746f] hover:border-white/[0.15] focus:border-[#3bd3a7]/70 focus:ring-[#31cda1]/10"
+              className="h-12 border-white/[0.09] bg-auth-field pl-11 pr-4 text-auth-text shadow-none placeholder:text-auth-subtle hover:border-white/[0.15] focus:border-auth-accent/70 focus:ring-auth-accent/10"
             />
           </div>
         </div>
 
         <div>
-          <Label htmlFor="password" className="mb-2 text-[13px] font-medium text-[#c0ccc8]">Senha</Label>
+          <Label htmlFor="password" className="mb-2 text-[13px] font-medium text-auth-label">Senha</Label>
           <div className="group relative">
-            <LockKeyhole className="pointer-events-none absolute left-4 top-1/2 z-10 h-[18px] w-[18px] -translate-y-1/2 text-[#71817b] transition-colors group-focus-within:text-[#43d6ad]" aria-hidden />
+            <LockKeyhole className="pointer-events-none absolute left-4 top-1/2 z-10 h-[18px] w-[18px] -translate-y-1/2 text-auth-subtle transition-colors group-focus-within:text-auth-accent" aria-hidden />
             <Input
               id="password"
               type={show ? "text" : "password"}
@@ -105,21 +105,21 @@ export default function LoginPage() {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               aria-invalid={Boolean(error)}
-              className="h-12 border-white/[0.09] bg-[#101617] pl-11 pr-12 text-[#edf6f2] shadow-none hover:border-white/[0.15] focus:border-[#3bd3a7]/70 focus:ring-[#31cda1]/10"
+              className="h-12 border-white/[0.09] bg-auth-field pl-11 pr-12 text-auth-text shadow-none hover:border-white/[0.15] focus:border-auth-accent/70 focus:ring-auth-accent/10"
             />
             <button
               type="button"
               onClick={() => setShow((current) => !current)}
               aria-label={show ? "Ocultar senha" : "Mostrar senha"}
               aria-pressed={show}
-              className="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-xl text-[#71817b] transition-colors hover:text-[#d7e4df] focus-visible:outline-[#48d9b0]"
+              className="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-xl text-auth-subtle transition-colors hover:text-auth-label focus-visible:outline-auth-accent"
             >
               {show ? <EyeOff className="h-[18px] w-[18px]" aria-hidden /> : <Eye className="h-[18px] w-[18px]" aria-hidden />}
             </button>
           </div>
         </div>
 
-        <label htmlFor="remember-login" className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg text-sm text-[#9ba9a4]">
+        <label htmlFor="remember-login" className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg text-sm text-auth-muted">
           <input
             id="remember-login"
             type="checkbox"
@@ -128,24 +128,24 @@ export default function LoginPage() {
               setRememberLogin(event.target.checked)
               if (!event.target.checked) localStorage.removeItem(REMEMBERED_EMAIL_KEY)
             }}
-            className="h-[18px] w-[18px] shrink-0 rounded accent-[#42d6aa]"
+            className="h-[18px] w-[18px] shrink-0 rounded accent-auth-accent"
           />
-          <span>Lembrar meu e-mail <span className="hidden text-xs text-[#687873] sm:inline">— sua senha não será salva</span></span>
+          <span>Lembrar meu e-mail <span className="hidden text-xs text-auth-subtle sm:inline">— sua senha não será salva</span></span>
         </label>
 
         <Button
           type="submit"
           variant="primary"
-          className="h-12 w-full bg-[linear-gradient(110deg,#16c69a,#82df4f)] text-[#03120d] shadow-[0_14px_32px_-20px_rgba(40,210,155,0.9)] transition-[filter,box-shadow,transform] hover:bg-[linear-gradient(110deg,#1bd2a3,#8be85a)] hover:shadow-[0_16px_36px_-18px_rgba(40,210,155,0.85)] hover:brightness-105 active:translate-y-px active:bg-[linear-gradient(110deg,#12ba90,#75d545)]"
+          className="h-12 w-full bg-[linear-gradient(110deg,var(--color-auth-accent-strong),var(--color-auth-accent-lime))] text-auth-accent-foreground shadow-[0_14px_32px_-20px_var(--color-auth-accent)] transition-[filter,box-shadow,transform] hover:brightness-105 active:translate-y-px"
           disabled={busy}
         >
           {busy ? <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden /> : <ArrowRight className="h-4 w-4" aria-hidden />}
           {busy ? "Entrando..." : "Entrar"}
         </Button>
 
-        <p className="pt-1 text-center text-sm text-[#8b9b95]">
+        <p className="pt-1 text-center text-sm text-auth-muted">
           Ainda não tem uma conta?{" "}
-          <Link to="/cadastro" className="font-semibold text-[#53dcb5] underline-offset-4 transition-colors hover:text-[#82e16b] hover:underline focus-visible:outline-[#53dcb5]">
+          <Link to="/cadastro" className="font-semibold text-auth-accent underline-offset-4 transition-colors hover:text-auth-accent-hover hover:underline focus-visible:outline-auth-accent">
             Criar conta
           </Link>
         </p>
@@ -160,19 +160,20 @@ function MobileIntroduction({ onContinue }: { onContinue: () => void }) {
       <div>
         <div className="mx-auto mb-5 flex w-[60%] max-w-[240px] items-center justify-center sm:max-w-[260px]">
           <img
-            src="/brand/contai-logo.png?v=20260828"
+            src="/brand/contai-logo-576.png?v=20260903"
             alt="Contaí — Entende. Organiza. Faz crescer."
-            width="1536"
-            height="1024"
+            width="576"
+            height="384"
+            decoding="async"
             className="block h-auto w-full object-contain mix-blend-screen"
           />
         </div>
 
-        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#53dcb5]">Clareza para decidir melhor</p>
-        <h1 id="mobile-intro-title" className="text-balance text-[2.35rem] font-semibold leading-[1.04] tracking-[-0.055em] text-[#f4faf7]">
-          Sua vida financeira, <span className="text-[#72df68]">organizada</span> em um só lugar.
+        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-auth-accent">Clareza para decidir melhor</p>
+        <h1 id="mobile-intro-title" className="text-balance text-[2.35rem] font-semibold leading-[1.04] tracking-[-0.04em] text-auth-heading">
+          Sua vida financeira, <span className="text-auth-accent-lime">organizada</span> em um só lugar.
         </h1>
-        <p className="mt-4 text-base leading-7 text-[#9baaa5]">
+        <p className="mt-4 text-base leading-7 text-auth-muted">
           Acompanhe lançamentos, metas e vencimentos com uma visão simples, privada e feita para a sua rotina.
         </p>
 
@@ -188,12 +189,12 @@ function MobileIntroduction({ onContinue }: { onContinue: () => void }) {
           type="button"
           variant="primary"
           onClick={onContinue}
-          className="h-14 w-full rounded-2xl bg-[linear-gradient(110deg,#16c69a,#82df4f)] text-base font-semibold text-[#03120d] shadow-[0_18px_42px_-20px_rgba(40,210,155,0.9)] transition-[filter,box-shadow,transform] hover:bg-[linear-gradient(110deg,#1bd2a3,#8be85a)] hover:brightness-105 active:translate-y-px"
+          className="h-14 w-full rounded-2xl bg-[linear-gradient(110deg,var(--color-auth-accent-strong),var(--color-auth-accent-lime))] text-base font-semibold text-auth-accent-foreground shadow-[0_18px_42px_-20px_var(--color-auth-accent)] transition-[filter,box-shadow,transform] hover:brightness-105 active:translate-y-px"
         >
           Acessar minha conta
           <ArrowRight className="h-5 w-5" aria-hidden />
         </Button>
-        <p className="mt-4 text-center text-xs leading-5 text-[#71817b]">Seus dados continuam protegidos e privados.</p>
+        <p className="mt-4 text-center text-xs leading-5 text-auth-subtle">Seus dados continuam protegidos e privados.</p>
       </div>
     </section>
   )
@@ -201,8 +202,8 @@ function MobileIntroduction({ onContinue }: { onContinue: () => void }) {
 
 function IntroBenefit({ icon: Icon, label }: { icon: typeof ShieldCheck; label: string }) {
   return (
-    <div className="flex min-h-24 flex-col items-center justify-center gap-2 rounded-2xl border border-white/[0.07] bg-white/[0.025] px-2 py-3 text-center text-[11px] leading-4 text-[#a8b7b2]">
-      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#103028] text-[#51dcb3]">
+    <div className="flex min-h-24 flex-col items-center justify-center gap-2 rounded-2xl border border-white/[0.07] bg-white/[0.025] px-2 py-3 text-center text-[11px] leading-4 text-auth-label">
+      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-income-soft text-auth-accent">
         <Icon className="h-[18px] w-[18px]" aria-hidden />
       </span>
       {label}

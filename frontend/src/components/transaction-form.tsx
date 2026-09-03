@@ -102,7 +102,7 @@ export function TransactionForm({
               onClick={() => setStatus(option)}
               aria-pressed={status === option}
               className={cn(
-                "h-9 rounded-lg text-sm font-medium transition-all",
+                "min-h-11 rounded-xl text-sm font-medium transition-all",
                 status === option
                   ? option === "paid"
                     ? "bg-income-soft text-income shadow-sm"

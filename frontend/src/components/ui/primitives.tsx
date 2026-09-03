@@ -18,9 +18,9 @@ const variants: Record<ButtonVariant, string> = {
 }
 
 const sizes: Record<ButtonSize, string> = {
-  sm: "h-11 px-3 text-sm gap-1.5 rounded-xl sm:h-9 sm:rounded-lg",
+  sm: "h-11 px-3 text-sm gap-1.5 rounded-xl sm:rounded-lg",
   md: "h-11 px-4 text-sm gap-2 rounded-xl",
-  icon: "h-11 w-11 rounded-xl justify-center sm:h-10 sm:w-10",
+  icon: "h-11 w-11 rounded-xl justify-center",
 }
 
 export interface ButtonProps
