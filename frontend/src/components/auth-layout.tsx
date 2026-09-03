@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { Link } from "react-router-dom"
 import type { LucideIcon } from "lucide-react"
 import { BarChart3, ShieldCheck, Sparkles, TrendingUp, WalletCards } from "lucide-react"
 import { BrandLogo } from "@/components/brand-logo"
@@ -65,6 +66,9 @@ export function AuthLayout({ children, title, subtitle, titleIcon: TitleIcon, mo
               </div>
             </div>
             {children}
+            <p className="mt-7 text-center text-xs text-[#71817b]">
+              <Link to="/privacidade" className="min-h-11 rounded-lg px-2 py-3 underline underline-offset-4 hover:text-[#b8c7c2]">Política de Privacidade</Link>
+            </p>
           </div>
         </div>
       </section>

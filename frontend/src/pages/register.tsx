@@ -41,8 +41,8 @@ export default function RegisterPage() {
       setError("Informe um e-mail válido.")
       return
     }
-    if (password.length < 8) {
-      setError("A senha deve ter pelo menos 8 caracteres.")
+    if (!(password.length >= 8 && /[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ]/.test(password) && /[a-záàâãéêíóôõúç]/.test(password) && /\d/.test(password) && /[^\p{L}\p{N}\s]/u.test(password))) {
+      setError("Use uma senha com maiúscula, minúscula, número e caractere especial.")
       return
     }
     if (password !== confirmation) {
@@ -137,7 +137,7 @@ export default function RegisterPage() {
           </button>
         </AuthField>
         <p id="password-hint" className="-mt-2 text-xs text-[#71817b]">
-          Use pelo menos 8 caracteres.
+          Use de 8 a 128 caracteres, com maiúscula, minúscula, número e caractere especial.
         </p>
 
         <AuthField label="Confirmar senha" htmlFor="confirmation" icon={LockKeyhole}>
@@ -166,6 +166,10 @@ export default function RegisterPage() {
           )}
           {busy ? "Criando conta..." : "Criar conta"}
         </Button>
+
+        <p className="text-center text-xs leading-5 text-[#71817b]">
+          Ao criar a conta, você declara ter lido a <Link to="/privacidade" className="underline underline-offset-4 hover:text-[#b8c7c2]">Política de Privacidade</Link>. O tratamento necessário à conta ocorre para prestar o serviço, não com base em consentimento genérico.
+        </p>
 
         <p className="pt-1 text-center text-sm text-[#8b9b95]">
           Já tem uma conta?{" "}

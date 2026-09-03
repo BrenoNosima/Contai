@@ -8,6 +8,8 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<void>
   register: (name: string, email: string, password: string, confirmation: string) => Promise<void>
   logout: () => Promise<void>
+  updateProfile: (name: string, email: string, password: string) => Promise<void>
+  clearSession: () => void
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -37,6 +39,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     logout: async () => {
       await authApi.logout()
+      setUser(null)
+      queryClient.clear()
+    },
+    updateProfile: async (name, email, password) => {
+      setUser(await authApi.update(name, email, password))
+    },
+    clearSession: () => {
       setUser(null)
       queryClient.clear()
     },

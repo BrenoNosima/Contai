@@ -57,6 +57,8 @@ limpo ao finalizar a chamada.
 
 ## Segurança e privacidade
 
+Usuários migrados com `must_change_password=true` podem acessar apenas as rotas de conta necessárias para trocar a senha, exportar dados ou excluir a conta. Rotas financeiras retornam 403 até a troca. Novas senhas exigem de 8 a 128 caracteres, maiúscula, minúscula, número e caractere especial; após a troca, todas as sessões são revogadas.
+
 O filtro de proprietário deve ser aplicado no backend. IDs ou payloads enviados
 pelo frontend nunca são prova de propriedade.
 

@@ -6,7 +6,7 @@ from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import CORS_ORIGINS
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_password_compliant_user
 from app.core.web_security import add_security_headers, enforce_rate_limit, https_redirect_url, validate_csrf_request
 from app.api.routes.auth import router as auth_router
 from app.core.exceptions import (
@@ -40,6 +40,7 @@ from app.api.routes.reports import (
 )
 from app.api.routes.metadata import router as metadata_router
 from app.api.routes.assistant_actions import router as assistant_actions_router
+from app.api.routes.privacy import router as privacy_router
 
 logger = logging.getLogger(__name__)
 STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
@@ -55,6 +56,7 @@ API_ROUTE_PREFIXES = {
     "health",
     "metadata",
     "openapi.json",
+    "privacy",
     "redoc",
     "reports",
     "transactions",
@@ -99,7 +101,8 @@ async def application_security(request: Request, call_next):
 
 # Rotas
 app.include_router(auth_router)
-private_dependencies = [Depends(get_current_user)]
+app.include_router(privacy_router)
+private_dependencies = [Depends(get_password_compliant_user)]
 app.include_router(transactions_router, dependencies=private_dependencies)
 app.include_router(goals_router, dependencies=private_dependencies)
 app.include_router(fixed_expenses_router, dependencies=private_dependencies)

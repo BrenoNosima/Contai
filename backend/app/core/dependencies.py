@@ -5,6 +5,7 @@ from app.core.security import decode_access_token
 from app.repositories.user_repository import UserRepository
 from app.repositories.auth_session_repository import AuthSessionRepository
 from datetime import UTC, datetime
+from app.models.user import User
 
 
 def get_db():
@@ -33,3 +34,11 @@ def get_current_user(access_token: str | None = Cookie(default=None), db: Sessio
     if not user or not user.is_active: raise unauthorized
     db.info["user_id"] = user.id
     yield user
+
+def get_password_compliant_user(current_user: User = Depends(get_current_user)) -> User:
+    if current_user.must_change_password:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Troque sua senha antes de acessar os dados financeiros.",
+        )
+    return current_user

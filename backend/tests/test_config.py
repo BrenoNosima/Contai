@@ -55,6 +55,8 @@ def test_settings_accept_hardened_production_configuration():
         "DATABASE_URL": "postgresql+psycopg://user:password@private-db:5432/finance",
         "JWT_SECRET_KEY": "a-production-secret-with-enough-entropy",
         "CORS_ORIGINS": "https://app.example.com",
+        "PRIVACY_CONTROLLER_NAME": "Contaí Tecnologia Ltda.",
+        "PRIVACY_CONTACT_EMAIL": "privacidade@contai.example",
     })
 
     assert settings.cookie_secure is True
@@ -69,6 +71,8 @@ def test_settings_accept_same_origin_production_without_cors():
         "DATABASE_URL": "postgresql://user:password@private-db:5432/finance",
         "JWT_SECRET_KEY": "a-production-secret-with-enough-entropy",
         "CORS_ORIGINS": "",
+        "PRIVACY_CONTROLLER_NAME": "Contaí Tecnologia Ltda.",
+        "PRIVACY_CONTACT_EMAIL": "privacidade@contai.example",
     })
 
     assert settings.cors_origins == ()
@@ -80,6 +84,8 @@ def test_settings_accept_same_origin_production_without_cors_variable():
         "ENVIRONMENT": "production",
         "DATABASE_URL": "postgresql://user:password@private-db:5432/finance",
         "JWT_SECRET_KEY": "a-production-secret-with-enough-entropy",
+        "PRIVACY_CONTROLLER_NAME": "Contaí Tecnologia Ltda.",
+        "PRIVACY_CONTACT_EMAIL": "privacidade@contai.example",
     })
 
     assert settings.cors_origins == ()
@@ -151,3 +157,12 @@ def test_settings_select_psycopg3_for_provider_database_urls(scheme):
 def test_settings_reject_invalid_values(values, message):
     with pytest.raises(ValueError, match=message):
         Settings.from_mapping(values)
+
+
+def test_production_rejects_placeholder_privacy_identity():
+    with pytest.raises(ValueError, match="PRIVACY_CONTROLLER_NAME"):
+        Settings.from_mapping({
+            "ENVIRONMENT": "production",
+            "DATABASE_URL": "postgresql+psycopg://user:password@db:5432/finance",
+            "JWT_SECRET_KEY": "a-production-secret-with-enough-entropy",
+        })

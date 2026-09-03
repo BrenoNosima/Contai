@@ -56,8 +56,8 @@ def client(db_session):
             response = test_client.post("/auth/register", json={
                 "name": "Test User",
                 "email": "test@example.com",
-                "password": "test-password-secure",
-                "password_confirmation": "test-password-secure",
+                "password": "Test-password1!",
+                "password_confirmation": "Test-password1!",
             })
             assert response.status_code == 201
             db_session.info["user_id"] = response.json()["id"]

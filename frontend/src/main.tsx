@@ -30,6 +30,10 @@ function RouteHydrateFallback() {
 
 const router = createBrowserRouter([
   {
+    path: "/privacidade",
+    lazy: lazyPage(() => import("@/pages/privacy")),
+  },
+  {
     element: <PublicOnlyGuard />,
     HydrateFallback: RouteHydrateFallback,
     children: [
@@ -40,7 +44,9 @@ const router = createBrowserRouter([
   {
     element: <PrivateGuard />,
     HydrateFallback: RouteHydrateFallback,
-    children: [{
+    children: [
+      { path: "/alterar-senha", lazy: lazyPage(() => import("@/pages/change-password")) },
+      {
       path: "/",
       element: <AppShell />,
       children: [
@@ -57,9 +63,11 @@ const router = createBrowserRouter([
         lazy: lazyPage(() => import("@/pages/fixed-expenses")),
       },
       { path: "assistente", lazy: lazyPage(() => import("@/pages/chat")) },
+        { path: "conta-e-privacidade", lazy: lazyPage(() => import("@/pages/account-privacy")) },
         { path: "*", element: <Navigate to="/" replace /> },
       ],
-    }],
+      },
+    ],
   },
 ])
 

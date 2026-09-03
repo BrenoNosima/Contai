@@ -34,6 +34,9 @@ class Settings:
     cookie_secure: bool
     enforce_https: bool
     refresh_expire_days: int
+    privacy_controller_name: str
+    privacy_contact_email: str
+    privacy_country: str
 
     @classmethod
     def from_mapping(cls, values: Mapping[str, str]) -> "Settings":
@@ -82,6 +85,9 @@ class Settings:
             values.get("REFRESH_EXPIRE_DAYS"), default=DEFAULT_REFRESH_EXPIRE_DAYS,
             name="REFRESH_EXPIRE_DAYS", minimum=1, maximum=90,
         )
+        privacy_controller_name = values.get("PRIVACY_CONTROLLER_NAME", "Contaí (responsável a definir)").strip()
+        privacy_contact_email = values.get("PRIVACY_CONTACT_EMAIL", "privacidade@example.invalid").strip().lower()
+        privacy_country = values.get("PRIVACY_COUNTRY", "Brasil").strip()
 
         if not database_url or "://" not in database_url:
             raise ValueError("DATABASE_URL deve ser uma URL SQLAlchemy válida.")
@@ -108,6 +114,8 @@ class Settings:
                 raise ValueError("JWT_NEXT_SECRET_KEY deve ser diferente e ter ao menos 32 caracteres.")
             if any("localhost" in origin or "127.0.0.1" in origin for origin in cors_origins):
                 raise ValueError("CORS_ORIGINS de produção não pode conter endereços locais.")
+            if "a definir" in privacy_controller_name.lower() or privacy_contact_email.endswith(".invalid"):
+                raise ValueError("Identifique PRIVACY_CONTROLLER_NAME e PRIVACY_CONTACT_EMAIL em produção.")
 
         return cls(
             environment=environment,
@@ -124,6 +132,9 @@ class Settings:
             cookie_secure=cookie_secure,
             enforce_https=enforce_https,
             refresh_expire_days=refresh_expire_days,
+            privacy_controller_name=privacy_controller_name,
+            privacy_contact_email=privacy_contact_email,
+            privacy_country=privacy_country,
         )
 
     @property

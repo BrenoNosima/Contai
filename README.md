@@ -103,10 +103,15 @@ As principais variáveis do backend ficam em `backend/.env`:
 | `REFRESH_EXPIRE_DAYS` | Tempo máximo da sessão renovável em dias |
 | `COOKIE_SECURE` | Força o envio do cookie somente por HTTPS |
 | `ENFORCE_HTTPS` | Redireciona tráfego público HTTP para HTTPS; obrigatório em produção |
+| `PRIVACY_CONTROLLER_NAME` | Nome ou razão social do controlador exibido ao titular |
+| `PRIVACY_CONTACT_EMAIL` | Canal de privacidade/encarregado exibido ao titular |
+| `PRIVACY_COUNTRY` | País do controlador |
 
 No frontend, `VITE_API_URL` define o endereço público da API. Ela pode permanecer vazia no desenvolvimento local.
 
 Nunca envie arquivos `.env` ou chaves de API para o repositório.
+
+Em produção, a aplicação recusa iniciar com a identidade de privacidade provisória. A documentação operacional de LGPD fica em `docs/lgpd/`. Para conferir a retenção sem excluir registros, execute `python -m app.maintenance.retention`; agende `python -m app.maintenance.retention --apply` após validar backups e os prazos legais.
 
 ## Publicação segura
 

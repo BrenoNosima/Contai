@@ -7,13 +7,15 @@ export function PrivateGuard() {
   const location = useLocation()
   if (loading) return <AuthLoading />
   if (!user) return <Navigate to="/login" replace state={{ from: location.pathname }} />
+  if (user.must_change_password && location.pathname !== "/alterar-senha") return <Navigate to="/alterar-senha" replace />
+  if (!user.must_change_password && location.pathname === "/alterar-senha") return <Navigate to="/" replace />
   return <Outlet />
 }
 
 export function PublicOnlyGuard() {
   const { user, loading } = useAuth()
   if (loading) return <AuthLoading />
-  if (user) return <Navigate to="/" replace />
+  if (user) return <Navigate to={user.must_change_password ? "/alterar-senha" : "/"} replace />
   return <Outlet />
 }
 

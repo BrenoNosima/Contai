@@ -49,8 +49,8 @@ def test_csrf_accepts_same_origin_when_cors_is_empty(client, monkeypatch):
         json={
             "name": "Same Origin",
             "email": "same-origin@example.com",
-            "password": "12345678",
-            "password_confirmation": "12345678",
+            "password": "Strong-123!",
+            "password_confirmation": "Strong-123!",
         },
     )
 
@@ -65,8 +65,8 @@ def test_csrf_rejects_external_origin_when_cors_is_empty(client, monkeypatch):
         json={
             "name": "External Origin",
             "email": "external-origin@example.com",
-            "password": "12345678",
-            "password_confirmation": "12345678",
+            "password": "Strong-123!",
+            "password_confirmation": "Strong-123!",
         },
     )
 
@@ -114,6 +114,15 @@ def test_sensitive_identifiers_are_redacted_before_ai_processing():
     assert "123.456.789-00" not in redacted
     assert "4111 1111 1111 1111" not in redacted
     assert "[DADO_SENSIVEL_E_MAIL_" in redacted
+
+
+def test_additional_identifiers_are_redacted_before_ai_processing():
+    redacted = redact_sensitive_input(
+        "CNPJ 12.345.678/0001-90, telefone (11) 98765-4321 e PIX 123e4567-e89b-42d3-a456-426614174000"
+    )
+    assert "12.345.678/0001-90" not in redacted
+    assert "(11) 98765-4321" not in redacted
+    assert "123e4567-e89b-42d3-a456-426614174000" not in redacted
 
 
 def test_sensitive_redaction_is_reversible_and_does_not_mutate_source_data():

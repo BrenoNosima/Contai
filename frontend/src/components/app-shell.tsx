@@ -12,6 +12,7 @@ import {
   X,
   LogOut,
   UserRound,
+  ShieldCheck,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -33,6 +34,7 @@ const NAV: NavItem[] = [
   { to: "/relatorios", label: "Relatórios", icon: BarChart3 },
   { to: "/gastos-fixos", label: "Gastos fixos", icon: Repeat },
   { to: "/assistente", label: "Assistente", icon: Sparkles },
+  { to: "/conta-e-privacidade", label: "Conta e privacidade", icon: ShieldCheck },
 ]
 
 const MOBILE_NAV_PATHS = new Set(["/", "/calendario", "/lancamentos", "/assistente"])

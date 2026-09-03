@@ -10,3 +10,5 @@ class UserRepository:
     def create(self, db: Session, user: User) -> User:
         db.add(user)
         return commit(db, user)
+    def save(self, db: Session, user: User) -> User:
+        return commit(db, user)

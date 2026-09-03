@@ -96,6 +96,7 @@ export interface AuthUser {
   name: string
   email: string
   created_at: string
+  must_change_password: boolean
 }
 
 export const authApi = {
@@ -109,6 +110,29 @@ export const authApi = {
     }),
   logout: () => request<void>("/auth/logout", { method: "POST" }),
   refresh: () => request<AuthUser>("/auth/refresh", { method: "POST", body: "{}" }, false),
+  update: (name: string, email: string, password: string) =>
+    request<AuthUser>("/auth/me", { method: "PATCH", body: JSON.stringify({ name, email, password }) }),
+  exportData: () => request<Record<string, unknown>>("/auth/me/export"),
+  deleteAccount: (password: string, confirmation: string) =>
+    request<void>("/auth/me", { method: "DELETE", body: JSON.stringify({ password, confirmation }) }),
+  changePassword: (currentPassword: string, newPassword: string, confirmation: string) =>
+    request<void>("/auth/change-password", {
+      method: "POST",
+      body: JSON.stringify({ current_password: currentPassword, new_password: newPassword, new_password_confirmation: confirmation }),
+    }),
+}
+
+export interface PrivacyInformation {
+  controller: string
+  contact: string
+  country: string
+  ai_provider: string
+  ai_destination: string
+  policy_version: string
+}
+
+export const privacyApi = {
+  information: () => request<PrivacyInformation>("/privacy"),
 }
 
 function toQuery(params: Record<string, unknown>): string {

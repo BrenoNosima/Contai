@@ -7,6 +7,7 @@ import { useFinanceInvalidation } from "@/lib/query"
 import { AnimatedLogo } from "@/components/animated-logo"
 import { useAuth } from "@/lib/auth"
 import { cn, formatMoney } from "@/lib/utils"
+import { Link } from "react-router-dom"
 
 interface Message {
   id: string
@@ -150,6 +151,9 @@ export default function ChatPage() {
           <ArrowUp className="h-5 w-5" aria-hidden />
         </button>
       </form>
+      <p className="mx-auto mt-2 max-w-3xl px-3 text-center text-[11px] leading-4 text-subtle">
+        As mensagens e os dados financeiros necessários à resposta são processados pela Groq nos Estados Unidos. Não envie senhas ou documentos. <Link to="/privacidade" className="underline underline-offset-2 hover:text-foreground">Saiba como seus dados são tratados</Link>.
+      </p>
     </div>
   )
 }

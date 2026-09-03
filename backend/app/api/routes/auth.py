@@ -4,7 +4,7 @@ from app.core.config import SETTINGS
 from app.core.dependencies import get_current_user, get_db
 from app.core.security import create_access_token, decode_access_token
 from app.models.user import User
-from app.schemas.auth import LoginRequest, RegisterRequest, UserResponse
+from app.schemas.auth import ChangePasswordRequest, DeleteAccountRequest, LoginRequest, ProfileUpdateRequest, RegisterRequest, UserResponse
 from app.services.auth_service import AuthService
 from app.core.web_security import CSRF_COOKIE_NAME, create_csrf_token
 
@@ -76,3 +76,30 @@ def logout(response: Response, access_token: str | None = Cookie(default=None), 
 @router.get("/me", response_model=UserResponse)
 def me(current_user: User = Depends(get_current_user)):
     return current_user
+
+@router.patch("/me", response_model=UserResponse)
+def update_me(payload: ProfileUpdateRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    try:
+        return service.update_profile(db, current_user, name=payload.name, email=payload.email, password=payload.password)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+@router.get("/me/export")
+def export_me(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return service.export_user_data(db, current_user)
+
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+def delete_me(payload: DeleteAccountRequest, response: Response, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    try:
+        service.delete_account(db, current_user, password=payload.password)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    clear_auth_cookies(response)
+
+@router.post("/change-password", status_code=status.HTTP_204_NO_CONTENT)
+def change_password(payload: ChangePasswordRequest, response: Response, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    try:
+        service.change_password(db, current_user, current_password=payload.current_password, new_password=payload.new_password)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    clear_auth_cookies(response)
