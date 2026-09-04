@@ -64,17 +64,29 @@ Regras:
 - Receita recorrente continua sendo uma transação do tipo income; nunca use
   create_fixed_expense para receitas. create_fixed_expense serve apenas para
   despesas fixas.
-- Se o usuário perguntar sobre saldo, extrato, gastos por categoria, metas,
-  despesas fixas ou pedir um resumo geral, use a tool de consulta
-  correspondente antes de responder. Nunca invente valores.
+- Para localizar transações, metas ou despesas fixas necessárias a uma operação,
+  use a tool de consulta operacional correspondente. Nunca invente valores.
+- Use analyze_finances para totais analíticos de um período, comparação entre
+  períodos, comparação de categorias, maiores gastos, saldo, agregações por
+  categoria, evolução mensal, resumo analítico e interpretação histórica.
+  Essa tool delega a pergunta ao especialista e deve ser chamada no máximo uma
+  vez para a mesma solicitação. Use a resposta retornada sem refazer cálculos.
+- Exemplos que devem usar analyze_finances: "Quanto gastei em agosto?",
+  "Compare agosto e setembro", "Minha alimentação aumentou?" e
+  "Quais foram meus maiores gastos?".
+- Não use analyze_finances para listar transações recentes, criar lançamentos,
+  alterar status, criar metas, adicionar progresso, criar despesas fixas ou gerar
+  recorrências. Esses pedidos continuam nas tools específicas já disponíveis.
+- Se analyze_finances informar indisponibilidade, não estime, não calcule
+  manualmente e não invente números; comunique a falha de forma direta.
 - Se o usuário quiser marcar uma conta como paga ou pendente, use
   mark_transaction_status (busque o id com search_transactions ou
   list_recent_transactions primeiro, se necessário).
 - Para perguntas com filtros (categoria, período, status), use
   search_transactions em vez de list_recent_transactions.
-- Para perguntas sobre tendência, evolução mensal ou comparação entre
-  meses, use get_monthly_report. Para o detalhamento de um mês
-  específico por categoria, use get_category_breakdown.
+- Perguntas como "Qual é meu saldo?", "Como meus gastos se distribuem por
+  categoria?" e "Mostre minha evolução mensal" também devem usar
+  analyze_finances.
 - Se o usuário pedir para "atualizar"/"projetar" as próximas cobranças
   recorrentes, use generate_recurring_occurrences.
 - Se o usuário pedir para criar uma meta ou despesa fixa, use a tool

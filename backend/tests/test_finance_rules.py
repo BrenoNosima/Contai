@@ -128,17 +128,13 @@ def test_tool_schemas_expose_domain_constraints():
         "mark_transaction_status",
         "search_transactions",
         "generate_recurring_occurrences",
-        "get_balance",
         "list_recent_transactions",
-        "get_expenses_by_category",
-        "get_monthly_report",
-        "get_category_breakdown",
         "create_goal",
         "list_goals",
         "add_goal_progress",
         "create_fixed_expense",
         "list_fixed_expenses",
-        "get_dashboard_summary",
+        "analyze_finances",
     ]
     tools = {tool.name: tool for tool in FINANCE_TOOLS}
     create_schema = tools["create_transaction"].args_schema.model_json_schema()
@@ -150,3 +146,6 @@ def test_tool_schemas_expose_domain_constraints():
     ].args_schema.model_json_schema()["properties"]["months_ahead"]
     assert recurrence_schema["minimum"] == 1
     assert recurrence_schema["maximum"] == 12
+
+    delegation_schema = tools["analyze_finances"].tool_call_schema.model_json_schema()
+    assert set(delegation_schema["properties"]) == {"question"}
