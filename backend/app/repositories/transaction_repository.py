@@ -2,7 +2,7 @@ from calendar import monthrange
 from datetime import date
 from datetime import UTC, datetime
 
-from sqlalchemy import func, extract
+from sqlalchemy import case, extract, func
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import PersistenceConflictError
@@ -18,6 +18,91 @@ def _period_start(months: int) -> date:
 
 
 class TransactionRepository:
+
+    def get_period_aggregate(
+        self,
+        db: Session,
+        start_date: date,
+        end_date: date,
+    ):
+        """Aggregate paid transactions by financial competence (due_date)."""
+
+        return (
+            db.query(
+                func.coalesce(
+                    func.sum(
+                        case(
+                            (Transaction.type == "income", Transaction.amount),
+                            else_=0,
+                        )
+                    ),
+                    0,
+                ).label("total_income"),
+                func.coalesce(
+                    func.sum(
+                        case(
+                            (Transaction.type == "expense", Transaction.amount),
+                            else_=0,
+                        )
+                    ),
+                    0,
+                ).label("total_expenses"),
+                func.count(Transaction.id).label("transaction_count"),
+            )
+            .filter(
+                Transaction.status == "paid",
+                Transaction.due_date >= start_date,
+                Transaction.due_date <= end_date,
+            )
+            .one()
+        )
+
+    def get_category_expense_total(
+        self,
+        db: Session,
+        category: str,
+        start_date: date,
+        end_date: date,
+    ):
+        """Sum paid expenses for one exact category and due-date period."""
+
+        return (
+            db.query(func.coalesce(func.sum(Transaction.amount), 0))
+            .filter(
+                Transaction.type == "expense",
+                Transaction.status == "paid",
+                Transaction.category == category,
+                Transaction.due_date >= start_date,
+                Transaction.due_date <= end_date,
+            )
+            .scalar()
+        )
+
+    def get_top_expenses(
+        self,
+        db: Session,
+        start_date: date,
+        end_date: date,
+        limit: int,
+    ) -> list[Transaction]:
+        """Return the largest paid expenses for a due-date period."""
+
+        return (
+            db.query(Transaction)
+            .filter(
+                Transaction.type == "expense",
+                Transaction.status == "paid",
+                Transaction.due_date >= start_date,
+                Transaction.due_date <= end_date,
+            )
+            .order_by(
+                Transaction.amount.desc(),
+                Transaction.due_date.desc(),
+                Transaction.id.desc(),
+            )
+            .limit(limit)
+            .all()
+        )
 
     def create(
         self,

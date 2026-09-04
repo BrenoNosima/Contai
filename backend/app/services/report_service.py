@@ -1,5 +1,8 @@
 from datetime import date
+from decimal import Decimal, ROUND_HALF_UP
 
+from app.core.exceptions import DomainValidationError
+from app.core.financial_domain import FINANCIAL_CATEGORIES
 from app.repositories.transaction_repository import (
     TransactionRepository,
 )
@@ -9,6 +12,8 @@ MONTH_LABELS = [
     "Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
     "Jul", "Ago", "Set", "Out", "Nov", "Dez",
 ]
+MONEY_QUANTUM = Decimal("0.01")
+PERCENT_QUANTUM = Decimal("0.01")
 
 
 class ReportService:
@@ -19,6 +24,132 @@ class ReportService:
 
     def __init__(self):
         self.repository = TransactionRepository()
+
+    def get_period_summary(
+        self,
+        db,
+        start_date: date,
+        end_date: date,
+    ) -> dict:
+        self._validate_period(start_date, end_date)
+        row = self.repository.get_period_aggregate(db, start_date, end_date)
+        total_income = self._money(row.total_income)
+        total_expenses = self._money(row.total_expenses)
+        return {
+            "start_date": start_date.isoformat(),
+            "end_date": end_date.isoformat(),
+            "total_income": total_income,
+            "total_expenses": total_expenses,
+            "balance": self._money(total_income - total_expenses),
+            "transaction_count": int(row.transaction_count),
+        }
+
+    def compare_periods(
+        self,
+        db,
+        first_start: date,
+        first_end: date,
+        second_start: date,
+        second_end: date,
+    ) -> dict:
+        first = self.get_period_summary(db, first_start, first_end)
+        second = self.get_period_summary(db, second_start, second_end)
+        return {
+            "first_period": first,
+            "second_period": second,
+            "changes": {
+                field: self._change(first[field], second[field])
+                for field in ("total_income", "total_expenses", "balance")
+            },
+        }
+
+    def compare_category_periods(
+        self,
+        db,
+        category: str,
+        first_start: date,
+        first_end: date,
+        second_start: date,
+        second_end: date,
+    ) -> dict:
+        if category not in FINANCIAL_CATEGORIES:
+            raise DomainValidationError("Categoria financeira inválida.")
+        self._validate_period(first_start, first_end)
+        self._validate_period(second_start, second_end)
+        first_total = self._money(
+            self.repository.get_category_expense_total(
+                db, category, first_start, first_end
+            )
+        )
+        second_total = self._money(
+            self.repository.get_category_expense_total(
+                db, category, second_start, second_end
+            )
+        )
+        return {
+            "category": category,
+            "first_period": {
+                "start_date": first_start.isoformat(),
+                "end_date": first_end.isoformat(),
+                "total": first_total,
+            },
+            "second_period": {
+                "start_date": second_start.isoformat(),
+                "end_date": second_end.isoformat(),
+                "total": second_total,
+            },
+            **self._change(first_total, second_total),
+        }
+
+    def get_top_expenses(
+        self,
+        db,
+        start_date: date,
+        end_date: date,
+        limit: int = 5,
+    ) -> list[dict]:
+        self._validate_period(start_date, end_date)
+        if not 1 <= limit <= 20:
+            raise DomainValidationError("O limite deve estar entre 1 e 20.")
+        return [
+            {
+                "transaction_id": item.id,
+                "description": item.description,
+                "category": item.category,
+                "amount": self._money(item.amount),
+                "due_date": item.due_date.isoformat(),
+                "status": item.status,
+            }
+            for item in self.repository.get_top_expenses(
+                db, start_date, end_date, limit
+            )
+        ]
+
+    @staticmethod
+    def _validate_period(start_date: date, end_date: date) -> None:
+        if start_date > end_date:
+            raise DomainValidationError(
+                "A data inicial não pode ser posterior à data final."
+            )
+
+    @staticmethod
+    def _money(value) -> Decimal:
+        return Decimal(str(value or 0)).quantize(
+            MONEY_QUANTUM, rounding=ROUND_HALF_UP
+        )
+
+    @staticmethod
+    def _change(first: Decimal, second: Decimal) -> dict:
+        difference = ReportService._money(second - first)
+        percentage_change = None
+        if first != 0:
+            percentage_change = (
+                difference / abs(first) * Decimal("100")
+            ).quantize(PERCENT_QUANTUM, rounding=ROUND_HALF_UP)
+        return {
+            "difference": difference,
+            "percentage_change": percentage_change,
+        }
 
     def monthly_trend(
         self,
