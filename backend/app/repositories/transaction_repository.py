@@ -1,8 +1,9 @@
 from calendar import monthrange
 from datetime import date
 from datetime import UTC, datetime
+from decimal import Decimal
 
-from sqlalchemy import case, extract, func
+from sqlalchemy import case, extract, func, or_
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import PersistenceConflictError
@@ -18,6 +19,86 @@ def _period_start(months: int) -> date:
 
 
 class TransactionRepository:
+
+    def get_pending_period_totals(
+        self,
+        db: Session,
+        start_date: date,
+        end_date: date,
+    ):
+        return (
+            db.query(
+                func.coalesce(
+                    func.sum(case(
+                        (Transaction.type == "income", Transaction.amount),
+                        else_=0,
+                    )),
+                    0,
+                ).label("pending_income"),
+                func.coalesce(
+                    func.sum(case(
+                        (Transaction.type == "expense", Transaction.amount),
+                        else_=0,
+                    )),
+                    0,
+                ).label("pending_expenses"),
+            )
+            .filter(
+                Transaction.status == "pending",
+                Transaction.due_date >= start_date,
+                Transaction.due_date <= end_date,
+            )
+            .one()
+        )
+
+    def get_materialized_commitment_keys(
+        self,
+        db: Session,
+        start_date: date,
+        end_date: date,
+    ) -> list[tuple[int | None, int | None, date]]:
+        return (
+            db.query(
+                Transaction.parent_id,
+                Transaction.fixed_expense_id,
+                Transaction.due_date,
+            )
+            .filter(
+                Transaction.due_date >= start_date,
+                Transaction.due_date <= end_date,
+                or_(
+                    Transaction.parent_id.isnot(None),
+                    Transaction.fixed_expense_id.isnot(None),
+                ),
+            )
+            .all()
+        )
+
+    def get_pending_monthly_totals(
+        self,
+        db: Session,
+        start_date: date,
+        end_date: date,
+    ):
+        return (
+            db.query(
+                extract("year", Transaction.due_date).label("year"),
+                extract("month", Transaction.due_date).label("month"),
+                Transaction.type,
+                func.sum(Transaction.amount).label("total"),
+            )
+            .filter(
+                Transaction.status == "pending",
+                Transaction.due_date >= start_date,
+                Transaction.due_date <= end_date,
+            )
+            .group_by(
+                extract("year", Transaction.due_date),
+                extract("month", Transaction.due_date),
+                Transaction.type,
+            )
+            .all()
+        )
 
     def get_period_aggregate(
         self,
@@ -244,33 +325,27 @@ class TransactionRepository:
     def get_total_income(
         self,
         db: Session,
-    ) -> float:
-
-        transactions = (
-            db.query(Transaction)
-            .filter(Transaction.type == "income", Transaction.status == "paid")
-            .all()
-        )
-
-        return sum(
-            transaction.amount
-            for transaction in transactions
+    ) -> Decimal:
+        return (
+            db.query(func.coalesce(func.sum(Transaction.amount), 0))
+            .filter(
+                Transaction.type == "income",
+                Transaction.status == "paid",
+            )
+            .scalar()
         )
 
     def get_total_expense(
         self,
         db: Session,
-    ) -> float:
-
-        transactions = (
-            db.query(Transaction)
-            .filter(Transaction.type == "expense", Transaction.status == "paid")
-            .all()
-        )
-
-        return sum(
-            transaction.amount
-            for transaction in transactions
+    ) -> Decimal:
+        return (
+            db.query(func.coalesce(func.sum(Transaction.amount), 0))
+            .filter(
+                Transaction.type == "expense",
+                Transaction.status == "paid",
+            )
+            .scalar()
         )
 
     def get_expenses_by_category(

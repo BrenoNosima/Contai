@@ -113,13 +113,13 @@ class TransactionService:
 
     def create_installments(self, db: Session, data: InstallmentCreate) -> list[Transaction]:
         group_id = str(uuid4())
-        total = Decimal(str(data.total_amount)).quantize(Decimal("0.01"))
-        base = (total / data.installment_count).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
-        remainder = total - (base * data.installment_count)
+        amounts = self.split_installment_amounts(
+            data.total_amount,
+            data.installment_count,
+        )
         items: list[Transaction] = []
-        for index in range(data.installment_count):
+        for index, amount in enumerate(amounts):
             due_date = _add_months(data.first_due_date, index)
-            amount = base + (remainder if index == data.installment_count - 1 else Decimal("0"))
             items.append(Transaction(
                 type="expense",
                 description=data.description,
@@ -141,6 +141,28 @@ class TransactionService:
                 installment_count=data.installment_count,
             ))
         return self.repository.create_many(db, items)
+
+    @staticmethod
+    def split_installment_amounts(
+        total_amount,
+        installment_count: int,
+    ) -> list[Decimal]:
+        """Split an amount in cents while preserving the exact total."""
+
+        total = Decimal(str(total_amount)).quantize(Decimal("0.01"))
+        if total <= 0:
+            raise DomainValidationError("O valor deve ser maior que zero.")
+        if not 1 <= installment_count <= 120:
+            raise DomainValidationError("A quantidade de parcelas deve estar entre 1 e 120.")
+        base = (total / installment_count).quantize(
+            Decimal("0.01"),
+            rounding=ROUND_DOWN,
+        )
+        remainder = total - (base * installment_count)
+        return [
+            base + (remainder if index == installment_count - 1 else Decimal("0"))
+            for index in range(installment_count)
+        ]
 
     def get_installments(self, db: Session, group_id: str) -> list[Transaction]:
         return self.repository.get_installments(db, group_id)
