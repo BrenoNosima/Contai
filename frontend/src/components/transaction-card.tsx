@@ -36,7 +36,7 @@ export function TransactionCard({
   return (
     <div
       className={cn(
-        "group flex items-start gap-2.5 rounded-2xl border border-border bg-surface-2/70 p-3 transition-all duration-200 hover:border-border-strong hover:bg-surface-2 hover:shadow-lg sm:items-center sm:gap-3 sm:p-3.5",
+        "group flex items-start gap-2.5 rounded-2xl border border-border bg-surface-2/70 p-3 transition-[background-color,border-color,box-shadow] duration-200 hover:border-border-strong hover:bg-surface-2 hover:shadow-lg sm:items-center sm:gap-3 sm:p-3.5",
         !paid && !isIncome && due.tone === "expense" && "border-[color:var(--color-expense)]/40",
       )}
     >
@@ -115,7 +115,7 @@ export function TransactionCard({
             <button
               onClick={() => onEdit(tx)}
               aria-label="Editar lançamento"
-              className="flex h-11 w-11 items-center justify-center rounded-xl text-muted transition-all hover:bg-surface-3 hover:text-foreground sm:opacity-0 sm:focus-visible:opacity-100 sm:group-hover:opacity-100"
+              className="flex h-11 w-11 items-center justify-center rounded-xl text-muted transition-colors hover:bg-surface-3 hover:text-foreground"
             >
               <Pencil className="h-4 w-4" aria-hidden />
             </button>
@@ -124,7 +124,7 @@ export function TransactionCard({
             <button
               onClick={() => onDelete(tx)}
               aria-label="Excluir lançamento"
-              className="flex h-11 w-11 items-center justify-center rounded-xl text-muted transition-all hover:bg-expense-soft hover:text-expense sm:opacity-0 sm:focus-visible:opacity-100 sm:group-hover:opacity-100"
+              className="flex h-11 w-11 items-center justify-center rounded-xl text-muted transition-colors hover:bg-expense-soft hover:text-expense"
             >
               <Trash2 className="h-4 w-4" aria-hidden />
             </button>

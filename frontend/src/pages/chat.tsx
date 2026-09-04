@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from "react"
 import { useMutation } from "@tanstack/react-query"
-import { ArrowUp, Check, LoaderCircle, ReceiptText, X } from "lucide-react"
+import { ArrowUp, Check, LoaderCircle, MessageCircle, ReceiptText, X } from "lucide-react"
 import { assistantActionsApi, chatApi } from "@/lib/api"
 import type { AssistantAction } from "@/lib/types"
 import { useFinanceInvalidation } from "@/lib/query"
-import { AnimatedLogo } from "@/components/animated-logo"
 import { useAuth } from "@/lib/auth"
 import { cn, formatMoney } from "@/lib/utils"
 import { Link } from "react-router-dom"
@@ -19,9 +18,9 @@ interface Message {
 
 const SUGGESTIONS = [
   "Quanto gastei este mês?",
-  "Quais são minhas maiores despesas?",
+  "Quais contas ainda estão pendentes?",
   "Como estão minhas metas?",
-  "Onde posso economizar?",
+  "Registre uma despesa de R$ 50 em transporte",
 ]
 
 export default function ChatPage() {
@@ -55,7 +54,7 @@ export default function ChatPage() {
         {
           id: crypto.randomUUID(),
           role: "assistant",
-          content: err.message || "Algo deu errado ao falar com o assistente. Tente de novo.",
+          content: err.message || "Não foi possível obter a resposta. Confira sua conexão e tente novamente.",
           error: true,
         },
       ])
@@ -161,14 +160,14 @@ export default function ChatPage() {
 function ChatWelcome({ firstName, onSuggestion }: { firstName?: string; onSuggestion: (text: string) => void }) {
   return (
     <section className="animate-in mx-auto flex w-full max-w-2xl flex-col items-center px-2 text-center" aria-labelledby="chat-welcome-title">
-      <AnimatedLogo className="mb-8" imageClassName="w-32 sm:w-36" />
-      <p className="text-sm font-medium text-income">Olá{firstName ? `, ${firstName}` : ""}</p>
-      <h1 id="chat-welcome-title" className="mt-3 max-w-lg text-balance text-3xl font-semibold tracking-[-0.045em] text-foreground sm:text-4xl">
-        Como posso te ajudar com suas finanças hoje?
+      <p className="text-sm text-muted">Olá{firstName ? `, ${firstName}` : ""}.</p>
+      <h1 id="chat-welcome-title" className="mt-2 max-w-xl text-balance text-3xl font-semibold tracking-[-0.035em] text-foreground sm:text-4xl">
+        Consulte seus números ou prepare uma alteração.
       </h1>
+      <p className="mt-3 max-w-lg text-sm leading-6 text-muted">Você revisa e confirma antes que o assistente altere qualquer dado financeiro.</p>
       <div className="mt-8 grid w-full grid-cols-1 gap-2 sm:grid-cols-2" aria-label="Sugestões de perguntas">
         {SUGGESTIONS.map((suggestion) => (
-          <button key={suggestion} type="button" onClick={() => onSuggestion(suggestion)} className="min-h-12 rounded-2xl border border-border bg-surface/45 px-4 py-3 text-left text-sm leading-5 text-muted transition-colors hover:border-border-strong hover:bg-surface-2 hover:text-foreground active:bg-surface-3">
+          <button key={suggestion} type="button" onClick={() => onSuggestion(suggestion)} className="min-h-12 border-b border-border px-1 py-3 text-left text-sm leading-5 text-muted transition-colors hover:text-foreground sm:odd:pr-4 sm:even:pl-4">
             {suggestion}
           </button>
         ))}
@@ -197,8 +196,8 @@ function MessageBubble({
   return (
     <div className={cn("flex items-start gap-3", isUser && "justify-end")}>
       {!isUser && (
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-surface-2" aria-hidden>
-          <AnimatedLogo imageClassName="w-7" />
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center text-muted" aria-hidden>
+          <MessageCircle className="h-[18px] w-[18px]" />
         </div>
       )}
       <div
@@ -236,20 +235,20 @@ function confirmedActionMessage(action: AssistantAction): string {
       const amount = formatMoney(Number(payload.amount))
       const description = payload.description ? ` — ${payload.description}` : ""
       const category = payload.category ? ` na categoria ${payload.category}` : ""
-      return `Lançamento concluído: ${kind} de ${amount}${category}${description}. Seus dados financeiros já foram atualizados.`
+      return `${kind === "receita" ? "Receita" : "Despesa"} de ${amount}${category}${description} adicionada.`
     }
     case "mark_transaction_status":
-      return `Atualização concluída: o lançamento #${payload.transaction_id} foi marcado como ${formatActionValue("status", payload.status).toLowerCase()}.`
+      return `Lançamento #${payload.transaction_id} marcado como ${formatActionValue("status", payload.status).toLowerCase()}.`
     case "generate_recurring_occurrences":
-      return `Geração concluída: os lançamentos recorrentes dos próximos ${formatActionValue("months_ahead", payload.months_ahead)} foram atualizados.`
+      return `Lançamentos recorrentes dos próximos ${formatActionValue("months_ahead", payload.months_ahead)} atualizados.`
     case "create_goal":
-      return `Criação concluída: a meta “${payload.name}” foi criada com o valor de ${formatMoney(Number(payload.target_amount))}.`
+      return `Meta “${payload.name}” criada com o valor de ${formatMoney(Number(payload.target_amount))}.`
     case "add_goal_progress":
-      return `Progresso concluído: ${formatMoney(Number(payload.amount))} foram adicionados à meta #${payload.goal_id}.`
+      return `${formatMoney(Number(payload.amount))} adicionados à meta #${payload.goal_id}.`
     case "create_fixed_expense":
-      return `Cadastro concluído: a despesa fixa “${payload.name}”, no valor de ${formatMoney(Number(payload.amount))}, foi adicionada.`
+      return `Despesa fixa “${payload.name}”, de ${formatMoney(Number(payload.amount))}, adicionada.`
     default:
-      return "Ação concluída com sucesso. Seus dados financeiros já foram atualizados."
+      return "Alteração salva nos seus dados financeiros."
   }
 }
 
@@ -404,8 +403,8 @@ function FormattedMessage({ content }: { content: string }) {
 function TypingIndicator() {
   return (
     <div className="flex items-center gap-3" role="status" aria-live="polite">
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-surface-2" aria-hidden>
-        <AnimatedLogo imageClassName="w-7" />
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center text-muted" aria-hidden>
+        <MessageCircle className="h-[18px] w-[18px]" />
       </div>
       <div className="rounded-2xl rounded-bl-md bg-surface-2 px-4 py-3 text-sm text-muted">
         <span className="sr-only">Contaí está pensando</span>

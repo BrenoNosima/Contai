@@ -14,6 +14,7 @@ import type {
   TransactionFilters,
   TransactionStatus,
 } from "./types"
+import { DEMO_MODE, demoRequest } from "./demo-api"
 
 /**
  * In development we hit the Vite proxy at `/api` -> VITE_API_URL.
@@ -43,6 +44,7 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit, retryAuthentication = true): Promise<T> {
+  if (DEMO_MODE) return demoRequest<T>(path, init)
   let res: Response
   try {
     const method = (init?.method ?? "GET").toUpperCase()
@@ -149,6 +151,7 @@ function toQuery(params: Record<string, unknown>): string {
 export const transactionsApi = {
   list: (filters: TransactionFilters = {}) =>
     request<Transaction[]>(`/transactions/${toQuery(filters as Record<string, unknown>)}`),
+  get: (id: number) => request<Transaction>(`/transactions/${id}`),
   create: (data: TransactionCreate) =>
     request<Transaction>(`/transactions/`, {
       method: "POST",

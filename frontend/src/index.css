@@ -66,6 +66,8 @@
   --color-auth-canvas: #050809;
   --color-auth-panel: #0b1011;
   --color-auth-field: #101617;
+  --color-auth-border: #1b2221;
+  --color-auth-border-strong: #303938;
   --color-auth-heading: #f4faf7;
   --color-auth-text: #edf6f2;
   --color-auth-label: #c0ccc8;
@@ -200,6 +202,7 @@
     background-color: var(--color-surface);
     border: 1px solid var(--color-border);
   }
+
 }
 
 @media (min-width: 640px) {

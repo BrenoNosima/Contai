@@ -16,7 +16,7 @@ import { ApiError } from "@/lib/api"
 import { useAuth } from "@/lib/auth"
 
 const fieldClassName =
-  "h-12 border-white/[0.09] bg-auth-field pl-11 text-auth-text shadow-none placeholder:text-auth-subtle hover:border-white/[0.15] focus:border-auth-accent/70 focus:ring-auth-accent/10"
+  "h-12 border-auth-border bg-auth-field pl-11 text-auth-text shadow-none placeholder:text-auth-subtle hover:border-auth-border-strong focus:border-auth-accent/70 focus:ring-auth-accent/10"
 
 export default function RegisterPage() {
   const { register } = useAuth()
@@ -156,7 +156,7 @@ export default function RegisterPage() {
         <Button
           type="submit"
           variant="primary"
-          className="h-12 w-full bg-[linear-gradient(110deg,var(--color-auth-accent-strong),var(--color-auth-accent-lime))] text-auth-accent-foreground shadow-[0_14px_32px_-20px_var(--color-auth-accent)] transition-[filter,box-shadow,transform] hover:brightness-105 active:translate-y-px"
+          className="h-12 w-full bg-auth-accent-strong text-auth-accent-foreground shadow-none hover:bg-auth-accent-hover active:translate-y-px"
           disabled={busy}
         >
           {busy ? (

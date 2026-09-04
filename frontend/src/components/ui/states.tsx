@@ -10,13 +10,13 @@ export function Spinner({ className }: { className?: string }) {
 export function LoadingState({ label = "Carregando…" }: { label?: string }) {
   return (
     <div
-      className="card-elevated-2 overflow-hidden rounded-2xl p-5 text-muted"
+      className="overflow-hidden border-y border-border py-5 text-muted"
       role="status"
       aria-live="polite"
       aria-busy="true"
     >
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+        <div className="flex h-10 w-10 items-center justify-center">
           <Spinner className="h-5 w-5 text-primary" />
         </div>
         <span className="text-sm font-medium text-foreground">{label}</span>
@@ -31,7 +31,7 @@ export function LoadingState({ label = "Carregando…" }: { label?: string }) {
 }
 
 export function ErrorState({
-  message = "Algo deu errado.",
+  message = "Não foi possível carregar estes dados. Tente novamente.",
   onRetry,
 }: {
   message?: string
@@ -39,10 +39,10 @@ export function ErrorState({
 }) {
   return (
     <div
-      className="card-elevated-2 flex flex-col items-center justify-center gap-3 rounded-2xl px-5 py-14 text-center"
+      className="flex flex-col items-center justify-center gap-3 border-y border-border px-5 py-14 text-center"
       role="alert"
     >
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-expense-soft text-expense">
+      <div className="flex h-12 w-12 items-center justify-center text-expense">
         <AlertTriangle className="h-6 w-6" aria-hidden />
       </div>
       <p className="max-w-sm text-sm text-muted">{message}</p>
@@ -68,7 +68,7 @@ export function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center justify-center gap-4 px-5 py-14 text-center">
-      <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-border bg-surface-3/70 text-subtle shadow-inner">
+      <div className="flex h-14 w-14 items-center justify-center text-subtle">
         {icon ?? <Inbox className="h-7 w-7" aria-hidden />}
       </div>
       <div className="space-y-1">

@@ -75,7 +75,6 @@ export default function GoalsPage() {
     <div className="animate-in">
       <PageHeader
         title="Metas"
-        subtitle="Acompanhe seus objetivos financeiros."
         actions={
           <Button size="sm" variant="primary" onClick={() => setForm({ open: true })}>
             <Plus className="h-4 w-4" aria-hidden /> Nova meta
@@ -190,7 +189,7 @@ function GoalCard({
   const meta = STATUS_META[goal.status]
   const pct = Math.min(100, Math.max(0, goal.progress_percentage))
   return (
-    <Card className="flex flex-col gap-4 overflow-hidden transition-all hover:-translate-y-0.5 hover:border-border-strong hover:shadow-xl">
+    <Card className="flex flex-col gap-4 overflow-hidden">
       <div className="relative z-10 flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate font-medium text-foreground">{goal.name}</p>
@@ -225,7 +224,7 @@ function GoalCard({
           aria-valuemax={100}
         >
           <div
-            className={cn("h-full rounded-full transition-all", meta.bar)}
+            className={cn("h-full rounded-full transition-[width,background-color]", meta.bar)}
             style={{ width: `${pct}%` }}
           />
         </div>

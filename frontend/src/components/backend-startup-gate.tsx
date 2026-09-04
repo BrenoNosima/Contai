@@ -1,8 +1,9 @@
 import { useEffect, useState, type ReactNode } from "react"
 import { RefreshCw, Server } from "lucide-react"
-import { AnimatedLogo } from "@/components/animated-logo"
+import { BrandLogo } from "@/components/brand-logo"
 import { Button } from "@/components/ui/primitives"
 import { waitForBackend, type BackendAvailability } from "@/lib/backend-health"
+import { DEMO_MODE } from "@/lib/demo-api"
 
 type GateState = "checking" | "starting" | Exclude<BackendAvailability, "ready">
 
@@ -28,10 +29,10 @@ export function BackendStartupGate({ children }: { children: ReactNode }) {
     return () => controller.abort()
   }, [attempt])
 
-  if (ready) return children
+  if (DEMO_MODE || ready) return children
 
   const failed = state === "timeout" || state === "unavailable"
-  const title = failed ? "Não foi possível iniciar agora" : "Preparando seu ambiente..."
+  const title = failed ? "Servidor indisponível" : "Conectando ao Contaí"
   const description = failed
     ? "O Contaí está temporariamente indisponível. Aguarde um instante e tente novamente."
     : state === "starting"
@@ -39,22 +40,16 @@ export function BackendStartupGate({ children }: { children: ReactNode }) {
       : "Estamos verificando se está tudo pronto para você."
 
   return (
-    <main className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-background px-5 py-10 sm:px-8">
-      <div className="pointer-events-none absolute inset-0" aria-hidden>
-        <div className="absolute inset-0 opacity-[0.025] [background-image:linear-gradient(rgba(255,255,255,.32)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.32)_1px,transparent_1px)] [background-size:56px_56px]" />
-        <div className="absolute left-1/2 top-1/2 h-[28rem] w-[28rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-income/[0.055] blur-3xl sm:h-[38rem] sm:w-[38rem]" />
-      </div>
-
+    <main className="flex min-h-dvh items-center justify-center bg-background px-5 py-10 sm:px-8">
       <section
-        className="relative w-full max-w-md animate-in rounded-3xl border border-border bg-surface/90 px-6 py-8 text-center shadow-[0_30px_80px_-42px_rgba(0,0,0,0.95)] backdrop-blur-sm sm:px-10 sm:py-10"
+        className="w-full max-w-md animate-in px-2 py-8 text-center sm:px-6 sm:py-10"
         role={failed ? "alert" : "status"}
         aria-live="polite"
         aria-busy={!failed}
       >
-        <AnimatedLogo className="mb-9" imageClassName="w-36 sm:w-40" />
+        <BrandLogo className="mb-9 justify-center" imageClassName="w-36 sm:w-40" />
 
-        <div className="relative mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-border-strong bg-surface-2 text-income">
-          {!failed && <span className="startup-pulse absolute inset-[-9px] rounded-[1.35rem] border border-income/25" aria-hidden />}
+        <div className="relative mx-auto mb-6 flex h-12 w-12 items-center justify-center text-income">
           {failed ? <Server className="h-7 w-7" aria-hidden /> : <StartupLoader />}
         </div>
 
@@ -68,7 +63,6 @@ export function BackendStartupGate({ children }: { children: ReactNode }) {
           </Button>
         ) : (
           <div className="mt-7 flex items-center justify-center gap-2 text-xs font-medium text-subtle">
-            <span className="h-1.5 w-1.5 rounded-full bg-income" aria-hidden />
             Você continuará automaticamente
           </div>
         )}

@@ -68,7 +68,7 @@ export default function ReportsPage() {
   if (isLoading) {
     return (
       <div>
-        <PageHeader title="Relatórios" subtitle="Entenda para onde seu dinheiro vai." />
+        <PageHeader title="Relatórios" />
         <LoadingState label="Calculando seus números..." />
       </div>
     )
@@ -77,7 +77,7 @@ export default function ReportsPage() {
   if (isError) {
     return (
       <div>
-        <PageHeader title="Relatórios" subtitle="Entenda para onde seu dinheiro vai." />
+        <PageHeader title="Relatórios" />
         <ErrorState onRetry={() => refetch()} />
       </div>
     )
@@ -97,7 +97,7 @@ export default function ReportsPage() {
                 key={opt.value}
                 onClick={() => setRange(opt.value)}
                 aria-pressed={range === opt.value}
-                className={`min-h-11 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
+                className={`min-h-11 rounded-lg px-3 py-2 text-sm font-medium transition-[color,background-color,box-shadow] ${
                   range === opt.value ? "bg-primary text-primary-foreground shadow-sm" : "text-muted hover:bg-surface-3 hover:text-foreground"
                 }`}
               >
@@ -111,17 +111,11 @@ export default function ReportsPage() {
       <Card className="overflow-hidden p-4 sm:p-5">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-medium uppercase tracking-[0.12em] text-subtle">
-              Resultado do período
-            </p>
-            <p className="mt-2 text-sm text-muted">Saldo líquido</p>
+            <p className="text-sm text-muted">Saldo líquido do período</p>
             <p className={`metric-value-lg mt-1 ${totals.net >= 0 ? "text-income" : "text-expense"}`}>
               {formatMoney(totals.net)}
             </p>
           </div>
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-3 text-foreground">
-            <Wallet className="h-5 w-5" aria-hidden />
-          </span>
         </div>
         <div className="mt-5 grid grid-cols-2 divide-x divide-border border-t border-border pt-4">
           <PeriodMetric
@@ -141,7 +135,7 @@ export default function ReportsPage() {
       </Card>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <Card className="p-5 transition-colors hover:border-border-strong">
+        <Card className="p-5">
           <h2 className="font-sans text-base font-semibold text-foreground">Entradas x Saídas</h2>
           <p className="mb-4 text-sm text-muted">Comparativo mensal dos últimos {range} meses.</p>
           <MonthlyBars data={monthly} />
@@ -154,7 +148,7 @@ export default function ReportsPage() {
           </table>
         </Card>
 
-        <Card className="p-5 transition-colors hover:border-border-strong">
+        <Card className="p-5">
           <h2 className="font-sans text-base font-semibold text-foreground">Evolução do saldo</h2>
           <p className="mb-4 text-sm text-muted">Saldo acumulado ao longo do período.</p>
           <BalanceTrend data={trend} />
@@ -167,7 +161,7 @@ export default function ReportsPage() {
           </table>
         </Card>
 
-        <Card className="p-5 transition-colors hover:border-border-strong lg:col-span-2">
+        <Card className="p-5 lg:col-span-2">
           <h2 className="font-sans text-base font-semibold text-foreground">Gastos por categoria</h2>
           <p className="mb-4 text-sm text-muted">
             {topCategory

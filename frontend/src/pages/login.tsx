@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react"
-import { ArrowLeft, ArrowRight, Eye, EyeOff, LoaderCircle, LockKeyhole, Mail, ShieldCheck, Sparkles, UserRound, WalletCards } from "lucide-react"
+import { ArrowLeft, ArrowRight, CalendarClock, Check, Eye, EyeOff, LoaderCircle, LockKeyhole, Mail, ShieldCheck, UserRound, WalletCards } from "lucide-react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { AuthLayout } from "@/components/auth-layout"
 import { Button, Input, Label } from "@/components/ui/primitives"
@@ -88,7 +88,7 @@ export default function LoginPage() {
               onChange={(event) => setEmail(event.target.value)}
               placeholder="voce@exemplo.com"
               aria-invalid={Boolean(error)}
-              className="h-12 border-white/[0.09] bg-auth-field pl-11 pr-4 text-auth-text shadow-none placeholder:text-auth-subtle hover:border-white/[0.15] focus:border-auth-accent/70 focus:ring-auth-accent/10"
+              className="h-12 border-auth-border bg-auth-field pl-11 pr-4 text-auth-text shadow-none placeholder:text-auth-subtle hover:border-auth-border-strong focus:border-auth-accent/70 focus:ring-auth-accent/10"
             />
           </div>
         </div>
@@ -105,7 +105,7 @@ export default function LoginPage() {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               aria-invalid={Boolean(error)}
-              className="h-12 border-white/[0.09] bg-auth-field pl-11 pr-12 text-auth-text shadow-none hover:border-white/[0.15] focus:border-auth-accent/70 focus:ring-auth-accent/10"
+              className="h-12 border-auth-border bg-auth-field pl-11 pr-12 text-auth-text shadow-none hover:border-auth-border-strong focus:border-auth-accent/70 focus:ring-auth-accent/10"
             />
             <button
               type="button"
@@ -136,7 +136,7 @@ export default function LoginPage() {
         <Button
           type="submit"
           variant="primary"
-          className="h-12 w-full bg-[linear-gradient(110deg,var(--color-auth-accent-strong),var(--color-auth-accent-lime))] text-auth-accent-foreground shadow-[0_14px_32px_-20px_var(--color-auth-accent)] transition-[filter,box-shadow,transform] hover:brightness-105 active:translate-y-px"
+          className="h-12 w-full bg-auth-accent-strong text-auth-accent-foreground shadow-none hover:bg-auth-accent-hover active:translate-y-px"
           disabled={busy}
         >
           {busy ? <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden /> : <ArrowRight className="h-4 w-4" aria-hidden />}
@@ -169,18 +169,17 @@ function MobileIntroduction({ onContinue }: { onContinue: () => void }) {
           />
         </div>
 
-        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-auth-accent">Clareza para decidir melhor</p>
         <h1 id="mobile-intro-title" className="text-balance text-[2.35rem] font-semibold leading-[1.04] tracking-[-0.04em] text-auth-heading">
-          Sua vida financeira, <span className="text-auth-accent-lime">organizada</span> em um só lugar.
+          Saiba o que já saiu, o que vence e quanto sobra.
         </h1>
         <p className="mt-4 text-base leading-7 text-auth-muted">
-          Acompanhe lançamentos, metas e vencimentos com uma visão simples, privada e feita para a sua rotina.
+          Lançamentos, contas e metas reunidos para você decidir com os números à vista.
         </p>
 
-        <div className="mt-6 grid grid-cols-3 gap-2" aria-label="Benefícios">
-          <IntroBenefit icon={ShieldCheck} label="Sessão segura" />
-          <IntroBenefit icon={WalletCards} label="Dados privados" />
-          <IntroBenefit icon={Sparkles} label="Assistente" />
+        <div className="mt-6 border-y border-auth-border py-2" aria-label="Recursos principais">
+          <IntroBenefit icon={WalletCards} label="Saldo e movimentações no mesmo resumo" />
+          <IntroBenefit icon={CalendarClock} label="Contas organizadas por vencimento" />
+          <IntroBenefit icon={Check} label="Você confirma alterações do assistente" />
         </div>
       </div>
 
@@ -189,7 +188,7 @@ function MobileIntroduction({ onContinue }: { onContinue: () => void }) {
           type="button"
           variant="primary"
           onClick={onContinue}
-          className="h-14 w-full rounded-2xl bg-[linear-gradient(110deg,var(--color-auth-accent-strong),var(--color-auth-accent-lime))] text-base font-semibold text-auth-accent-foreground shadow-[0_18px_42px_-20px_var(--color-auth-accent)] transition-[filter,box-shadow,transform] hover:brightness-105 active:translate-y-px"
+          className="h-14 w-full rounded-xl bg-auth-accent-strong text-base font-semibold text-auth-accent-foreground shadow-none hover:bg-auth-accent-hover active:translate-y-px"
         >
           Acessar minha conta
           <ArrowRight className="h-5 w-5" aria-hidden />
@@ -202,11 +201,9 @@ function MobileIntroduction({ onContinue }: { onContinue: () => void }) {
 
 function IntroBenefit({ icon: Icon, label }: { icon: typeof ShieldCheck; label: string }) {
   return (
-    <div className="flex min-h-24 flex-col items-center justify-center gap-2 rounded-2xl border border-white/[0.07] bg-white/[0.025] px-2 py-3 text-center text-[11px] leading-4 text-auth-label">
-      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-income-soft text-auth-accent">
-        <Icon className="h-[18px] w-[18px]" aria-hidden />
-      </span>
-      {label}
+    <div className="flex items-center gap-3 border-b border-auth-border py-3.5 text-sm text-auth-label last:border-b-0">
+      <Icon className="h-[18px] w-[18px] shrink-0 text-auth-accent" aria-hidden />
+      <span>{label}</span>
     </div>
   )
 }

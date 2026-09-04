@@ -34,7 +34,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     <button
       ref={ref}
       className={cn(
-      "inline-flex touch-manipulation items-center justify-center whitespace-nowrap transition-all duration-200 disabled:pointer-events-none disabled:opacity-45 select-none [&>svg.lucide]:shrink-0",
+      "inline-flex touch-manipulation items-center justify-center whitespace-nowrap transition-[color,background-color,border-color,box-shadow,opacity] duration-200 disabled:pointer-events-none disabled:opacity-45 select-none [&>svg.lucide]:shrink-0",
         variants[variant],
         sizes[size],
         className,
@@ -71,7 +71,7 @@ export const Input = React.forwardRef<
   <input
     ref={ref}
     className={cn(
-      "h-11 w-full rounded-xl border border-border bg-surface px-3.5 text-base text-foreground shadow-sm outline-none placeholder:text-subtle transition-all focus:border-primary focus:ring-4 focus:ring-primary/10 sm:text-sm",
+      "h-11 w-full rounded-xl border border-border bg-surface px-3.5 text-base text-foreground shadow-sm outline-none placeholder:text-subtle transition-[border-color,box-shadow] focus:border-primary focus:ring-4 focus:ring-primary/10 sm:text-sm",
       className,
     )}
     {...props}
@@ -87,7 +87,7 @@ export const Select = React.forwardRef<
   <select
     ref={ref}
     className={cn(
-      "h-11 w-full appearance-none rounded-xl border border-border bg-surface px-3.5 text-base text-foreground shadow-sm outline-none transition-all focus:border-primary focus:ring-4 focus:ring-primary/10 sm:text-sm",
+      "h-11 w-full appearance-none rounded-xl border border-border bg-surface px-3.5 text-base text-foreground shadow-sm outline-none transition-[border-color,box-shadow] focus:border-primary focus:ring-4 focus:ring-primary/10 sm:text-sm",
       className,
     )}
     {...props}
@@ -105,7 +105,7 @@ export const Textarea = React.forwardRef<
   <textarea
     ref={ref}
     className={cn(
-      "w-full resize-none rounded-xl border border-border bg-surface px-3.5 py-2.5 text-base text-foreground shadow-sm outline-none placeholder:text-subtle transition-all focus:border-primary focus:ring-4 focus:ring-primary/10 sm:text-sm",
+      "w-full resize-none rounded-xl border border-border bg-surface px-3.5 py-2.5 text-base text-foreground shadow-sm outline-none placeholder:text-subtle transition-[border-color,box-shadow] focus:border-primary focus:ring-4 focus:ring-primary/10 sm:text-sm",
       className,
     )}
     {...props}

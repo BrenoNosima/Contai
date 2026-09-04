@@ -111,9 +111,9 @@ export default function FixedExpensesPage() {
               return (
                 <div
                   key={item.id}
-                  className="group flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-surface-2/70 p-3.5 transition-all hover:-translate-y-0.5 hover:border-border-strong hover:bg-surface-2 hover:shadow-lg sm:flex-nowrap"
+                  className="group flex flex-wrap items-center gap-3 border-b border-border px-1 py-3.5 last:border-b-0 sm:flex-nowrap"
                 >
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-surface-3 text-muted">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center text-muted">
                     <Icon className="h-5 w-5" aria-hidden />
                   </div>
                   <div className="min-w-0 flex-1">
@@ -135,14 +135,14 @@ export default function FixedExpensesPage() {
                     <button
                       onClick={() => setForm({ open: true, item })}
                       aria-label="Editar gasto fixo"
-                      className="flex h-11 w-11 items-center justify-center rounded-xl text-muted transition-all hover:bg-surface-3 hover:text-foreground sm:opacity-0 sm:focus-visible:opacity-100 sm:group-hover:opacity-100"
+                      className="flex h-11 w-11 items-center justify-center rounded-xl text-muted transition-colors hover:bg-surface-3 hover:text-foreground"
                     >
                       <Pencil className="h-4 w-4" aria-hidden />
                     </button>
                     <button
                       onClick={() => setDeleting(item)}
                       aria-label="Excluir gasto fixo"
-                      className="flex h-11 w-11 items-center justify-center rounded-xl text-muted transition-all hover:bg-expense-soft hover:text-expense sm:opacity-0 sm:focus-visible:opacity-100 sm:group-hover:opacity-100"
+                      className="flex h-11 w-11 items-center justify-center rounded-xl text-muted transition-colors hover:bg-expense-soft hover:text-expense"
                     >
                       <Trash2 className="h-4 w-4" aria-hidden />
                     </button>

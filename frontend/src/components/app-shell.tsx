@@ -7,7 +7,7 @@ import {
   Target,
   BarChart3,
   Repeat,
-  Sparkles,
+  MessageCircle,
   MoreHorizontal,
   LogOut,
   UserRound,
@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils"
 import { useAuth } from "@/lib/auth"
 import { BrandLogo } from "@/components/brand-logo"
 import { Dialog } from "@/components/ui/dialog"
+import { DEMO_MODE } from "@/lib/demo-api"
 
 interface NavItem {
   to: string
@@ -33,12 +34,17 @@ const NAV: NavItem[] = [
   { to: "/metas", label: "Metas", icon: Target },
   { to: "/relatorios", label: "Relatórios", icon: BarChart3 },
   { to: "/gastos-fixos", label: "Gastos fixos", icon: Repeat },
-  { to: "/assistente", label: "Assistente", icon: Sparkles },
+  { to: "/assistente", label: "Assistente", icon: MessageCircle },
   { to: "/conta-e-privacidade", label: "Conta e privacidade", icon: ShieldCheck },
 ]
 
-const MOBILE_NAV_PATHS = new Set(["/", "/calendario", "/lancamentos", "/assistente"])
+const MOBILE_NAV_PATHS = new Set(["/", "/lancamentos", "/assistente"])
 const MOBILE_NAV = NAV.filter((item) => MOBILE_NAV_PATHS.has(item.to))
+const DESKTOP_GROUPS = [
+  { label: "Dia a dia", items: NAV.slice(0, 3) },
+  { label: "Planejamento", items: NAV.slice(3, 6) },
+  { label: "Ferramentas", items: NAV.slice(6, 7) },
+]
 
 export function AppShell() {
   const location = useLocation()
@@ -63,18 +69,17 @@ export function AppShell() {
         <div className="px-2 py-1">
           <BrandLogo className="justify-center" imageClassName="w-32" />
         </div>
-        <div className="mt-7 px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-subtle">
-          Menu principal
-        </div>
-        <nav className="mt-2 flex flex-1 flex-col gap-1" aria-label="Navegação principal">
-          {NAV.map((item) => (
+        <nav className="mt-7 flex flex-1 flex-col gap-5" aria-label="Navegação principal">
+          {DESKTOP_GROUPS.map((group) => <div key={group.label}>
+            <p className="mb-1 px-3 text-[11px] font-medium text-subtle">{group.label}</p>
+            <div className="space-y-1">{group.items.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.end}
               className={({ isActive }) =>
                 cn(
-                  "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                  "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors duration-200",
                   isActive
                     ? "bg-primary/10 text-primary"
                     : "text-muted hover:bg-surface-2 hover:text-foreground",
@@ -94,8 +99,12 @@ export function AppShell() {
                 </>
               )}
             </NavLink>
-          ))}
+            ))}</div>
+          </div>)}
         </nav>
+        <NavLink to="/conta-e-privacidade" className={({ isActive }) => cn("mb-2 flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium", isActive ? "bg-primary/10 text-primary" : "text-muted hover:bg-surface-2 hover:text-foreground")}>
+          <ShieldCheck className="h-[18px] w-[18px]" aria-hidden /> Conta e privacidade
+        </NavLink>
         <div className="mb-3 flex items-center gap-3 rounded-xl border border-border bg-surface-2 p-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-surface-3 text-muted"><UserRound className="h-4 w-4" aria-hidden /></div>
           <div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold text-foreground">{user?.name}</p><p className="truncate text-[11px] text-subtle">{user?.email}</p></div>
@@ -122,6 +131,7 @@ export function AppShell() {
 
       {/* Content */}
       <main className="lg:pl-64">
+        {DEMO_MODE && <div className="border-b border-warning/30 bg-warning-soft px-4 py-2 text-center text-xs font-medium text-warning">Modo demonstração · dados fictícios · alterações reiniciam ao recarregar</div>}
         <div
           className={cn(
             "mx-auto w-full px-4 sm:px-6 xl:px-8",
@@ -183,27 +193,27 @@ export function AppShell() {
         open={moreOpen}
         onClose={() => setMoreOpen(false)}
         title="Mais opções"
-        description="Acesse as demais áreas da Contaí."
+        description="Planejamento e configurações."
         className="lg:hidden"
       >
-        <div className="grid grid-cols-2 gap-2">
+        <div className="divide-y divide-border border-y border-border">
           {NAV.filter((item) => !MOBILE_NAV.includes(item)).map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               onClick={() => setMoreOpen(false)}
               className={({ isActive }) => cn(
-                "flex items-center gap-3 rounded-2xl border p-3 text-sm font-medium transition-colors",
+                "flex min-h-12 items-center gap-3 px-1 py-3 text-sm font-medium transition-colors",
                 isActive
-                  ? "border-primary/30 bg-primary/10 text-primary"
-                  : "border-border bg-surface-2 text-muted hover:text-foreground",
+                  ? "text-primary"
+                  : "text-muted hover:text-foreground",
               )}
             >
               <item.icon className="h-5 w-5" aria-hidden />
               {item.label}
             </NavLink>
           ))}
-          <button type="button" onClick={handleLogout} disabled={loggingOut} className="flex min-h-12 items-center gap-3 rounded-2xl border border-expense/25 bg-expense-soft p-3 text-sm font-medium text-expense disabled:opacity-50"><LogOut className="h-5 w-5" aria-hidden /> Sair</button>
+          <button type="button" onClick={handleLogout} disabled={loggingOut} className="flex min-h-12 w-full items-center gap-3 px-1 py-3 text-sm font-medium text-expense disabled:opacity-50"><LogOut className="h-5 w-5" aria-hidden /> Sair</button>
         </div>
       </Dialog>
     </div>
