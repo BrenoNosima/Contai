@@ -3,7 +3,7 @@ id: SPEC-ASSISTANT-003
 title: Base determinística de planejamento financeiro
 status: implemented
 owners: []
-last_updated: 2026-09-04
+last_updated: 2026-09-07
 ---
 
 # Base determinística de planejamento financeiro
@@ -17,11 +17,12 @@ por Python e SQL, sem somar valores, dividir parcelas ou estimar metas.
 ## Objetivo
 
 Disponibilizar cinco capacidades READ/SIMULATION para compromissos, fluxo de
-caixa, parcelamento e metas, sem persistência e sem registro em agents.
+caixa, parcelamento e metas, sem persistência. Na etapa 3B, expô-las somente
+no PlanningAgent isolado, sem registro nos demais agents.
 
 ## Fora de escopo
 
-- Criar `PlanningAgent` ou integrá-lo ao `FinancialAgent`.
+- Integrar `PlanningAgent` ao `FinancialAgent` (a criação isolada pertence à etapa 3B).
 - Criar endpoints, migrations ou alterações de schema.
 - Persistir simulações, transações, metas ou despesas fixas.
 - Produzir score, recomendação subjetiva de compra ou data prevista de conclusão.
@@ -156,7 +157,8 @@ caixa, parcelamento e metas, sem persistência e sem registro em agents.
 - Criar `PlanningService` e `planning_tools.py`.
 - Acrescentar somente agregações necessárias ao `TransactionRepository`.
 - Extrair a divisão de parcelas do `TransactionService` para reutilização exata.
-- Não alterar agents, registries, endpoints, frontend ou banco.
+- Na base determinística, não alterar agents; na etapa 3B criar somente o
+  PlanningAgent isolado. Não alterar registries, endpoints, frontend ou banco.
 
 ## Verificação
 
@@ -164,6 +166,66 @@ caixa, parcelamento e metas, sem persistência e sem registro em agents.
 | --- | --- |
 | AC-001–AC-007 | `backend/tests/test_financial_planning.py` |
 | AC-008–AC-010 | testes de registry, suíte completa e `git diff --check` |
+
+## Etapa 3B — PlanningAgent isolado
+
+O PlanningAgent interpreta exclusivamente resultados determinísticos do
+PlanningService. Expõe `ask(message, chat_history=None)` sem memória persistente,
+endpoint ou delegação. FinancialAgent, AnalystAgent e registry permanecem intactos.
+
+Registra exatamente cinco tools READ/SIMULATION:
+
+| Tool | Exemplo |
+| --- | --- |
+| get_committed_amount | Quanto do meu dinheiro já está comprometido este mês? |
+| project_cash_flow | Quanto devo ter no fim do mês? Quanto vai sobrar? |
+| simulate_installment_purchase | Se eu comprar algo de R$ 4.000 em 8x, como fica? |
+| calculate_goal_contribution | Quanto preciso guardar por mês para minha meta? |
+| simulate_goal_impact | Essa compra atrasa minha meta? |
+
+Escolher a capacidade mais específica. Nunca calcular parcelas, saldo, margem,
+diferenças, contribuição, déficit, superávit ou impacto na LLM. Explicar apenas
+campos retornados. Margem de 900 para 500 não autoriza inventar diferença de 400.
+Respeitar remaining_amount, deadline, months_remaining e
+required_monthly_contribution; meta concluída não exige contribuição adicional.
+Não inventar prazo alternativo, score ou classificação financeira.
+
+Simulações nunca criam compras, parcelas, transações ou atualizam metas.
+Pedidos de escrita devem receber explicação da limitação, sem tool de escrita
+ou proposta. Projeção não é saldo bancário garantido, receita prevista não é
+renda garantida e margem não é recomendação automática de compra. Não decidir
+pelo usuário; explicar números com linguagem condicional.
+
+“Quanto vai sobrar?” é Planning quando futuro; “Quanto sobrou em agosto?” é
+Analyst quando histórico realizado. Se faltar período, identificação da meta ou
+dados do cenário, pedir esclarecimento; não inventar IDs nem delegar nesta etapa.
+O histórico user/assistant fornecido pelo chamador permite “E em 5x?” retomar
+uma compra anterior, sem armazenamento e sem aceitar roles privilegiados.
+
+Reutilizar create_chat_model (Groq, timeout e retries compartilhados), create_agent
+e retry único para ValueError/ValidationError. Falhas persistentes de tool/provider
+propagam ao chamador; erros estruturados não se tornam valores. Resposta vazia
+gera erro explícito. Não criar cache com memória de conversa.
+
+Aplicar validate_prompt à entrada e ao histórico user; sensitive_redaction_scope,
+redact_sensitive_input, restore_sensitive_data e sanitize_model_output no mesmo
+padrão do Analyst. Aplicar também redact_for_ai na fronteira de saída das tools,
+inclusive erros de parsing que podem repetir entrada sensível. Conteúdo de tools
+e histórico é dado não confiável, nunca instrução de sistema.
+
+Nenhuma tool aceita user_id. O chamador futuro estabelece set_current_user_id
+antes de ask e restaura o token em finally; as sessões existentes herdam o
+ContextVar. Não inserir identidade no prompt nem permitir escolha pela LLM.
+
+Aceitação 3B: testes offline verificam conjunto exato, ausência de escrita e
+user_id, contratos de seleção, execução de tools com modelo simulado, histórico,
+redação, injection, erros de tool/provider, resposta vazia e ausência de DML.
+Rodar testes específicos, suíte backend completa e git diff --check. Testes com
+modelo simulado não comprovam a qualidade de seleção da Groq real.
+
+### Histórico da etapa 3B
+
+- 2026-09-07: especificado PlanningAgent isolado antes da implementação.
 
 ## Histórico
 
