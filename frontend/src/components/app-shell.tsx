@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { NavLink, Outlet, useLocation } from "react-router-dom"
 import {
   LayoutDashboard,
@@ -12,6 +12,7 @@ import {
   LogOut,
   UserRound,
   ShieldCheck,
+  CircleHelp,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -35,6 +36,7 @@ const NAV: NavItem[] = [
   { to: "/relatorios", label: "Relatórios", icon: BarChart3 },
   { to: "/gastos-fixos", label: "Gastos fixos", icon: Repeat },
   { to: "/assistente", label: "Assistente", icon: MessageCircle },
+  { to: "/ajuda", label: "Ajuda", icon: CircleHelp },
   { to: "/conta-e-privacidade", label: "Conta e privacidade", icon: ShieldCheck },
 ]
 
@@ -43,7 +45,7 @@ const MOBILE_NAV = NAV.filter((item) => MOBILE_NAV_PATHS.has(item.to))
 const DESKTOP_GROUPS = [
   { label: "Dia a dia", items: NAV.slice(0, 3) },
   { label: "Planejamento", items: NAV.slice(3, 6) },
-  { label: "Ferramentas", items: NAV.slice(6, 7) },
+  { label: "Ferramentas", items: NAV.slice(6, 8) },
 ]
 
 export function AppShell() {
@@ -58,6 +60,30 @@ export function AppShell() {
   const active = NAV.find((n) =>
     n.end ? location.pathname === n.to : location.pathname.startsWith(n.to),
   )
+  const moreActive = Boolean(active && !MOBILE_NAV_PATHS.has(active.to))
+  const activeMobileIndex = MOBILE_NAV.findIndex((item) => item.to === active?.to)
+  const desiredGlowIndex = moreOpen || moreActive ? 3 : Math.max(activeMobileIndex, 0)
+  const [glowIndex, setGlowIndex] = useState(desiredGlowIndex)
+  const [glowVisible, setGlowVisible] = useState(true)
+
+  useEffect(() => {
+    if (desiredGlowIndex === glowIndex) {
+      setGlowVisible(true)
+      return
+    }
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setGlowIndex(desiredGlowIndex)
+      setGlowVisible(true)
+      return
+    }
+
+    setGlowVisible(false)
+    const moveTimer = window.setTimeout(() => {
+      setGlowIndex(desiredGlowIndex)
+      window.requestAnimationFrame(() => setGlowVisible(true))
+    }, 120)
+    return () => window.clearTimeout(moveTimer)
+  }, [desiredGlowIndex, glowIndex])
   const firstName = user?.name.trim().split(/\s+/)[0] || "Usuário"
   const userInitial = firstName.charAt(0).toLocaleUpperCase("pt-BR")
   const ActiveIcon = active?.icon
@@ -136,9 +162,9 @@ export function AppShell() {
           className={cn(
             "mx-auto w-full px-4 sm:px-6 xl:px-8",
             location.pathname.startsWith("/assistente")
-              ? "h-[calc(100dvh-4.0625rem)] max-w-5xl overflow-hidden pb-[calc(4.5rem+env(safe-area-inset-bottom))] pt-4 sm:pt-6 lg:h-dvh lg:pb-8 lg:pt-8"
+              ? "h-[calc(100dvh-4.0625rem)] max-w-5xl overflow-hidden pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-4 sm:pt-6 lg:h-dvh lg:pb-8 lg:pt-8"
               : cn(
-                  "pb-24 pt-5 sm:pb-28 sm:pt-7 lg:pb-12 lg:pt-9",
+                  "pb-[calc(7rem+env(safe-area-inset-bottom))] pt-5 sm:pt-7 lg:pb-12 lg:pt-9",
                   location.pathname.startsWith("/calendario")
                     ? "max-w-7xl"
                     : "max-w-5xl",
@@ -151,11 +177,21 @@ export function AppShell() {
 
       {/* Mobile bottom nav */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface/95 shadow-[0_-12px_30px_-24px_rgba(0,0,0,0.7)] backdrop-blur-xl lg:hidden"
+        className="fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom))] left-3 right-3 z-30 mx-auto max-w-[30rem] rounded-[26px] border border-border bg-surface shadow-[0_12px_36px_-14px_rgba(0,0,0,0.85)] lg:hidden"
         aria-label="Navegação inferior"
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
-        <div className="mx-auto flex max-w-md items-stretch justify-around">
+        <div className="relative flex items-stretch p-1.5">
+          <span
+            aria-hidden
+            className={cn(
+              "pointer-events-none absolute left-1.5 top-1.5 h-12 w-[calc((100%-0.75rem)/4)] transition-[transform,opacity] duration-300 ease-out motion-reduce:transition-none",
+              glowVisible ? "opacity-100" : "opacity-0",
+            )}
+            style={{ transform: `translateX(${glowIndex * 100}%)` }}
+          >
+            <span className="absolute left-1/2 top-[-0.375rem] h-11 w-16 -translate-x-1/2 [clip-path:polygon(32%_0%,68%_0%,100%_100%,0%_100%)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-primary)_38%,transparent)_0%,color-mix(in_srgb,var(--color-primary)_18%,transparent)_38%,color-mix(in_srgb,var(--color-primary)_6%,transparent)_70%,transparent_100%)] blur-[5px]" />
+            <span className="absolute left-1/2 top-[-0.375rem] h-0.5 w-6 -translate-x-1/2 rounded-full bg-foreground/90 shadow-[0_0_7px_color-mix(in_srgb,var(--color-primary)_55%,transparent)]" />
+          </span>
           {MOBILE_NAV.map((item) => (
             <NavLink
               key={item.to}
@@ -163,25 +199,24 @@ export function AppShell() {
               end={item.end}
               className={({ isActive }) =>
                 cn(
-                  "relative flex min-h-[60px] flex-1 flex-col items-center justify-center gap-1 px-1 py-2 text-[10px] font-medium transition-colors",
-                  isActive ? "text-primary" : "text-subtle hover:text-foreground",
+                  "relative flex min-h-12 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-[20px] px-0.5 py-1.5 text-[10px] font-medium transition-[color,background-color,opacity,transform] duration-200 [&>span]:relative [&>span]:z-10 [&>svg]:relative [&>svg]:z-10 focus-visible:z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:scale-[0.98]",
+                  isActive ? "text-primary" : "text-subtle hover:bg-surface-2 hover:text-foreground",
                 )
               }
             >
-              {({ isActive }) => (
-                <>
-                  {isActive && <span className="absolute top-0 h-0.5 w-8 rounded-full bg-primary" />}
-                  <item.icon className="h-5 w-5" aria-hidden />
-                  <span className="truncate">{item.label}</span>
-                </>
-              )}
+              <item.icon className="h-5 w-5" aria-hidden />
+              <span className="max-w-full truncate">{item.label}</span>
             </NavLink>
           ))}
           <button
             type="button"
             onClick={() => setMoreOpen(true)}
-            className="flex min-h-[60px] flex-1 flex-col items-center justify-center gap-1 px-1 py-2 text-[10px] font-medium text-subtle transition-colors hover:text-foreground"
+            className={cn(
+              "relative flex min-h-12 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-[20px] px-0.5 py-1.5 text-[10px] font-medium transition-[color,background-color,opacity,transform] duration-200 [&>span]:relative [&>span]:z-10 [&>svg]:relative [&>svg]:z-10 focus-visible:z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:scale-[0.98]",
+              moreActive || moreOpen ? "text-primary" : "text-subtle hover:bg-surface-2 hover:text-foreground",
+            )}
             aria-expanded={moreOpen}
+            aria-current={moreActive ? "page" : undefined}
           >
             <MoreHorizontal className="h-5 w-5" aria-hidden />
             <span>Mais</span>
