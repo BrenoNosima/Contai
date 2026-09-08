@@ -52,7 +52,7 @@ export default function OverviewPage() {
         <MonthSummary transactions={monthTransactions.data} />
       </div>
       <div className="mt-8">
-        <div className="grid min-w-0 items-start gap-4 lg:grid-cols-2">
+        <div className="grid min-w-0 items-stretch gap-4 lg:grid-cols-2">
         <UpcomingSection items={upcoming} loading={pending.isLoading} error={pending.isError} retry={() => pending.refetch()} onOpen={setSelectedId} />
         <RecentSection items={dashboard.data.recent_transactions} onOpen={setSelectedId} />
         </div>

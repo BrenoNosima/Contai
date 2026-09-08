@@ -81,7 +81,7 @@ export function AppShell() {
     const moveTimer = window.setTimeout(() => {
       setGlowIndex(desiredGlowIndex)
       window.requestAnimationFrame(() => setGlowVisible(true))
-    }, 120)
+    }, 50)
     return () => window.clearTimeout(moveTimer)
   }, [desiredGlowIndex, glowIndex])
   const firstName = user?.name.trim().split(/\s+/)[0] || "Usuário"
@@ -184,7 +184,7 @@ export function AppShell() {
           <span
             aria-hidden
             className={cn(
-              "pointer-events-none absolute left-1.5 top-1.5 h-12 w-[calc((100%-0.75rem)/4)] transition-[transform,opacity] duration-300 ease-out motion-reduce:transition-none",
+              "pointer-events-none absolute left-1.5 top-1.5 h-12 w-[calc((100%-0.75rem)/4)] [transition:transform_160ms_cubic-bezier(0.22,1,0.36,1),opacity_50ms_ease-out] motion-reduce:transition-none",
               glowVisible ? "opacity-100" : "opacity-0",
             )}
             style={{ transform: `translateX(${glowIndex * 100}%)` }}

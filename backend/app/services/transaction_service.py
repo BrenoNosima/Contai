@@ -396,12 +396,15 @@ class TransactionService:
         months_ahead: int,
     ) -> list[date]:
 
+        horizon_month = _add_months(date.today().replace(day=1), months_ahead)
+        horizon = horizon_month.replace(
+            day=monthrange(horizon_month.year, horizon_month.month)[1]
+        )
+
         if recurrence == "weekly":
-            horizon = _add_months(date.today(), months_ahead)
             step = timedelta(weeks=1)
         else:
             # monthly (padrão)
-            horizon = _add_months(date.today(), months_ahead)
             step = None
 
         dates: list[date] = []

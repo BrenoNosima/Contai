@@ -5,6 +5,7 @@ from pydantic import ValidationError
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+import app.services.transaction_service as transaction_service_module
 from app.core.database import Base
 from app.core.exceptions import DomainValidationError
 from app.schemas.fixed_expense import FixedExpenseCreate
@@ -54,6 +55,23 @@ def test_monthly_recurrence_preserves_last_valid_day():
     assert _add_months(date(2026, 1, 31), 1) == date(2026, 2, 28)
     assert _add_months(date(2026, 1, 31), 2) == date(2026, 3, 31)
     assert _add_months(date(2024, 1, 31), 1) == date(2024, 2, 29)
+
+
+def test_recurring_projection_covers_the_entire_horizon_month(monkeypatch):
+    class FixedDate(date):
+        @classmethod
+        def today(cls):
+            return cls(2026, 9, 8)
+
+    monkeypatch.setattr(transaction_service_module, "date", FixedDate)
+
+    dates = TransactionService._project_dates(
+        date(2026, 9, 24),
+        "monthly",
+        months_ahead=1,
+    )
+
+    assert date(2026, 10, 24) in dates
 
 
 def test_recurring_projection_does_not_duplicate_template_date():

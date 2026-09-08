@@ -29,6 +29,49 @@ import { cn, formatMoney } from "@/lib/utils"
 
 const WEEKDAYS = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"]
 
+export function calendarMonthDistance(cursor: Date, today: Date): number {
+  return (cursor.getFullYear() - today.getFullYear()) * 12 + cursor.getMonth() - today.getMonth()
+}
+
+export function calendarDayStatusLabel(items: Pick<Transaction, "type" | "status">[]): string {
+  const groups = [
+    { type: "expense", status: "pending", singular: "despesa pendente", plural: "despesas pendentes" },
+    { type: "expense", status: "paid", singular: "despesa paga", plural: "despesas pagas" },
+    { type: "income", status: "pending", singular: "receita a receber", plural: "receitas a receber" },
+    { type: "income", status: "paid", singular: "receita recebida", plural: "receitas recebidas" },
+  ] as const
+
+  return groups.flatMap((group) => {
+    const count = items.filter((item) => item.type === group.type && item.status === group.status).length
+    return count ? [`${count} ${count === 1 ? group.singular : group.plural}`] : []
+  }).join(", ")
+}
+
+type CalendarTransactionsApi = Pick<typeof transactionsApi, "generateOccurrences" | "list">
+
+export async function loadCalendarTransactions({
+  startISO,
+  endISO,
+  monthsAhead,
+  generateOccurrences,
+  api = transactionsApi,
+}: {
+  startISO: string
+  endISO: string
+  monthsAhead: number
+  generateOccurrences: boolean
+  api?: CalendarTransactionsApi
+}): Promise<Transaction[]> {
+  if (generateOccurrences) {
+    try {
+      await api.generateOccurrences(monthsAhead)
+    } catch {
+      // A falha na geração não deve esconder lançamentos já existentes.
+    }
+  }
+  return api.list({ start_date: startISO, end_date: endISO })
+}
+
 export default function CalendarPage() {
   const [cursor, setCursor] = useState(() => new Date())
   const [selected, setSelected] = useState<Date | null>(null)
@@ -47,18 +90,17 @@ export default function CalendarPage() {
   const startISO = format(gridStart, "yyyy-MM-dd")
   const endISO = format(gridEnd, "yyyy-MM-dd")
   const today = new Date()
-  const monthDistance =
-    (cursor.getFullYear() - today.getFullYear()) * 12 +
-    cursor.getMonth() -
-    today.getMonth()
+  const monthDistance = calendarMonthDistance(cursor, today)
   const monthsAhead = Math.min(12, Math.max(1, monthDistance))
 
   const txQuery = useQuery({
     queryKey: qk.transactions({ scope: "calendar", startISO, endISO }),
-    queryFn: async () => {
-      await transactionsApi.generateOccurrences(monthsAhead)
-      return transactionsApi.list({ start_date: startISO, end_date: endISO })
-    },
+    queryFn: () => loadCalendarTransactions({
+      startISO,
+      endISO,
+      monthsAhead,
+      generateOccurrences: monthDistance >= 0,
+    }),
   })
 
   const byDay = useMemo(() => {
@@ -169,13 +211,14 @@ export default function CalendarPage() {
                 const inMonth = isSameMonth(day, cursor)
                 const isSel = selected && isSameDay(day, selected)
                 const visibleItems = items.slice(0, 3)
+                const statusLabel = calendarDayStatusLabel(items)
                 return (
                   <button
                     key={key}
                     onClick={() => setSelected(day)}
                     aria-label={`${format(day, "dd 'de' MMMM", { locale: ptBR })}${
                       items.length ? `, ${items.length} lançamentos` : ""
-                    }`}
+                    }${statusLabel ? `, ${statusLabel}` : ""}`}
                     aria-pressed={!!isSel}
                     className={cn(
                       "group relative min-h-14 border-b border-r border-[color:var(--color-calendar-border)] p-1 text-left text-sm transition-colors min-[420px]:min-h-16 min-[420px]:p-1.5 sm:min-h-[122px] sm:p-2.5 [@media(min-width:900px)]:min-h-[136px] [&:nth-child(7n)]:border-r-0",
@@ -240,11 +283,6 @@ export default function CalendarPage() {
                         )}
                       </span>
                     )}
-                    {items.length > 0 && (
-                      <span className="sr-only">
-                        {hasPending ? "pendente" : "pago"}
-                      </span>
-                    )}
                   </button>
                 )
               })}
@@ -256,6 +294,10 @@ export default function CalendarPage() {
               <span className="flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-full bg-warning" />
                 Pendente
+              </span>
+              <span className="flex items-center gap-1.5 opacity-60">
+                <span className="h-2 w-2 rounded-full border border-current" />
+                <span className="line-through">Concluído</span>
               </span>
               <span className="sm:hidden">Número = lançamentos</span>
             </div>
@@ -277,7 +319,7 @@ export default function CalendarPage() {
         <div className="space-y-3">
           {selectedTx.length > 0 && (
             <div className="flex items-center justify-between rounded-xl bg-surface-2 px-4 py-3">
-              <span className="text-xs text-muted">Total previsto do dia</span>
+              <span className="text-xs text-muted">Resultado do dia</span>
               <Money
                 value={
                   selectedTx.reduce(
@@ -319,7 +361,10 @@ export default function CalendarPage() {
             variant="outline"
             className="w-full"
             onClick={() => {
-              if (selected) setAddFor(format(selected, "yyyy-MM-dd"))
+              if (selected) {
+                setAddFor(format(selected, "yyyy-MM-dd"))
+                setSelected(null)
+              }
             }}
           >
             <Plus className="h-4 w-4" aria-hidden /> Adicionar neste dia
