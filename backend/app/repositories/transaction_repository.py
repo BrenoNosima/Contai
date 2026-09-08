@@ -208,6 +208,9 @@ class TransactionRepository:
         try:
             commit(db)
         except PersistenceConflictError:
+            if db.info.get("defer_commit"):
+                # The enclosing action must roll back its state as well.
+                raise
             # Outra geração concorrente pode ter criado a mesma ocorrência
             # entre a consulta de existência e o commit do lote.
             return []

@@ -229,6 +229,23 @@ modelo simulado não comprovam a qualidade de seleção da Groq real.
 
 ## Histórico
 
+### Correções da auditoria final
+
+- Parcelamento rejeita valores não finitos ou com fração de centavo; total e
+  parcelas usam exatamente o mesmo valor monetário aceito.
+- `projected_balance_before/after` são snapshots independentes: saldo realizado
+  atual mais margem daquela competência. `balance_basis=independent_month`
+  torna explícito que não representam saldo acumulado entre meses.
+- Impacto de meta ativa cobre cada competência desde o mês atual até o prazo,
+  inclusive meses sem parcelas; no último mês considera somente datas até o
+  prazo. Meta concluída não requer novo planejamento e retorna impactos vazios.
+- `status` corresponde ao cenário; `registered_status` preserva o cadastro.
+- Tools exigem contexto autenticado antes de abrir sessão. Consultas financeiras
+  sem contexto são negadas por padrão; acesso administrativo exige opção explícita
+  na sessão. O PlanningAgent permanece isolado, com as mesmas cinco tools.
+- Regressões devem cobrir frações de centavo, horizonte completo, prazo substituído,
+  isolamento, ausência de escrita e semântica dos snapshots.
+
 | Data | Alteração |
 | --- | --- |
 | 2026-09-04 | Especificação criada para a base determinística de planejamento. |

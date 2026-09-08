@@ -28,6 +28,7 @@ class FailingSession:
 
 class ManagedSession:
     def __init__(self):
+        self.info = {}
         self.rolled_back = False
         self.closed = False
 
@@ -59,6 +60,7 @@ def test_database_error_rolls_back_and_becomes_unavailable():
 def test_tool_session_rolls_back_and_closes_after_unexpected_error(monkeypatch):
     session = ManagedSession()
     monkeypatch.setattr(tool_common, "SessionLocal", lambda: session)
+    monkeypatch.setattr(tool_common, "get_current_user_id", lambda: 1)
 
     with pytest.raises(RuntimeError, match="tool failed"):
         with tool_common.tool_db():

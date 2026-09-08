@@ -149,7 +149,10 @@ class TransactionService:
     ) -> list[Decimal]:
         """Split an amount in cents while preserving the exact total."""
 
-        total = Decimal(str(total_amount)).quantize(Decimal("0.01"))
+        total = Decimal(str(total_amount))
+        if not total.is_finite() or total != total.quantize(Decimal("0.01")):
+            raise DomainValidationError("O valor deve ser finito e ter no máximo duas casas decimais.")
+        total = total.quantize(Decimal("0.01"))
         if total <= 0:
             raise DomainValidationError("O valor deve ser maior que zero.")
         if not 1 <= installment_count <= 120:

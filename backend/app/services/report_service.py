@@ -175,8 +175,8 @@ class ReportService:
                 "period": key,
                 "month": MONTH_LABELS[month - 1],
                 "year": year,
-                "income": 0.0,
-                "expense": 0.0,
+                "income": Decimal("0.00"),
+                "expense": Decimal("0.00"),
             }
 
         for row_year, row_month, tx_type, total in rows:
@@ -187,9 +187,9 @@ class ReportService:
                 continue
 
             if tx_type == "income":
-                buckets[key]["income"] = float(total)
+                buckets[key]["income"] = self._money(total)
             else:
-                buckets[key]["expense"] = float(total)
+                buckets[key]["expense"] = self._money(total)
 
         ordered = sorted(buckets.values(), key=lambda b: b["period"])
 
@@ -207,7 +207,7 @@ class ReportService:
         return [
             {
                 **item,
-                "balance": round(item["income"] - item["expense"], 2),
+                "balance": self._money(item["income"] - item["expense"]),
             }
             for item in trend
         ]
@@ -216,10 +216,10 @@ class ReportService:
         """Resumo completo do período consumido pela tela de relatórios."""
 
         monthly = self.monthly_balance_table(db, months)
-        income = round(sum(item["income"] for item in monthly), 2)
-        expense = round(sum(item["expense"] for item in monthly), 2)
+        income = self._money(sum((item["income"] for item in monthly), Decimal("0")))
+        expense = self._money(sum((item["expense"] for item in monthly), Decimal("0")))
         categories = [
-            {"category": category, "amount": float(total)}
+            {"category": category, "amount": self._money(total)}
             for category, total in self.repository.get_expense_totals_since(db, months)
         ]
 
@@ -229,7 +229,7 @@ class ReportService:
             "totals": {
                 "income": income,
                 "expense": expense,
-                "net": round(income - expense, 2),
+                "net": self._money(income - expense),
             },
         }
 
@@ -254,7 +254,7 @@ class ReportService:
         income = []
 
         for category, tx_type, total in rows:
-            entry = {"category": category, "amount": float(total)}
+            entry = {"category": category, "amount": self._money(total)}
             if tx_type == "expense":
                 expenses.append(entry)
             else:

@@ -441,7 +441,7 @@ def test_goal_impact_reports_sufficient_reduced_and_deficit_margin(
         1,
         start,
     )
-    impact = result["goal_period_impacts"][0]
+    impact = next(row for row in result["goal_period_impacts"] if row["due_date"] == start.isoformat())
     assert impact["required_monthly_contribution"] == Decimal("90.91")
     assert impact["monthly_available_after"] == Decimal(expected_after)
     assert impact["goal_surplus_after"] == Decimal(expected_after) - Decimal("90.91")

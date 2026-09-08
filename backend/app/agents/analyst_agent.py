@@ -59,12 +59,14 @@ class AnalystAgent:
         chat_history: list[dict] | None = None,
     ) -> str:
         for item in chat_history or []:
+            if item.get("role") not in {"user", "assistant"}:
+                raise ValueError("Histórico aceita somente user e assistant.")
             if item.get("role") == "user":
                 validate_prompt(str(item.get("content", "")))
 
         messages = [
             {
-                **item,
+                "role": item["role"],
                 "content": redact_sensitive_input(str(item.get("content", ""))),
             }
             for item in (chat_history or [])

@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine, event, false, inspect
 from sqlalchemy.orm import Session, sessionmaker, with_loader_criteria
 from sqlalchemy.orm import declarative_base
 
@@ -38,13 +38,13 @@ def scope_financial_queries(execute_state):
     from app.models.assistant_action import AssistantAction
 
     user_id = execute_state.session.info.get("user_id") or get_current_user_id()
-    if user_id is None or not execute_state.is_select:
+    if user_id is None and execute_state.session.info.get("allow_unscoped_financial_access"):
         return
     for model in (Transaction, Goal, FixedExpense, AssistantAction):
         execute_state.statement = execute_state.statement.options(
             with_loader_criteria(
                 model,
-                lambda entity: entity.user_id == user_id,
+                (lambda entity: entity.user_id == user_id) if user_id is not None else false(),
                 include_aliases=True,
             )
         )
@@ -59,8 +59,18 @@ def assign_financial_owner(session, _flush_context, _instances):
     from app.models.assistant_action import AssistantAction
 
     user_id = session.info.get("user_id") or get_current_user_id()
-    if user_id is None:
+    if user_id is None and session.info.get("allow_unscoped_financial_access"):
         return
+    financial_models = (Transaction, Goal, FixedExpense, AssistantAction)
+    for entity in session.new | session.dirty | session.deleted:
+        if not isinstance(entity, financial_models):
+            continue
+        if user_id is None:
+            raise ValueError("Contexto autenticado obrigatório para alterar dados financeiros.")
+        if entity not in session.new:
+            previous = inspect(entity).attrs.user_id.history.deleted
+            if entity.user_id != user_id or any(owner != user_id for owner in previous):
+                raise ValueError("O registro financeiro pertence a outro usuário.")
     for entity in session.new:
         if isinstance(entity, (Transaction, Goal, FixedExpense, AssistantAction)):
             entity.user_id = user_id

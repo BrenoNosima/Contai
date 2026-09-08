@@ -20,7 +20,7 @@ def create_goal(
     description: Annotated[str | None, Field(max_length=300)] = None,
     deadline: str | None = None,
 ) -> dict:
-    """Cria uma meta financeira; deadline opcional usa o formato AAAA-MM-DD."""
+    """Propõe uma meta para confirmação humana; deadline opcional usa AAAA-MM-DD."""
 
     with tool_db() as db:
         parsed_deadline = parse_iso_date(deadline, "deadline")
@@ -56,6 +56,6 @@ def add_goal_progress(
     goal_id: Annotated[int, Field(ge=1)],
     amount: Annotated[float, Field(gt=0)],
 ) -> dict:
-    """Adiciona um valor positivo ao progresso de uma meta existente."""
+    """Propõe adicionar progresso a uma meta; exige confirmação humana."""
 
     return propose("add_goal_progress", {"goal_id": goal_id, "amount": amount})

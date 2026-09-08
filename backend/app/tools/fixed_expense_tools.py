@@ -19,7 +19,7 @@ def create_fixed_expense(
     amount: Annotated[float, Field(gt=0)],
     billing_day: Annotated[int, Field(ge=1, le=31)],
 ) -> dict:
-    """Cadastra uma despesa fixa mensal."""
+    """Propõe cadastrar uma despesa fixa mensal; exige confirmação humana."""
 
     return propose("create_fixed_expense", {"name": name, "category": category,
         "amount": amount, "billing_day": billing_day})

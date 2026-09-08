@@ -109,6 +109,7 @@ class PlanningService:
             })
         return {
             "purchase_amount": self._money(amount),
+            "balance_basis": "independent_month",
             "installments": installments,
             "first_due_date": first_due_date.isoformat(),
             "installment_amounts": [self._money(item) for item in amounts],
@@ -171,24 +172,56 @@ class PlanningService:
         required = contribution["required_monthly_contribution"]
         deadline = contribution["target_date"]
         impacts = []
-        for item in purchase["schedule"]:
-            due_date = date.fromisoformat(item["due_date"])
-            if deadline and due_date > date.fromisoformat(deadline):
-                continue
-            impacts.append({
-                **item,
-                "required_monthly_contribution": required,
-                "goal_surplus_before": self._money(
-                    item["monthly_available_before"] - required
-                ),
-                "goal_surplus_after": self._money(
-                    item["monthly_available_after"] - required
-                ),
+        if contribution["remaining_amount"] == 0:
+            return {
+                "goal": contribution,
+                "purchase_amount": purchase["purchase_amount"],
+                "installments": installments,
+                "balance_basis": "independent_month",
+                "goal_period_impacts": impacts,
+            }
+        end_date = date.fromisoformat(deadline)
+        month = (as_of or date.today()).replace(day=1)
+        forecast = self._monthly_forecast(db, month, end_date)
+        income, expenses = self.transaction_service.get_totals(db)
+        current_balance = self._money(income - expenses)
+        installments_by_month = {
+            row["due_date"][:7]: row for row in purchase["schedule"]
+            if date.fromisoformat(row["due_date"]) <= end_date
+        }
+        while month <= end_date:
+            period = month.strftime("%Y-%m")
+            installment = installments_by_month.get(period)
+            amount = installment["amount"] if installment else Decimal("0.00")
+            totals = forecast.get((month.year, month.month), {
+                "income": Decimal("0"), "expenses": Decimal("0"),
             })
+            before = self._money(totals["income"] - totals["expenses"])
+            after = self._money(before - amount)
+            impacts.append({
+                "period": period,
+                "period_end": min(end_date, month.replace(
+                    day=monthrange(month.year, month.month)[1],
+                )).isoformat(),
+                "installment_number": installment["installment_number"] if installment else None,
+                "due_date": installment["due_date"] if installment else None,
+                "amount": amount,
+                "monthly_available_before": before,
+                "monthly_available_after": after,
+                "projected_balance_before": self._money(current_balance + before),
+                "projected_balance_after": self._money(current_balance + after),
+                "required_monthly_contribution": required,
+                "goal_surplus_before": self._money(before - required),
+                "goal_surplus_after": self._money(after - required),
+            })
+            if month.year == end_date.year and month.month == end_date.month:
+                break
+            month = self._add_months(month, 1)
         return {
             "goal": contribution,
             "purchase_amount": purchase["purchase_amount"],
             "installments": installments,
+            "balance_basis": "independent_month",
             "goal_period_impacts": impacts,
         }
 
@@ -365,5 +398,6 @@ class PlanningService:
             "remaining_amount": PlanningService._money(remaining),
             "months_remaining": months,
             "required_monthly_contribution": PlanningService._money(contribution),
-            "status": goal.status,
+            "status": "completed" if remaining == 0 else "active",
+            "registered_status": goal.status,
         }

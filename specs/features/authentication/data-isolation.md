@@ -3,7 +3,7 @@ id: SPEC-AUTH-001
 title: Isolamento de dados financeiros por usuário
 status: implemented
 owners: []
-last_updated: 2026-09-01
+last_updated: 2026-09-07
 ---
 
 # Isolamento de dados financeiros por usuário
@@ -25,6 +25,15 @@ usuário atual.
 - Exportação pública de relatórios.
 
 ## Requisitos
+
+- Correção da auditoria: consultas e alterações ORM em lote recebem critério de
+  ownership também fora do chat. Sem contexto, o critério financeiro é falso;
+  flush de entidade financeira é rejeitado. Alterar ownership de entidade existente
+  também é rejeitado. Tools exigem contexto antes de abrir a sessão e fixam o usuário
+  em db.info. Somente manutenção interna explicitamente autorizada usa
+  `allow_unscoped_financial_access`; essa opção não integra nenhum schema público.
+  Sessões devem continuar privadas por requisição; SQL textual/Core não constitui
+  interface disponível para LLMs.
 
 - **REQ-001:** Rotas financeiras devem exigir autenticação válida.
 - **REQ-002:** Criações devem associar automaticamente o usuário autenticado.

@@ -48,7 +48,7 @@ def mark_transaction_status(
     transaction_id: Annotated[int, Field(ge=1)],
     status: Literal["paid", "pending"],
 ) -> dict:
-    """Marca uma transação existente como paid ou pending usando seu id."""
+    """Propõe mudar uma transação para paid ou pending; exige confirmação humana."""
 
     return propose("mark_transaction_status", {"transaction_id": transaction_id, "status": status})
 
@@ -100,7 +100,7 @@ def search_transactions(
 def generate_recurring_occurrences(
     months_ahead: Annotated[int, Field(ge=1, le=12)] = 3,
 ) -> list:
-    """Gera, sem duplicar, cobranças pendentes dos próximos meses."""
+    """Propõe materializar cobranças recorrentes; exige confirmação, não é simulação."""
 
     return propose("generate_recurring_occurrences", {"months_ahead": months_ahead})
 
@@ -122,7 +122,7 @@ def get_balance() -> dict:
 def list_recent_transactions(
     limit: Annotated[int, Field(ge=1, le=100)] = 5,
 ) -> list:
-    """Lista as transações cadastradas mais recentemente."""
+    """Lista transações paid com settled_at, ordenadas pela liquidação mais recente."""
 
     with tool_db() as db:
         return redact_for_ai([

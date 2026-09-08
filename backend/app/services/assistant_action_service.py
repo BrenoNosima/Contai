@@ -1,9 +1,10 @@
 import secrets
 from datetime import UTC, datetime, timedelta
 
+from sqlalchemy import update
 from sqlalchemy.orm import Session
 
-from app.core.persistence import commit
+from app.core.persistence import atomic_operation, commit
 from app.core.user_context import get_current_user_id
 from app.models.assistant_action import AssistantAction
 from app.schemas.fixed_expense import FixedExpenseCreate
@@ -40,10 +41,16 @@ class AssistantActionService:
         ).order_by(AssistantAction.created_at).all()
 
     def confirm(self, db: Session, action_id: str) -> tuple[AssistantAction, object] | None:
-        item = db.query(AssistantAction).filter(AssistantAction.id == action_id).first()
-        now = datetime.now(UTC).replace(tzinfo=None)
-        if not item or item.status != "pending" or item.expires_at <= now:
-            return None
+        with atomic_operation(db):
+            item = self._transition(db, action_id, "confirmed")
+            if item is None:
+                return None
+            result = self._execute(db, item)
+            if result is None:
+                raise ValueError("O registro solicitado não existe.")
+        return item, result
+
+    def _execute(self, db: Session, item: AssistantAction):
         p = item.payload
         tx, goals, fixed = TransactionService(), GoalService(), FixedExpenseService()
         if item.action == "create_transaction":
@@ -56,19 +63,35 @@ class AssistantActionService:
             result = goals.create_goal(db, GoalCreate(**p))
         elif item.action == "add_goal_progress":
             result = goals.add_progress(db, p["goal_id"], p["amount"])
-        else:
+        elif item.action == "create_fixed_expense":
             result = fixed.create_fixed_expense(db, FixedExpenseCreate(**p))
-        if result is None:
-            raise ValueError("O registro solicitado não existe.")
-        item.status = "confirmed"
-        commit(db)
-        return item, result
+        else:
+            raise ValueError("Ação do assistente inválida.")
+        return result
 
     def reject(self, db: Session, action_id: str) -> AssistantAction | None:
-        item = db.query(AssistantAction).filter(AssistantAction.id == action_id, AssistantAction.status == "pending").first()
-        if not item:
-            return None
-        item.status = "rejected"
-        commit(db)
+        with atomic_operation(db):
+            item = self._transition(db, action_id, "rejected")
         return item
 
+    @staticmethod
+    def _transition(db: Session, action_id: str, status: str) -> AssistantAction | None:
+        user_id = db.info.get("user_id") or get_current_user_id()
+        if user_id is None:
+            raise ValueError("Contexto autenticado obrigatório.")
+        now = datetime.now(UTC).replace(tzinfo=None)
+        # Conditional UPDATE acquires the database write lock before dispatch.
+        # A concurrent confirm/reject can no longer claim the same pending row.
+        claimed = db.execute(
+            update(AssistantAction).where(
+                AssistantAction.id == action_id,
+                AssistantAction.user_id == user_id,
+                AssistantAction.status == "pending",
+                AssistantAction.expires_at > now,
+            ).values(status=status).execution_options(synchronize_session=False)
+        )
+        if claimed.rowcount != 1:
+            return None
+        return db.query(AssistantAction).filter(
+            AssistantAction.id == action_id,
+        ).populate_existing().one()

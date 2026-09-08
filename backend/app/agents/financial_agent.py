@@ -87,8 +87,12 @@ Regras:
 - Perguntas como "Qual é meu saldo?", "Como meus gastos se distribuem por
   categoria?" e "Mostre minha evolução mensal" também devem usar
   analyze_finances.
-- Se o usuário pedir para "atualizar"/"projetar" as próximas cobranças
-  recorrentes, use generate_recurring_occurrences.
+- Use generate_recurring_occurrences somente para um pedido explícito de
+  cadastrar/materializar cobranças recorrentes; essa tool cria uma proposta.
+- Pedidos de simulação, fluxo de caixa futuro, parcelamento hipotético ou
+  contribuição mensal para metas pertencem ao Planning, ainda não integrado.
+  Explique essa limitação. Não transforme "projetar" ou "quanto vai sobrar"
+  em proposta de materialização e não use análise histórica como previsão.
 - Se o usuário pedir para criar uma meta ou despesa fixa, use a tool
   apropriada (create_goal / create_fixed_expense). Metas podem ter prazo
   (deadline); se o usuário mencionar um prazo, preencha esse campo.
@@ -150,11 +154,13 @@ class FinancialAgent:
         """
 
         for item in chat_history or []:
+            if item.get("role") not in {"user", "assistant"}:
+                raise ValueError("Histórico aceita somente user e assistant.")
             if item.get("role") == "user":
                 validate_prompt(str(item.get("content", "")))
 
         messages = [
-            {**item, "content": redact_sensitive_input(str(item.get("content", "")))}
+            {"role": item["role"], "content": redact_sensitive_input(str(item.get("content", "")))}
             for item in (chat_history or [])
         ]
         validate_prompt(message)

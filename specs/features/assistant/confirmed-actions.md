@@ -1,9 +1,9 @@
 ---
 id: SPEC-ASSISTANT-001
 title: Ações da assistente com confirmação humana
-status: draft
+status: implemented
 owners: []
-last_updated: 2026-09-01
+last_updated: 2026-09-07
 ---
 
 # Ações da assistente com confirmação humana
@@ -24,6 +24,12 @@ Garantir controle humano, rastreabilidade e execução única das ações sugeri
 - Recuperação de propostas expiradas.
 
 ## Requisitos
+
+- Correção da auditoria: confirmação reivindica a proposta pendente com atualização
+  condicional por proprietário, estado e expiração. A alteração financeira e o
+  estado confirmado são persistidos na mesma transação; falha reverte ambos.
+  Confirmação/rejeição concorrentes não podem executar a mesma proposta duas vezes.
+  Commits internos são diferidos para flush durante essa unidade de trabalho.
 
 - **REQ-001:** Tools mutáveis devem criar proposta, não executar diretamente.
 - **REQ-002:** A resposta deve informar que a operação aguarda confirmação.
@@ -72,18 +78,17 @@ servidor, independentemente do estado exibido no cliente.
 - Banco: ação persiste proprietário, payload, estado e expiração.
 - Assistente: tools mutáveis criam propostas; o prompt proíbe autoaprovação.
 
-## Lacunas conhecidas
+## Limites de validação
 
-- Ainda não há testes automatizados específicos cobrindo confirmação, rejeição,
-  expiração, repetição e isolamento das ações.
-- A atomicidade entre a alteração financeira e a mudança de estado da proposta
-  precisa ser comprovada antes de esta spec passar para `implemented`.
+- Atomicidade, rejeição, expiração, repetição e isolamento são testados com SQLite.
+- Concorrência entre confirmações e entre confirmar/rejeitar é testada com sessões
+  independentes. A validação contra PostgreSQL real continua pendente.
 
 ## Verificação
 
 | Critério | Evidência |
 | --- | --- |
-| AC-001–AC-004 | Pendente: adicionar testes de integração para o ciclo completo da ação. |
+| AC-001–AC-004 | `backend/tests/test_assistant_action_atomicity.py` e testes de chat/delegação. |
 
 ## Histórico
 

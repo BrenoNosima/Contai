@@ -4,6 +4,7 @@ from app.agents.llm import create_chat_model
 from app.core.ai_guardrails import (
     redact_sensitive_input,
     restore_sensitive_data,
+    sanitize_model_output,
     sensitive_redaction_scope,
     validate_prompt,
 )
@@ -28,4 +29,8 @@ class ExtractorAgent:
         validate_prompt(text)
         with sensitive_redaction_scope():
             result: NaturalLanguageResponse = self.chain.invoke({"text": redact_sensitive_input(text)})
-            return NaturalLanguageResponse.model_validate(restore_sensitive_data(result.model_dump()))
+            data = restore_sensitive_data(result.model_dump())
+            return NaturalLanguageResponse.model_validate({
+                key: sanitize_model_output(value) if isinstance(value, str) else value
+                for key, value in data.items()
+            })

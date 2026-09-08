@@ -10,6 +10,8 @@ RETENTION_DAYS = 30
 def purge(*, apply: bool = False) -> dict[str, int | bool]:
     cutoff = (datetime.now(UTC) - timedelta(days=RETENTION_DAYS)).replace(tzinfo=None)
     with SessionLocal() as db:
+        # Explicit administrative job; never enabled by a tool or HTTP caller.
+        db.info["allow_unscoped_financial_access"] = True
         actions = db.query(AssistantAction).filter(AssistantAction.expires_at < cutoff).count()
         sessions = db.query(AuthSession).filter(AuthSession.expires_at < cutoff).count()
         if apply:

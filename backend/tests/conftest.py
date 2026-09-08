@@ -29,6 +29,8 @@ def db_session():
     Base.metadata.create_all(engine)
 
     session = TestingSession()
+    # Fixture setup may seed multiple owners; authenticated queries still scope.
+    session.info["allow_unscoped_financial_access"] = True
     try:
         yield session
     finally:

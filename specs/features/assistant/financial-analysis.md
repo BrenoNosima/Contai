@@ -288,6 +288,18 @@ serializáveis para tool calling.
 
 ## Histórico
 
+### Correções da auditoria final
+
+- Escopos aninhados de redação compartilham marcadores sem colisão; operações
+  independentes continuam isoladas. UUIDs são ocultados integralmente, inclusive v7.
+- Erros de parsing são redigidos na função comum antes de retornar às tools.
+- Relatórios calculam com Decimal; tools serializam dinheiro como strings exatas.
+- Histórico aceita somente user/assistant. Planejamento futuro fica explicitamente
+  fora do Analyst; o Financial não transforma simulação em proposta de materialização.
+- Descrições das tools refletem propostas pendentes e a semântica de liquidação da
+  listagem recente. Extractor sanitiza também os campos textuais de saída, sem mudar
+  seu endpoint ou sua responsabilidade.
+
 | Data | Alteração |
 | --- | --- |
 | 2026-09-04 | Especificação criada para a base determinística do futuro AnalystAgent. |

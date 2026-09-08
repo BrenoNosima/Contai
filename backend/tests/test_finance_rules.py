@@ -20,6 +20,7 @@ def db():
     engine = create_engine("sqlite:///:memory:")
     Base.metadata.create_all(engine)
     session = sessionmaker(bind=engine)()
+    session.info["allow_unscoped_financial_access"] = True
     try:
         yield session
     finally:
