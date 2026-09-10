@@ -256,6 +256,12 @@ O agent só deve pedir mês ou ano quando houver ambiguidade real que essas regr
 e o histórico não resolvam. A resolução de datas escolhe argumentos da tool; ela
 não autoriza a LLM a calcular valores financeiros.
 
+Como o `AnalystAgent` é reutilizado entre chamadas, o contexto temporal deve ser
+gerado novamente para cada `ask`, e não apenas na construção do singleton. Esse
+contexto informa explicitamente os intervalos inclusivos do mês atual e do mês
+anterior. Assim, um processo que atravesse a meia-noite ou a virada do mês não
+continua usando uma referência antiga.
+
 ## Critérios de aceitação
 
 - **AC-001:** Resumos calculam receitas, despesas, saldo e contagem apenas de `paid`.
@@ -287,6 +293,9 @@ não autoriza a LLM a calcular valores financeiros.
   disponível a nenhum agent.
 - **AC-018:** A data corrente é injetada no prompt e “este/esse mês”, “mês
   passado” e meses nomeados sem ano são resolvidos sem pergunta redundante.
+- **AC-019:** Cada chamada recebe intervalos atuais, inclusive após a virada do
+  mês, e “Quanto gastei este mês?”/“Qual meu saldo desse mês?” não solicitam
+  novamente mês ou ano.
 
 ## Plano técnico
 
@@ -304,7 +313,7 @@ não autoriza a LLM a calcular valores financeiros.
 | AC-008 | `pytest -q` e `git diff --check` |
 | AC-009–AC-012 | `backend/tests/test_analyst_agent.py` |
 | AC-013–AC-017 | `backend/tests/test_analyst_delegation.py` |
-| AC-018 | `backend/tests/test_analyst_agent.py` |
+| AC-018–AC-019 | `backend/tests/test_analyst_agent.py` |
 
 ## Histórico
 

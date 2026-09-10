@@ -7,7 +7,11 @@ import pytest
 import app.agents.analyst_agent as analyst_module
 import app.tools.analytics_tools as analytics_module
 from app.agents.analyst_agent import ANALYST_TOOLS, AnalystAgent
-from app.prompts.analyst_prompt import ANALYST_SYSTEM_PROMPT, build_analyst_system_prompt
+from app.prompts.analyst_prompt import (
+    ANALYST_SYSTEM_PROMPT,
+    build_analysis_time_context,
+    build_analyst_system_prompt,
+)
 
 
 WRITE_TOOL_NAMES = {
@@ -58,7 +62,7 @@ def test_analyst_agent_builds_shared_model_with_exact_read_tools(monkeypatch):
     assert captured == {
         "model": shared_model,
         "tools": ANALYST_TOOLS,
-        "system_prompt": build_analyst_system_prompt(date.today()),
+        "system_prompt": ANALYST_SYSTEM_PROMPT,
     }
 
 
@@ -133,6 +137,14 @@ def test_prompt_resolves_common_month_references_from_current_server_date():
     assert "Um ano informado pelo usuário sempre prevalece" in prompt
 
 
+def test_per_request_time_context_has_exact_current_and_previous_month_ranges():
+    context = build_analysis_time_context(date(2026, 1, 10))
+
+    assert "2026-01-01 até\n  2026-01-31" in context
+    assert "2025-12-01 até 2025-12-31" in context
+    assert "Não peça mês nem ano ao usuário" in context
+
+
 @pytest.mark.parametrize(
     "question",
     [
@@ -167,8 +179,10 @@ def test_ask_passes_sanitized_history_and_restores_sensitive_data():
 
     messages = graph.calls[0][0]["messages"]
     assert messages[0] == {"role": "assistant", "content": "Qual período?"}
-    assert "pessoa@example.com" not in messages[1]["content"]
-    assert "[DADO_SENSIVEL_E_MAIL_1]" in messages[1]["content"]
+    assert messages[1]["role"] == "system"
+    assert "Contexto temporal confiável" in messages[1]["content"]
+    assert "pessoa@example.com" not in messages[2]["content"]
+    assert "[DADO_SENSIVEL_E_MAIL_1]" in messages[2]["content"]
     assert result == "Análise enviada para pessoa@example.com"
     assert graph.calls[0][1] == {"recursion_limit": 8}
 
@@ -184,8 +198,24 @@ def test_follow_up_history_is_forwarded_as_ephemeral_context():
     agent.ask("E Alimentação?", history)
 
     messages = graph.calls[0][0]["messages"]
-    assert messages[:-1] == history
+    assert messages[:-2] == history
+    assert messages[-2]["role"] == "system"
     assert messages[-1] == {"role": "user", "content": "E Alimentação?"}
+
+
+@pytest.mark.parametrize(
+    "question",
+    ["Quanto gastei este mês?", "Qual meu saldo desse mês?"],
+)
+def test_each_question_receives_resolved_period_without_requesting_user_input(question):
+    graph = FakeGraph("Resultado consultado.")
+    agent = bare_agent(graph)
+
+    assert agent.ask(question) == "Resultado consultado."
+    messages = graph.calls[0][0]["messages"]
+    assert messages[-2]["role"] == "system"
+    assert "Não peça mês nem ano ao usuário" in messages[-2]["content"]
+    assert messages[-1] == {"role": "user", "content": question}
 
 
 def test_prompt_injection_is_rejected_before_provider_call():

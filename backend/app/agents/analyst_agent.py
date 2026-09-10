@@ -11,7 +11,7 @@ from app.core.ai_guardrails import (
     sensitive_redaction_scope,
     validate_prompt,
 )
-from app.prompts.analyst_prompt import build_analyst_system_prompt
+from app.prompts.analyst_prompt import ANALYST_SYSTEM_PROMPT, build_analysis_time_context
 from app.tools.analytics_tools import (
     compare_category_periods,
     compare_periods,
@@ -43,7 +43,7 @@ class AnalystAgent:
         self.agent = create_agent(
             model=self.llm,
             tools=self.tools,
-            system_prompt=build_analyst_system_prompt(date.today()),
+            system_prompt=ANALYST_SYSTEM_PROMPT,
         )
 
     def ask(
@@ -74,6 +74,12 @@ class AnalystAgent:
             for item in (chat_history or [])
         ]
         validate_prompt(message)
+        messages.append(
+            {
+                "role": "system",
+                "content": build_analysis_time_context(date.today()),
+            }
+        )
         messages.append(
             {
                 "role": "user",

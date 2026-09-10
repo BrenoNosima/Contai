@@ -1,3 +1,6 @@
+from datetime import timedelta
+
+
 ANALYST_SYSTEM_PROMPT = """
 Preserve exatamente qualquer marcador no formato [DADO_SENSIVEL_...]. Ele
 representa um valor privado temporariamente ocultado e nunca deve ser traduzido,
@@ -83,6 +86,31 @@ Brasil, sem emojis, de forma direta e profissional.
 """
 
 
+def build_analysis_time_context(current_date) -> str:
+    """Return exact rolling periods for one request."""
+
+    current_start = current_date.replace(day=1)
+    if current_start.month == 12:
+        next_start = current_start.replace(year=current_start.year + 1, month=1)
+    else:
+        next_start = current_start.replace(month=current_start.month + 1)
+    current_end = next_start - timedelta(days=1)
+    previous_end = current_start - timedelta(days=1)
+    previous_start = previous_end.replace(day=1)
+
+    return f"""Contexto temporal confiável gerado pelo servidor para esta chamada:
+- Data atual: {current_date.isoformat()}.
+- "este mês", "esse mês" e "mês atual": {current_start.isoformat()} até
+  {current_end.isoformat()}, inclusive.
+- "mês passado": {previous_start.isoformat()} até {previous_end.isoformat()},
+  inclusive.
+- Para mês nomeado sem ano, use a ocorrência mais recente que não esteja no
+  futuro. Ano explícito sempre prevalece.
+- Essas referências já estão resolvidas. Não peça mês nem ano ao usuário.
+Use as datas apenas como argumentos das tools; não calcule valores financeiros.
+"""
+
+
 def build_analyst_system_prompt(current_date) -> str:
     """Add an explicit server date so relative periods are unambiguous."""
 
@@ -104,4 +132,6 @@ Contexto temporal desta conversa:
   ambígua após aplicar estas regras e considerar o histórico.
 - Resolver datas serve apenas para preencher argumentos das tools. Continue sem
   calcular, estimar ou reconstruir valores financeiros na LLM.
+
+{build_analysis_time_context(current_date)}
 """
