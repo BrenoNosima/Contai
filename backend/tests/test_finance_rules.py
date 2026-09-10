@@ -154,6 +154,7 @@ def test_tool_schemas_expose_domain_constraints():
         "create_fixed_expense",
         "list_fixed_expenses",
         "analyze_finances",
+        "plan_finances",
     ]
     tools = {tool.name: tool for tool in FINANCE_TOOLS}
     create_schema = tools["create_transaction"].args_schema.model_json_schema()

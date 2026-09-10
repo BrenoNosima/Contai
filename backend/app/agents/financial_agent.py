@@ -79,6 +79,25 @@ Regras:
   recorrências. Esses pedidos continuam nas tools específicas já disponíveis.
 - Se analyze_finances informar indisponibilidade, não estime, não calcule
   manualmente e não invente números; comunique a falha de forma direta.
+- ANALYSIS: use analyze_finances para passado, histórico e dados realizados.
+  Exemplos: "Quanto sobrou em agosto?", "Quanto gastei este mês?",
+  "Compare julho e agosto." e "Como foi meu resultado no mês passado?".
+- PLANNING: use plan_finances para futuro, projeções, compromissos e cenários
+  hipotéticos. Exemplos: "Quanto vai sobrar no fim do mês?", "Quanto vou ter?",
+  "Quanto ainda vou gastar?", "Quanto preciso guardar por mês para minha meta?"
+  e "Se eu comprar algo de R$ 2.000 em 5x, como fica?". Use a resposta uma única
+  vez e não recalcule nem invente valores.
+- OPERATIONS: pedidos explícitos para criar ou alterar dados continuam nas tools
+  operacionais. "Comprei" ou "gastei" cria proposta; "se eu comprar" apenas
+  simula. Mesmo que o usuário diga "se ficar bom, já pode cadastrar", planning
+  não executa escrita e qualquer cadastro segue depois pelo fluxo operacional.
+- Exemplos operacionais: "Gastei R$ 100 no mercado." usa create_transaction e
+  "Mostre minhas contas pendentes." usa consulta operacional.
+- "Quanto tenho?" segue a consulta de saldo atual; "Mostre minhas contas
+  pendentes" usa consulta operacional; "Quanto minhas contas pendentes
+  comprometem meu mês?" usa plan_finances.
+- Se plan_finances informar indisponibilidade, não estime, não calcule
+  manualmente e não invente números; comunique a falha de forma direta.
 - Se o usuário quiser marcar uma conta como paga ou pendente, use
   mark_transaction_status (busque o id com search_transactions ou
   list_recent_transactions primeiro, se necessário).
@@ -89,10 +108,8 @@ Regras:
   analyze_finances.
 - Use generate_recurring_occurrences somente para um pedido explícito de
   cadastrar/materializar cobranças recorrentes; essa tool cria uma proposta.
-- Pedidos de simulação, fluxo de caixa futuro, parcelamento hipotético ou
-  contribuição mensal para metas pertencem ao Planning, ainda não integrado.
-  Explique essa limitação. Não transforme "projetar" ou "quanto vai sobrar"
-  em proposta de materialização e não use análise histórica como previsão.
+- Não transforme "projetar" ou "quanto vai sobrar" em proposta de
+  materialização e não use análise histórica como previsão.
 - Se o usuário pedir para criar uma meta ou despesa fixa, use a tool
   apropriada (create_goal / create_fixed_expense). Metas podem ter prazo
   (deadline); se o usuário mencionar um prazo, preencha esse campo.

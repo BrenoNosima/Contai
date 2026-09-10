@@ -55,7 +55,7 @@ def call_delegation(question, runtime):
 def test_financial_agent_has_one_delegation_and_no_private_analytics_tools():
     tool_names = [item.name for item in FINANCE_TOOLS]
 
-    assert len(FINANCE_TOOLS) == 11
+    assert len(FINANCE_TOOLS) == 12
     assert tool_names.count("analyze_finances") == 1
     assert REMOVED_FINANCIAL_TOOL_NAMES.isdisjoint(tool_names)
     assert {

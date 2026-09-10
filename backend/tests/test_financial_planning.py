@@ -495,7 +495,7 @@ def test_planning_tools_are_serializable_sanitized_and_unregistered(monkeypatch)
     names = {item.name for item in PLANNING_TOOLS}
     assert names.isdisjoint({item.name for item in FINANCE_TOOLS})
     assert names.isdisjoint({item.name for item in ANALYST_TOOLS})
-    assert len(FINANCE_TOOLS) == 11
+    assert len(FINANCE_TOOLS) == 12
     assert len(ANALYST_TOOLS) == 8
     for planning_tool in PLANNING_TOOLS:
         assert "user_id" not in planning_tool.args_schema.model_json_schema()["properties"]

@@ -3,7 +3,7 @@ id: SPEC-ASSISTANT-003
 title: Base determinística de planejamento financeiro
 status: implemented
 owners: []
-last_updated: 2026-09-07
+last_updated: 2026-09-10
 ---
 
 # Base determinística de planejamento financeiro
@@ -22,7 +22,6 @@ no PlanningAgent isolado, sem registro nos demais agents.
 
 ## Fora de escopo
 
-- Integrar `PlanningAgent` ao `FinancialAgent` (a criação isolada pertence à etapa 3B).
 - Criar endpoints, migrations ou alterações de schema.
 - Persistir simulações, transações, metas ou despesas fixas.
 - Produzir score, recomendação subjetiva de compra ou data prevista de conclusão.
@@ -228,6 +227,92 @@ modelo simulado não comprovam a qualidade de seleção da Groq real.
 - 2026-09-07: especificado PlanningAgent isolado antes da implementação.
 
 ## Histórico
+
+## Etapa 3C — integração ao Assistente Contaí
+
+O `FinancialAgent` passa a orquestrar planejamento por uma única delegação
+`plan_finances(question)`. O usuário continua falando somente com o Assistente
+Contaí pelo endpoint `/chat`; não há seleção de agents nem endpoint adicional.
+
+Responsabilidades e fronteiras:
+
+- `FinancialAgent` mantém operações e consultas operacionais, delega dados
+  históricos/realizados a `analyze_finances` e futuro/simulações a
+  `plan_finances`.
+- `AnalystAgent` interpreta somente passado e dados realizados, com suas oito
+  tools READ inalteradas.
+- `PlanningAgent` interpreta somente futuro, compromissos e cenários hipotéticos,
+  com suas cinco tools READ/SIMULATION inalteradas.
+- `PlanningService` permanece responsável por toda matemática determinística.
+  Agents comunicam os campos retornados e não recalculam nem inventam valores.
+
+`plan_finances` recebe da LLM somente a pergunta. O histórico relevante é
+extraído do `ToolRuntime`, limitado a mensagens reais `user`/`assistant`, sem
+system, tool calls ou metadata, e encaminhado a `PlanningAgent.ask`. Assim,
+“E em 5x?” pode retomar “notebook de R$ 4.000 em 10x” sem persistir memória nova.
+
+A identidade nunca é argumento de tool: a rota autenticada estabelece o
+`ContextVar`, que é herdado sincronamente pela delegação e pelas sessões de
+banco. A delegação restaura sua guarda de reentrada em `finally`, inclusive em
+falhas, sem alterar ou permitir que a LLM escolha `user_id`.
+
+Os guardrails permanecem em camadas: o `FinancialAgent` aplica
+`validate_prompt`, `redact_sensitive_input`, `sensitive_redaction_scope`,
+`restore_sensitive_data` e `sanitize_model_output`; o `PlanningAgent` valida e
+redige novamente sua entrada; resultados de planning tools e da delegação usam
+`redact_for_ai`. Conteúdo de histórico e tools é sempre dado não confiável.
+
+Falhas de tool/provider, período inválido, meta inexistente, prazo ausente ou
+parcelas inválidas retornam indisponibilidade controlada ao orquestrador. O
+`FinancialAgent` não cria fallback numérico. Uma guarda compartilhada impede
+delegação circular ou aninhada entre especialistas.
+
+### Roteamento
+
+| Pedido | Destino | Motivo |
+| --- | --- | --- |
+| Quanto sobrou em agosto? | `analyze_finances` | agosto é histórico realizado |
+| Quanto vai sobrar no fim deste mês? | `plan_finances` | envolve projeção futura |
+| Quanto gastei este mês? | `analyze_finances` | gasto já realizado |
+| Quanto ainda tenho comprometido este mês? | `plan_finances` | compromisso futuro |
+| Compare julho e agosto. | `analyze_finances` | comparação passada |
+| Quanto vou ter? / Quanto ainda vou gastar? | `plan_finances` | futuro |
+| Quanto tenho? | consulta/saldo atual conforme comportamento existente | posição atual |
+| Mostre minhas contas pendentes. | consulta operacional | listagem atual |
+| Quanto as contas pendentes comprometem meu mês? | `plan_finances` | impacto projetado |
+| Se eu comprar um celular de R$ 3.000 em 10x, como fica? | `plan_finances` | simulação, sem escrita |
+| Comprei um celular de R$ 3.000. | `create_transaction` | operação explícita |
+| Gastei R$ 80 no mercado. | `create_transaction` | operação explícita |
+| Marque a conta de luz como paga. | `mark_transaction_status` | alteração explícita |
+| Crie uma meta / adicione progresso / crie gasto fixo. | tool operacional correspondente | alteração explícita |
+
+Mesmo em “Se ficar bom, já pode cadastrar”, a etapa hipotética continua somente
+simulação. Qualquer WRITE posterior exige o fluxo operacional normal do
+`FinancialAgent` e `AssistantActionService`; o `PlanningAgent` nunca cadastra a
+compra nem recebe tools de escrita.
+
+### Critérios de aceitação da integração
+
+- **AC-3C-001:** `FinancialAgent` possui exatamente as 11 tools existentes mais
+  `plan_finances`, totalizando 12.
+- **AC-3C-002:** As cinco planning tools permanecem exclusivas do
+  `PlanningAgent`; ele mantém exatamente cinco tools e nenhuma WRITE.
+- **AC-3C-003:** `AnalystAgent` permanece com exatamente oito tools READ, sem
+  mudança de prompt ou comportamento.
+- **AC-3C-004:** Histórico e usuário autenticado são preservados sem expor
+  `chat_history`, runtime ou `user_id` ao modelo.
+- **AC-3C-005:** Passado usa `analyze_finances`, futuro e hipóteses usam
+  `plan_finances`, e criação/alteração explícita permanece operacional.
+- **AC-3C-006:** Falhas são controladas sem cálculos substitutos; guardrails e
+  sanitização são preservados e injection não libera escrita.
+- **AC-3C-007:** Não há endpoint, frontend, banco, migration ou persistência de
+  simulações novos.
+- **AC-3C-008:** Testes offline com fakes cobrem conjunto de tools, roteamento,
+  contexto, histórico/follow-up, falhas, ausência de escrita e ciclos.
+
+### Histórico da etapa 3C
+
+- 2026-09-10: especificada a delegação única `plan_finances` antes da implementação.
 
 ### Correções da auditoria final
 
