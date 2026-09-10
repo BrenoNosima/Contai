@@ -1,3 +1,5 @@
+from datetime import date
+
 from langchain.agents import create_agent
 from pydantic import ValidationError
 
@@ -9,7 +11,7 @@ from app.core.ai_guardrails import (
     sensitive_redaction_scope,
     validate_prompt,
 )
-from app.prompts.analyst_prompt import ANALYST_SYSTEM_PROMPT
+from app.prompts.analyst_prompt import build_analyst_system_prompt
 from app.tools.analytics_tools import (
     compare_category_periods,
     compare_periods,
@@ -41,7 +43,7 @@ class AnalystAgent:
         self.agent = create_agent(
             model=self.llm,
             tools=self.tools,
-            system_prompt=ANALYST_SYSTEM_PROMPT,
+            system_prompt=build_analyst_system_prompt(date.today()),
         )
 
     def ask(

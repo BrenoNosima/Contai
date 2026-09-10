@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+from datetime import date
 from types import SimpleNamespace
 
 import pytest
@@ -6,7 +7,7 @@ import pytest
 import app.agents.analyst_agent as analyst_module
 import app.tools.analytics_tools as analytics_module
 from app.agents.analyst_agent import ANALYST_TOOLS, AnalystAgent
-from app.prompts.analyst_prompt import ANALYST_SYSTEM_PROMPT
+from app.prompts.analyst_prompt import ANALYST_SYSTEM_PROMPT, build_analyst_system_prompt
 
 
 WRITE_TOOL_NAMES = {
@@ -57,7 +58,7 @@ def test_analyst_agent_builds_shared_model_with_exact_read_tools(monkeypatch):
     assert captured == {
         "model": shared_model,
         "tools": ANALYST_TOOLS,
-        "system_prompt": ANALYST_SYSTEM_PROMPT,
+        "system_prompt": build_analyst_system_prompt(date.today()),
     }
 
 
@@ -118,6 +119,35 @@ def test_prompt_handles_null_percentage_and_empty_results_without_invention():
     assert "período-base tinha valor\n  zero" in ANALYST_SYSTEM_PROMPT
     assert "totais zero ou uma lista vazia" in ANALYST_SYSTEM_PROMPT
     assert "Nunca invente valores financeiros" in ANALYST_SYSTEM_PROMPT
+
+
+def test_prompt_resolves_common_month_references_from_current_server_date():
+    prompt = build_analyst_system_prompt(date(2026, 9, 10))
+
+    assert "A data atual do servidor é 2026-09-10" in prompt
+    assert '"este mês", "esse mês" e "mês atual"' in prompt
+    assert '"mês passado" significa o mês civil imediatamente anterior' in prompt
+    assert 'Um mês nomeado sem ano, como "agosto"' in prompt
+    assert "não esteja no futuro" in prompt
+    assert "Não pergunte qual é o mês ou ano" in prompt
+    assert "Um ano informado pelo usuário sempre prevalece" in prompt
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Quanto gastei esse mês?",
+        "Quanto gastei este mês?",
+        "Quanto gastei mês passado?",
+        "Quanto gastei em agosto?",
+    ],
+)
+def test_prompt_treats_common_month_questions_as_resolvable(question):
+    prompt = build_analyst_system_prompt(date(2026, 9, 10))
+    reference = question.removeprefix("Quanto gastei ").removesuffix("?")
+
+    assert reference in prompt or question in prompt
+    assert "Não pergunte qual é o mês ou ano" in prompt
 
 
 def test_prompt_preserves_due_date_semantics_and_avoids_causality():

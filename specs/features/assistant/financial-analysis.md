@@ -239,6 +239,23 @@ serializáveis para tool calling.
 - O parâmetro `ToolRuntime` é injetado pelo LangChain 1.3.x e não integra o schema
   de argumentos visível à LLM.
 
+## Interpretação temporal
+
+O `AnalystAgent` deve receber no system prompt a data corrente do servidor em
+formato ISO. Referências suficientemente determinadas não exigem esclarecimento:
+
+- “este mês”, “esse mês” e “mês atual” significam o mês civil da data corrente;
+- “mês passado” significa o mês civil imediatamente anterior, inclusive na
+  virada de dezembro para janeiro;
+- um mês nomeado sem ano, como “agosto”, significa a ocorrência mais recente
+  desse mês que não esteja no futuro em relação à data corrente;
+- ano explícito sempre prevalece sobre a inferência;
+- início e fim enviados à tool devem abranger todo o mês civil correspondente.
+
+O agent só deve pedir mês ou ano quando houver ambiguidade real que essas regras
+e o histórico não resolvam. A resolução de datas escolhe argumentos da tool; ela
+não autoriza a LLM a calcular valores financeiros.
+
 ## Critérios de aceitação
 
 - **AC-001:** Resumos calculam receitas, despesas, saldo e contagem apenas de `paid`.
@@ -268,6 +285,8 @@ serializáveis para tool calling.
 - **AC-017:** As cinco tools removidas do `FinancialAgent` não aparecem em seu
   registry; quatro ficam privadas do Analyst e `get_dashboard_summary` não fica
   disponível a nenhum agent.
+- **AC-018:** A data corrente é injetada no prompt e “este/esse mês”, “mês
+  passado” e meses nomeados sem ano são resolvidos sem pergunta redundante.
 
 ## Plano técnico
 
@@ -285,6 +304,7 @@ serializáveis para tool calling.
 | AC-008 | `pytest -q` e `git diff --check` |
 | AC-009–AC-012 | `backend/tests/test_analyst_agent.py` |
 | AC-013–AC-017 | `backend/tests/test_analyst_delegation.py` |
+| AC-018 | `backend/tests/test_analyst_agent.py` |
 
 ## Histórico
 
@@ -306,3 +326,4 @@ serializáveis para tool calling.
 | 2026-09-04 | Definido o contrato READ-ONLY, guardrails e seleção de tools do AnalystAgent. |
 | 2026-09-04 | Definida a delegação única do FinancialAgent para o AnalystAgent. |
 | 2026-09-04 | Separadas tools operacionais do orquestrador e tools analíticas do especialista. |
+| 2026-09-10 | Definida resolução temporal determinística para referências mensais comuns. |
