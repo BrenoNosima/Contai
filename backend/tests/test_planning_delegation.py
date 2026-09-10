@@ -1,8 +1,10 @@
 from types import SimpleNamespace
 
 import pytest
+from langchain_core.language_models.fake_chat_models import FakeMessagesListChatModel
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 
+import app.agents.financial_agent as financial_module
 import app.tools.delegation_tools as delegation_module
 from app.agents.analyst_agent import ANALYST_TOOLS
 from app.agents.financial_agent import SYSTEM_PROMPT
@@ -46,6 +48,11 @@ class RecordingPlanner:
         return self.response
 
 
+class ScriptedModel(FakeMessagesListChatModel):
+    def bind_tools(self, tools, **kwargs):
+        return self
+
+
 def runtime_with(*messages):
     return SimpleNamespace(state={"messages": list(messages)})
 
@@ -72,6 +79,26 @@ def test_schema_exposes_only_question_without_identity_or_history():
     properties = plan_finances.tool_call_schema.model_json_schema()["properties"]
     assert set(properties) == {"question"}
     assert {"user_id", "chat_history", "runtime"}.isdisjoint(properties)
+    assert plan_finances.return_direct is True
+
+
+def test_planning_delegation_returns_without_financial_agent_synthesis(monkeypatch):
+    planner = RecordingPlanner(response="Resposta final do planejamento.")
+    monkeypatch.setattr(delegation_module, "get_planning_agent", lambda: planner)
+    model = ScriptedModel(responses=[AIMessage(content="", tool_calls=[{
+        "name": "plan_finances",
+        "args": {"question": "Quanto vai sobrar no fim do mês?"},
+        "id": "planning-direct-1",
+        "type": "tool_call",
+    }])])
+    monkeypatch.setattr(financial_module, "create_chat_model", lambda: model)
+
+    result = financial_module.FinancialAgent().ask(
+        "Quanto vai sobrar no fim do mês?"
+    )
+
+    assert result == "Resposta final do planejamento."
+    assert len(planner.calls) == 1
 
 
 def test_history_follow_up_and_authenticated_context_are_propagated(monkeypatch):

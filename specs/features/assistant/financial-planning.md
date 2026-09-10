@@ -251,6 +251,11 @@ extraído do `ToolRuntime`, limitado a mensagens reais `user`/`assistant`, sem
 system, tool calls ou metadata, e encaminhado a `PlanningAgent.ask`. Assim,
 “E em 5x?” pode retomar “notebook de R$ 4.000 em 10x” sem persistir memória nova.
 
+`plan_finances` usa retorno direto: a resposta já interpretada e sanitizada pelo
+`PlanningAgent` encerra o grafo do `FinancialAgent`, evitando uma chamada extra
+ao provider apenas para reformular o mesmo conteúdo. O orquestrador continua
+responsável pela seleção da delegação, e seus guardrails finais permanecem ativos.
+
 A identidade nunca é argumento de tool: a rota autenticada estabelece o
 `ContextVar`, que é herdado sincronamente pela delegação e pelas sessões de
 banco. A delegação restaura sua guarda de reentrada em `finally`, inclusive em
@@ -309,6 +314,8 @@ compra nem recebe tools de escrita.
   simulações novos.
 - **AC-3C-008:** Testes offline com fakes cobrem conjunto de tools, roteamento,
   contexto, histórico/follow-up, falhas, ausência de escrita e ciclos.
+- **AC-3C-009:** As duas delegações retornam diretamente após o especialista,
+  sem síntese redundante do `FinancialAgent`.
 
 ### Histórico da etapa 3C
 

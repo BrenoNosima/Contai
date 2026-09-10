@@ -81,6 +81,7 @@ def test_delegation_schema_exposes_only_question_to_model():
     assert "user_id" not in schema["properties"]
     assert "chat_history" not in schema["properties"]
     assert "runtime" not in schema["properties"]
+    assert analyze_finances.return_direct is True
 
 
 def test_delegation_passes_runtime_history_not_model_arguments(monkeypatch):

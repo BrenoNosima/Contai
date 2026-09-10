@@ -262,6 +262,15 @@ contexto informa explicitamente os intervalos inclusivos do mês atual e do mês
 anterior. Assim, um processo que atravesse a meia-noite ou a virada do mês não
 continua usando uma referência antiga.
 
+## Retorno direto da delegação
+
+`analyze_finances` é uma tool de delegação com retorno direto. Depois que o
+`AnalystAgent` já consultou a capacidade determinística e produziu a resposta
+sanitizada, o grafo do `FinancialAgent` deve encerrar sem nova chamada ao modelo.
+O conteúdo da tool passa pelos guardrails finais já existentes em
+`FinancialAgent.ask`; não há segunda reformulação nem recálculo pelo orquestrador.
+Operações e consultas não delegadas mantêm seu fluxo atual.
+
 ## Critérios de aceitação
 
 - **AC-001:** Resumos calculam receitas, despesas, saldo e contagem apenas de `paid`.
@@ -296,6 +305,8 @@ continua usando uma referência antiga.
 - **AC-019:** Cada chamada recebe intervalos atuais, inclusive após a virada do
   mês, e “Quanto gastei este mês?”/“Qual meu saldo desse mês?” não solicitam
   novamente mês ou ano.
+- **AC-020:** `analyze_finances` encerra diretamente o grafo do orquestrador após
+  a resposta do especialista, eliminando uma chamada redundante ao provider.
 
 ## Plano técnico
 

@@ -68,7 +68,7 @@ def _conversation_history(runtime: ToolRuntime) -> list[dict[str, str]]:
     return history
 
 
-@tool
+@tool(return_direct=True)
 def analyze_finances(
     question: Annotated[str, Field(min_length=1, max_length=4000)],
     runtime: ToolRuntime,
@@ -88,7 +88,7 @@ def analyze_finances(
         _delegation_active.reset(token)
 
 
-@tool
+@tool(return_direct=True)
 def plan_finances(
     question: Annotated[str, Field(min_length=1, max_length=4000)],
     runtime: ToolRuntime,
