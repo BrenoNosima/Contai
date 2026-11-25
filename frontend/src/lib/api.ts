@@ -45,6 +45,26 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit, retryAuthentication = true): Promise<T> {
+  const controller = new AbortController()
+  const abort = () => controller.abort()
+  init?.signal?.addEventListener("abort", abort, { once: true })
+  if (init?.signal?.aborted) controller.abort()
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const deadline = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      reject(new ApiError("O servidor demorou mais que o esperado. Tente novamente.", 504))
+      controller.abort()
+    }, path === "/chat/" ? 130_000 : 30_000)
+  })
+  try {
+    return await Promise.race([performRequest<T>(path, { ...init, signal: controller.signal }, retryAuthentication), deadline])
+  } finally {
+    clearTimeout(timer)
+    init?.signal?.removeEventListener("abort", abort)
+  }
+}
+
+async function performRequest<T>(path: string, init?: RequestInit, retryAuthentication = true): Promise<T> {
   if (DEMO_MODE) return demoRequest<T>(path, init)
   let res: Response
   try {
@@ -281,6 +301,7 @@ export const chatApi = {
 }
 
 export const assistantActionsApi = {
+  pending: () => request<import("./types").AssistantAction[]>("/assistant-actions/"),
   confirm: (id: string) => request<import("./types").AssistantAction>(`/assistant-actions/${id}/confirm`, { method: "POST", body: "{}" }),
   reject: (id: string) => request<import("./types").AssistantAction>(`/assistant-actions/${id}`, { method: "DELETE" }),
 }

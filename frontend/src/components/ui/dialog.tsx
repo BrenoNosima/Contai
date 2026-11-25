@@ -21,12 +21,14 @@ export function Dialog({
   const titleId = useId()
   const descriptionId = useId()
   const panelRef = useRef<HTMLDivElement>(null)
+  const closeRef = useRef(onClose)
+  closeRef.current = onClose
 
   useEffect(() => {
     if (!open) return
     const previousFocus = document.activeElement as HTMLElement | null
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose()
+      if (e.key === "Escape") closeRef.current()
       if (e.key === "Tab" && panelRef.current) {
         const focusable = panelRef.current.querySelectorAll<HTMLElement>(
           'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
@@ -44,15 +46,16 @@ export function Dialog({
     }
     document.addEventListener("keydown", onKey)
     document.body.style.overflow = "hidden"
-    window.requestAnimationFrame(() => {
+    const animation = window.requestAnimationFrame(() => {
       panelRef.current?.querySelector<HTMLElement>("[autofocus], input, select, textarea, button")?.focus()
     })
     return () => {
+      window.cancelAnimationFrame(animation)
       document.removeEventListener("keydown", onKey)
       document.body.style.overflow = ""
       previousFocus?.focus()
     }
-  }, [open, onClose])
+  }, [open])
 
   if (!open) return null
 

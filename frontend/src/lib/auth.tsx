@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react"
 import { authApi, type AuthUser } from "./api"
 import { queryClient } from "./query"
+import { clearChatStorage } from "./chat-storage"
 
 interface AuthContextValue {
   user: AuthUser | null
@@ -25,7 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
-    const unauthorized = () => { setUser(null); queryClient.clear() }
+    const unauthorized = () => { setUser(null); queryClient.clear(); clearChatStorage() }
     window.addEventListener("auth:unauthorized", unauthorized)
     return () => window.removeEventListener("auth:unauthorized", unauthorized)
   }, [])
@@ -41,6 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await authApi.logout()
       setUser(null)
       queryClient.clear()
+      clearChatStorage()
     },
     updateProfile: async (name, email, password) => {
       setUser(await authApi.update(name, email, password))
@@ -48,6 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     clearSession: () => {
       setUser(null)
       queryClient.clear()
+      clearChatStorage()
     },
   }), [loading, user])
 

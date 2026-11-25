@@ -29,7 +29,7 @@ export function BackendStartupGate({ children }: { children: ReactNode }) {
     return () => controller.abort()
   }, [attempt])
 
-  if (DEMO_MODE || ready) return children
+  if (DEMO_MODE || ready || window.location.pathname === "/privacidade") return children
 
   const failed = state === "timeout" || state === "unavailable"
   const title = failed ? "Servidor indisponível" : "Conectando ao Contaí"
