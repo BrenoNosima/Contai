@@ -5,7 +5,7 @@ from types import SimpleNamespace
 
 import httpx
 import pytest
-from groq import APIConnectionError, PermissionDeniedError
+from groq import APIConnectionError, PermissionDeniedError, RateLimitError
 from langchain_core.language_models.fake_chat_models import FakeMessagesListChatModel
 from langchain_core.messages import AIMessage
 
@@ -140,3 +140,24 @@ def test_provider_permission_failure_has_safe_actionable_log(client, monkeypatch
     assert result.status_code == 503
     assert "private provider detail" not in result.text
     assert "ai_provider_permission_denied" in caplog.text
+
+
+def test_rate_limit_has_retry_hint_and_request_identifier(client, monkeypatch):
+    def fail(*args):
+        raise RateLimitError("private provider detail", response=httpx.Response(
+            429, request=httpx.Request("POST", "https://example.invalid")), body={})
+    monkeypatch.setattr(chat_route, "get_agent", lambda: SimpleNamespace(ask=fail))
+    result = client.post("/chat/", json={"message": "Compare os meses"})
+    assert result.status_code == 429
+    assert result.headers["retry-after"] == "60"
+    assert len(result.headers["x-request-id"]) == 32
+    assert "private provider detail" not in result.text
+
+
+def test_proposal_finishes_without_another_model_call(monkeypatch):
+    from langchain_core.messages import ToolMessage
+    from app.tools.transaction_tools import create_transaction
+    assert create_transaction.return_direct
+    assert "confirme" in final_text({"messages": [ToolMessage(
+        content='{"requires_confirmation":true,"confirmation_id":"synthetic"}',
+        tool_call_id="synthetic")]})

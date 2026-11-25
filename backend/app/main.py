@@ -1,4 +1,6 @@
 import logging
+from uuid import uuid4
+from app.core.request_context import request_id
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, Request
@@ -68,6 +70,18 @@ app = FastAPI(
     description="Sistema financeiro pessoal com IA",
     version="0.1.0",
 )
+
+
+@app.middleware("http")
+async def correlate_request(request: Request, call_next):
+    identifier = uuid4().hex
+    token = request_id.set(identifier)
+    try:
+        response = await call_next(request)
+        response.headers["X-Request-ID"] = identifier
+        return response
+    finally:
+        request_id.reset(token)
 
 app.add_middleware(
     CORSMiddleware,

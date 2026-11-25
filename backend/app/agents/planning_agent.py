@@ -1,3 +1,5 @@
+from app.core.clock import business_today
+from app.prompts.analyst_prompt import build_analysis_time_context
 from functools import wraps
 
 from langchain.agents import create_agent
@@ -72,6 +74,7 @@ class PlanningAgent:
             })
         messages = recent_history(messages)
         messages.append({"role": "user", "content": redact_sensitive_input(message)})
+        messages.insert(len(messages) - 1, {"role": "system", "content": build_analysis_time_context(business_today()) + "\nPara fim deste mes use a data atual como inicio e o ultimo dia do mes como fim; nao peca datas ja resolvidas. Periodos futuros sao simulacoes."})
         result = invoke_once(self.agent,
             {"messages": messages}, config={"recursion_limit": 8},
         )

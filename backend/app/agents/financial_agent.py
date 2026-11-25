@@ -1,3 +1,5 @@
+from app.core.clock import business_today
+from app.prompts.analyst_prompt import build_analysis_time_context
 from langchain.agents import create_agent
 
 from app.agents.runtime import ExecutionLimits, execution_scope, final_text, recent_history, invoke_once
@@ -189,6 +191,7 @@ class FinancialAgent:
             }
         )
 
+        messages.insert(len(messages) - 1, {"role": "system", "content": build_analysis_time_context(business_today())})
         result = invoke_once(self.agent,
             {
                 "messages": messages,

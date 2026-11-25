@@ -4,7 +4,8 @@ from functools import lru_cache
 from fastapi import APIRouter
 from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
-from groq import APITimeoutError, PermissionDeniedError
+from groq import APITimeoutError, PermissionDeniedError, RateLimitError
+from app.core.request_context import request_id
 from app.core.dependencies import get_current_user
 from app.core.dependencies import get_db
 from app.core.config import SETTINGS
@@ -59,6 +60,9 @@ def chat(payload: ChatRequest, current_user: User = Depends(get_current_user), d
             raise AgentUnavailableError("Resposta vazia do assistente.")
         pending_actions = AssistantActionService().pending(db)
 
+    except RateLimitError as error:
+        logger.warning("ai_rate_limit request_id=%s", request_id.get())
+        raise HTTPException(status_code=429, detail="O assistente atingiu o limite temporário de uso. Aguarde um minuto e tente novamente.", headers={"Retry-After": "60"}) from error
     except PermissionDeniedError as error:
         logger.error("ai_provider_permission_denied model=%s", SETTINGS.groq_model)
         raise HTTPException(status_code=503, detail="O assistente está indisponível por configuração do serviço. Tente novamente mais tarde.") from error
@@ -68,7 +72,7 @@ def chat(payload: ChatRequest, current_user: User = Depends(get_current_user), d
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
     except Exception as error:
-        logger.error("ai_request_failed error_type=%s", type(error).__name__)
+        logger.error("ai_request_failed request_id=%s error_type=%s", request_id.get(), type(error).__name__)
         raise HTTPException(
             status_code=502,
             detail="Não foi possível falar com o assistente agora. Tente novamente em instantes.",

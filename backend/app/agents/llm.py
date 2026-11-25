@@ -13,4 +13,6 @@ def create_chat_model() -> ChatGroq:
         request_timeout=SETTINGS.ai_timeout_seconds,
         # Retries are controlled by ExecutionLimits within a shared request budget.
         max_retries=0,
+        max_tokens=2048,
+        **({"reasoning_effort": "low"} if SETTINGS.groq_model.startswith("openai/gpt-oss-") else {}),
     )
