@@ -94,7 +94,9 @@ As principais variáveis do backend ficam em `backend/.env`:
 | `GROQ_MODEL` | Modelo utilizado na Groq; por padrão, `openai/gpt-oss-20b` |
 | `CORS_ORIGINS` | Endereços autorizados a acessar a API, separados por vírgula |
 | `AI_TIMEOUT_SECONDS` | Tempo máximo de uma chamada ao provedor de IA (1 a 120 segundos) |
-| `AI_MAX_RETRIES` | Número de novas tentativas do cliente de IA (0 a 5) |
+| `AI_MAX_RETRIES` | Novas tentativas de falhas transitórias do modelo, compartilhadas por pergunta (0 a 5); não repete o agente inteiro |
+| `AI_REQUEST_TIMEOUT_SECONDS` | Orçamento de execução compartilhado pelos agentes (5 a 120 segundos; padrão 45) |
+| `AI_MAX_MODEL_CALLS` | Limite de chamadas ao modelo por pergunta, incluindo especialistas e retries (1 a 12; padrão 6) |
 | `ENVIRONMENT` | Ambiente atual; em `production`, cookies seguros são ativados por padrão |
 | `JWT_SECRET_KEY` | Segredo longo e aleatório usado para assinar os tokens JWT |
 | `JWT_PREVIOUS_SECRET_KEY` | Chave JWT anterior, usada temporariamente durante rotação sem derrubar sessões |

@@ -1,3 +1,5 @@
+import logging
+
 from contextvars import ContextVar
 from functools import lru_cache
 from typing import Annotated
@@ -5,22 +7,19 @@ from typing import Annotated
 from langchain.tools import ToolRuntime
 from langchain_core.tools import tool
 from pydantic import Field
+from groq import APITimeoutError, PermissionDeniedError
 
+from app.agents.runtime import AgentBudgetExceeded
 from app.agents.analyst_agent import AnalystAgent
 from app.agents.planning_agent import PlanningAgent
 from app.core.ai_guardrails import redact_for_ai
 
 
-ANALYSIS_UNAVAILABLE = (
-    "Não foi possível concluir a análise financeira agora. "
-    "Não estime nem calcule valores como alternativa; informe ao usuário que "
-    "a análise está temporariamente indisponível."
-)
-PLANNING_UNAVAILABLE = (
-    "Não foi possível concluir o planejamento financeiro agora. "
-    "Não estime nem calcule valores como alternativa; informe ao usuário que "
-    "o planejamento está temporariamente indisponível."
-)
+logger = logging.getLogger(__name__)
+
+
+ANALYSIS_UNAVAILABLE = "Não foi possível concluir a análise financeira agora. Tente novamente em instantes."
+PLANNING_UNAVAILABLE = "Não foi possível concluir o planejamento financeiro agora. Tente novamente em instantes."
 _delegation_active: ContextVar[bool] = ContextVar(
     "specialist_delegation_active",
     default=False,
@@ -82,7 +81,10 @@ def analyze_finances(
     try:
         history = _conversation_history(runtime)
         return redact_for_ai(get_analyst_agent().ask(question, history))
-    except Exception:
+    except (AgentBudgetExceeded, APITimeoutError, PermissionDeniedError):
+        raise
+    except Exception as error:
+        logger.warning("ai_specialist_failed specialist=analysis error_type=%s", type(error).__name__)
         return ANALYSIS_UNAVAILABLE
     finally:
         _delegation_active.reset(token)
@@ -107,7 +109,10 @@ def plan_finances(
     try:
         history = _conversation_history(runtime)
         return redact_for_ai(get_planning_agent().ask(question, history))
-    except Exception:
+    except (AgentBudgetExceeded, APITimeoutError, PermissionDeniedError):
+        raise
+    except Exception as error:
+        logger.warning("ai_specialist_failed specialist=planning error_type=%s", type(error).__name__)
         return PLANNING_UNAVAILABLE
     finally:
         _delegation_active.reset(token)

@@ -222,7 +222,6 @@ def test_analyst_failure_returns_controlled_error_without_internal_details(monke
 
     assert result == ANALYSIS_UNAVAILABLE
     assert "secret stack detail" not in result
-    assert "Não estime nem calcule" in result
 
 
 def test_delegation_keeps_redacted_placeholders_for_outer_guardrail(monkeypatch):

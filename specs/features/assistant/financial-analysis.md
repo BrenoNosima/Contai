@@ -287,8 +287,9 @@ Operações e consultas não delegadas mantêm seu fluxo atual.
   diferencia métricas e trata percentual nulo corretamente.
 - **AC-011:** O agent aceita histórico efêmero, rejeita prompt injection, redige
   dados sensíveis e sanitiza a resposta do provider.
-- **AC-012:** Falhas de argumentos/tool recebem uma única nova tentativa e falhas
-  inesperadas do provider são propagadas ao chamador.
+- **AC-012:** Falhas de argumentos/tool não repetem o grafo inteiro. Somente
+  falhas transitórias do modelo recebem retry dentro do orçamento compartilhado
+  da pergunta; falhas inesperadas são propagadas ao chamador.
 - **AC-013:** O `FinancialAgent` possui exatamente onze tools: seis operações,
   quatro consultas operacionais e uma delegação, sem tool analítica direta.
 - **AC-014:** O schema de `analyze_finances` contém somente `question`; histórico,

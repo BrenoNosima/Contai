@@ -197,7 +197,7 @@ def test_chat_handles_provider_failure(client, monkeypatch):
 
     response = client.post(
         "/chat/",
-        json={"message": "Qual meu saldo?", "chat_history": []},
+        json={"message": "Compare agosto e setembro.", "chat_history": []},
     )
 
     assert response.status_code == 502

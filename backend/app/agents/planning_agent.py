@@ -1,7 +1,7 @@
 from functools import wraps
 
 from langchain.agents import create_agent
-from pydantic import ValidationError
+from app.agents.runtime import ExecutionLimits, execution_scope, final_text, recent_history, invoke_once
 
 from app.agents.llm import create_chat_model
 from app.core.ai_guardrails import (
@@ -51,11 +51,12 @@ class PlanningAgent:
         self.tools = PLANNING_TOOLS
         self.agent = create_agent(
             model=self.llm, tools=self.tools, system_prompt=PLANNING_SYSTEM_PROMPT,
+            middleware=[ExecutionLimits()],
         )
 
     def ask(self, message: str, chat_history: list[dict] | None = None) -> str:
         validate_prompt(message)
-        with sensitive_redaction_scope():
+        with execution_scope(), sensitive_redaction_scope():
             return self._ask_sanitized(message, chat_history)
 
     def _ask_sanitized(self, message, chat_history):
@@ -69,27 +70,11 @@ class PlanningAgent:
             messages.append({
                 "role": item["role"], "content": redact_sensitive_input(content),
             })
+        messages = recent_history(messages)
         messages.append({"role": "user", "content": redact_sensitive_input(message)})
-        try:
-            result = self.agent.invoke(
-                {"messages": messages}, config={"recursion_limit": 8},
-            )
-        except (ValueError, ValidationError):
-            result = self.agent.invoke(
-                {"messages": [*messages, {
-                    "role": "system",
-                    "content": (
-                        "A chamada anterior falhou por formatação de JSON ou "
-                        "argumentos de tool. Tente novamente usando somente uma "
-                        "tool de planejamento adequada, argumentos válidos e "
-                        "datas no formato AAAA-MM-DD. Não invente dados ausentes."
-                    ),
-                }]}, config={"recursion_limit": 8},
-            )
-        if not result.get("messages"):
-            raise ValueError("PlanningAgent retornou resposta vazia.")
-        content = result["messages"][-1].content
-        if not isinstance(content, str) or not content.strip():
-            raise ValueError("PlanningAgent retornou resposta vazia ou inválida.")
+        result = invoke_once(self.agent,
+            {"messages": messages}, config={"recursion_limit": 8},
+        )
+        content = final_text(result)
         content = restore_sensitive_data(content)
         return sanitize_model_output(content.replace("\u202f", " ").replace("\u00a0", " "))

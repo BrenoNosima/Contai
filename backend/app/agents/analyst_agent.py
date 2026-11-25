@@ -1,7 +1,7 @@
 from datetime import date
 
 from langchain.agents import create_agent
-from pydantic import ValidationError
+from app.agents.runtime import ExecutionLimits, execution_scope, final_text, recent_history, invoke_once
 
 from app.agents.llm import create_chat_model
 from app.core.ai_guardrails import (
@@ -44,6 +44,7 @@ class AnalystAgent:
             model=self.llm,
             tools=self.tools,
             system_prompt=ANALYST_SYSTEM_PROMPT,
+            middleware=[ExecutionLimits()],
         )
 
     def ask(
@@ -52,7 +53,7 @@ class AnalystAgent:
         chat_history: list[dict] | None = None,
     ) -> str:
         validate_prompt(message)
-        with sensitive_redaction_scope():
+        with execution_scope(), sensitive_redaction_scope():
             return self._ask_sanitized(message, chat_history)
 
     def _ask_sanitized(
@@ -71,7 +72,7 @@ class AnalystAgent:
                 "role": item["role"],
                 "content": redact_sensitive_input(str(item.get("content", ""))),
             }
-            for item in (chat_history or [])
+            for item in recent_history(chat_history)
         ]
         validate_prompt(message)
         messages.append(
@@ -87,32 +88,12 @@ class AnalystAgent:
             }
         )
 
-        try:
-            result = self.agent.invoke(
-                {"messages": messages},
-                config={"recursion_limit": 8},
-            )
-        except (ValueError, ValidationError):
-            result = self.agent.invoke(
-                {
-                    "messages": [
-                        *messages,
-                        {
-                            "role": "system",
-                            "content": (
-                                "A chamada anterior falhou por formatação de JSON "
-                                "ou argumentos de tool. Tente novamente usando "
-                                "somente uma tool analítica adequada, argumentos "
-                                "válidos e datas no formato AAAA-MM-DD."
-                            ),
-                        },
-                    ]
-                },
-                config={"recursion_limit": 8},
-            )
-
-        final_message = result["messages"][-1]
-        content = restore_sensitive_data(str(final_message.content))
+        result = invoke_once(self.agent,
+            {"messages": messages},
+            config={"recursion_limit": 8},
+        )
+        content = final_text(result)
+        content = restore_sensitive_data(content)
         return sanitize_model_output(
             content.replace("\u202f", " ").replace("\u00a0", " ")
         )
