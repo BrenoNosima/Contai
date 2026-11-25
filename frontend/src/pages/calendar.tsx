@@ -52,8 +52,6 @@ type CalendarTransactionsApi = Pick<typeof transactionsApi, "generateOccurrences
 export async function loadCalendarTransactions({
   startISO,
   endISO,
-  monthsAhead,
-  generateOccurrences,
   api = transactionsApi,
 }: {
   startISO: string

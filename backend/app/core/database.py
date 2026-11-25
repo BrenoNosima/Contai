@@ -10,13 +10,16 @@ from app.core.config import DATABASE_URL
 connect_args = (
     {"check_same_thread": False}
     if DATABASE_URL.startswith("sqlite")
-    else {}
+    else {"connect_timeout": 5}
 )
 
 engine = create_engine(
     DATABASE_URL,
     connect_args=connect_args,
     pool_pre_ping=True,
+    pool_recycle=300,
+    hide_parameters=True,
+    **({"pool_timeout": 5} if not DATABASE_URL.startswith("sqlite") else {}),
 )
 
 SessionLocal = sessionmaker(
@@ -26,6 +29,13 @@ SessionLocal = sessionmaker(
 )
 
 Base = declarative_base()
+
+
+@event.listens_for(Session, "after_begin")
+def bound_database_work(session, transaction, connection):
+    if connection.dialect.name == "postgresql":
+        connection.exec_driver_sql("SET LOCAL statement_timeout = '10s'")
+        connection.exec_driver_sql("SET LOCAL lock_timeout = '3s'")
 
 
 @event.listens_for(Session, "do_orm_execute")

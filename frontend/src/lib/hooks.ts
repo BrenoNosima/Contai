@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useInfiniteQuery } from "@tanstack/react-query"
 import { transactionsApi } from "./api"
 import { qk, useFinanceInvalidation } from "./query"
 import { useToast } from "@/components/ui/toast"
@@ -21,6 +21,15 @@ export function useTransactions(filters: TransactionFilters = {}) {
   return useQuery({
     queryKey: qk.transactions(filters),
     queryFn: () => transactionsApi.list(filters),
+  })
+}
+
+export function useInfiniteTransactions(filters: TransactionFilters = {}) {
+  return useInfiniteQuery({
+    queryKey: ["transactions", "paged", filters],
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) => transactionsApi.list({ ...filters, limit: 50, offset: pageParam }),
+    getNextPageParam: (last, pages) => last.length === 50 ? pages.length * 50 : undefined,
   })
 }
 

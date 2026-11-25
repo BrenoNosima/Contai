@@ -92,13 +92,14 @@ class TransactionService:
         end_date: date | None = None,
         is_recurring: bool | None = None,
         installment: bool | None = None,
+        limit: int | None = None, offset: int = 0,
     ):
         """Lista com filtros — usada pela tela de Lançamentos e pelo agente."""
 
         if not any(
             [type, category, status, start_date, end_date, is_recurring is not None, installment is not None]
         ):
-            return self.repository.get_all(db)
+            return self.repository.get_all(db, limit=limit, offset=offset)
 
         return self.repository.filter(
             db,
@@ -108,7 +109,7 @@ class TransactionService:
             start_date=start_date,
             end_date=end_date,
             is_recurring=is_recurring,
-            installment=installment,
+            installment=installment, limit=limit, offset=offset,
         )
 
     def create_installments(self, db: Session, data: InstallmentCreate) -> list[Transaction]:
@@ -171,12 +172,13 @@ class TransactionService:
         return self.repository.get_installments(db, group_id)
 
     def get_period_summary(self, db: Session, start_date: date, end_date: date):
-        items = self.repository.filter(db, start_date=start_date, end_date=end_date)
-        income = sum((item.amount for item in items if item.type == "income" and item.status == "paid"), Decimal("0"))
-        expense = sum((item.amount for item in items if item.type == "expense" and item.status == "paid"), Decimal("0"))
-        pending_income = sum((item.amount for item in items if item.type == "income" and item.status == "pending"), Decimal("0"))
-        pending_expense = sum((item.amount for item in items if item.type == "expense" and item.status == "pending"), Decimal("0"))
-        return {"income": float(income), "expense": float(expense), "balance": float(income - expense), "pending_income": float(pending_income), "pending_expense": float(pending_expense)}
+        if start_date > end_date:
+            raise DomainValidationError("A data inicial deve ser anterior a data final.")
+        paid = self.repository.get_period_aggregate(db, start_date, end_date)
+        pending = self.repository.get_pending_period_totals(db, start_date, end_date)
+        return {"income": paid.total_income, "expense": paid.total_expenses,
+                "balance": paid.total_income - paid.total_expenses,
+                "pending_income": pending.pending_income, "pending_expense": pending.pending_expenses}
 
     def update_transaction(
         self,

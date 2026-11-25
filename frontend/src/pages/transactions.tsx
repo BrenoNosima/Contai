@@ -2,7 +2,7 @@ import { useMemo, useState, type FormEvent, type ReactNode } from "react"
 import { ArrowDownLeft, ArrowUpRight, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Clock3, MoreHorizontal, Plus, SlidersHorizontal, Trash2 } from "lucide-react"
 import { addMonths, endOfMonth, format, startOfMonth } from "date-fns"
 import { ptBR } from "date-fns/locale"
-import { useInstallments, usePeriodSummary, useTransactions, useTransactionMutations } from "@/lib/hooks"
+import { useInstallments, usePeriodSummary, useInfiniteTransactions, useTransactionMutations } from "@/lib/hooks"
 import type { InstallmentCreate, Transaction, TransactionFilters, TransactionStatus, TransactionType } from "@/lib/types"
 import { PageHeader } from "@/components/page-header"
 import { Badge, Button, Card, Input, Label, Money, Select } from "@/components/ui/primitives"
@@ -35,10 +35,10 @@ export default function TransactionsPage() {
   const effectiveStart = advanced.start_date || monthStart
   const effectiveEnd = advanced.show_future ? undefined : advanced.end_date || monthEnd
   const filters: TransactionFilters = { type, category: advanced.category, status: advanced.status, is_recurring: advanced.is_recurring, installment: advanced.installment, start_date: effectiveStart, end_date: effectiveEnd }
-  const query = useTransactions(filters)
+  const query = useInfiniteTransactions(filters)
   const summary = usePeriodSummary(monthStart, monthEnd)
   const { create, createInstallments, update, remove, setStatus } = useTransactionMutations()
-  const grouped = useMemo(() => groupTransactions(query.data ?? []), [query.data])
+  const grouped = useMemo(() => groupTransactions(query.data?.pages.flat() ?? []), [query.data])
   const advancedCount = Object.values(advanced).filter((value) => value !== undefined && value !== "" && value !== false).length
 
   return <div className="animate-in">
@@ -54,6 +54,7 @@ export default function TransactionsPage() {
     {advanced.show_future && <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-warning/25 bg-warning-soft px-3 py-2 text-xs text-warning"><span>Exibindo lançamentos futuros a partir de {format(parseDate(effectiveStart), "dd/MM/yyyy")}.</span><button className="font-semibold underline" onClick={() => setAdvanced((v) => ({ ...v, show_future: false }))}>Voltar ao período</button></div>}
     {query.isLoading ? <LoadingState /> : query.isError ? <ErrorState message="Não foi possível carregar os lançamentos." onRetry={() => query.refetch()} /> : grouped.length === 0 ? <Card elevated={false}><EmptyState title="Nenhum lançamento neste período" description="Altere o mês ou os filtros para consultar outros lançamentos." action={<Button variant="primary" size="sm" onClick={() => setAdding(true)}><Plus className="h-4 w-4" /> Adicionar</Button>} /></Card> : <><MobileList grouped={grouped} onOpen={setSelected} /><DesktopTable grouped={grouped} onOpen={setSelected} /></>}
 
+    {query.hasNextPage && <Button className="mt-5 w-full" disabled={query.isFetchingNextPage} onClick={() => query.fetchNextPage()}>{query.isFetchingNextPage ? "Carregando..." : "Carregar mais lancamentos"}</Button>}
     <Dialog open={filtersOpen} onClose={() => setFiltersOpen(false)} title="Filtros avançados" description="Refine o período e o tipo de lançamento exibido."><AdvancedFilterForm value={advanced} categories={metadata.categories} onChange={setAdvanced} onClear={() => setAdvanced({})} onClose={() => setFiltersOpen(false)} /></Dialog>
     <Dialog open={adding} onClose={() => setAdding(false)} title={addMode === "single" ? "Novo lançamento" : "Nova compra parcelada"}><div className="mb-5 grid grid-cols-2 gap-1 rounded-xl bg-surface-2 p-1"><QuickFilter active={addMode === "single"} onClick={() => setAddMode("single")}>Único</QuickFilter><QuickFilter active={addMode === "installment"} onClick={() => setAddMode("installment")}>Parcelado</QuickFilter></div>{addMode === "single" ? <TransactionForm submitting={create.isPending} onCancel={() => setAdding(false)} onSubmit={(data) => create.mutate(data, { onSuccess: () => setAdding(false) })} /> : <InstallmentForm categories={metadata.categories} submitting={createInstallments.isPending} onCancel={() => setAdding(false)} onSubmit={(data) => createInstallments.mutate(data, { onSuccess: () => setAdding(false) })} />}</Dialog>
     <TransactionDetails tx={selected} onClose={() => setSelected(null)} onEdit={(tx) => { setSelected(null); setEditing(tx) }} onDelete={(tx) => { setSelected(null); setDeleting(tx) }} onStatus={(tx, status) => setStatus.mutate({ id: tx.id, status })} busy={setStatus.isPending} />

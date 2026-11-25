@@ -236,11 +236,13 @@ class TransactionRepository:
     def get_all(
         self,
         db: Session,
+        limit: int | None = None, offset: int = 0,
     ):
 
         return (
             db.query(Transaction)
-            .order_by(Transaction.created_at.desc())
+            .order_by(Transaction.created_at.desc(), Transaction.id.desc())
+            .offset(offset).limit(limit)
             .all()
         )
 
@@ -254,6 +256,7 @@ class TransactionRepository:
         end_date: date | None = None,
         is_recurring: bool | None = None,
         installment: bool | None = None,
+        limit: int | None = None, offset: int = 0,
     ):
         """
         Lista transações com filtros opcionais — usada pela tela de
@@ -285,7 +288,7 @@ class TransactionRepository:
         elif installment is False:
             query = query.filter(Transaction.installment_group_id.is_(None))
 
-        return query.order_by(Transaction.due_date.desc()).all()
+        return query.order_by(Transaction.due_date.desc(), Transaction.id.desc()).offset(offset).limit(limit).all()
 
     def get_installments(self, db: Session, group_id: str):
         return (

@@ -151,8 +151,16 @@ function toQuery(params: Record<string, unknown>): string {
 
 // ---------- Transactions ----------
 export const transactionsApi = {
-  list: (filters: TransactionFilters = {}) =>
-    request<Transaction[]>(`/transactions/${toQuery(filters as Record<string, unknown>)}`),
+  list: async (filters: TransactionFilters = {}) => {
+    if (filters.limit !== undefined) return request<Transaction[]>(`/transactions/${toQuery(filters as Record<string, unknown>)}`)
+    const items: Transaction[] = []
+    for (let offset = 0; offset <= 100_000; offset += 200) {
+      const batch = await request<Transaction[]>(`/transactions/${toQuery({ ...filters, limit: 200, offset })}`)
+      items.push(...batch)
+      if (batch.length < 200) return items
+    }
+    throw new ApiError("Há muitos lançamentos. Use um período menor para consultar.", 422)
+  },
   get: (id: number) => request<Transaction>(`/transactions/${id}`),
   create: (data: TransactionCreate) =>
     request<Transaction>(`/transactions/`, {

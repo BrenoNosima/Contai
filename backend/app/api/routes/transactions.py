@@ -93,6 +93,8 @@ def get_all_transactions(
         description="Filtra apenas modelos recorrentes (true) ou não (false).",
     ),
     installment: bool | None = Query(default=None),
+    limit: int = Query(default=200, ge=1, le=1000),
+    offset: int = Query(default=0, ge=0, le=1000000),
 ):
     """
     Lista transações. Sem parâmetros, retorna tudo (comportamento
@@ -107,7 +109,7 @@ def get_all_transactions(
         start_date=start_date,
         end_date=end_date,
         is_recurring=is_recurring,
-        installment=installment,
+        installment=installment, limit=limit, offset=offset,
     )
 
 

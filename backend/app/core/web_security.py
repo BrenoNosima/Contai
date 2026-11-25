@@ -89,6 +89,8 @@ class InMemoryRateLimiter:
         now = time.monotonic()
         threshold = now - rule.window_seconds
         with self._lock:
+            if len(self._events) > 10000:
+                self._events = defaultdict(deque, {k: v for k, v in self._events.items() if v and v[-1] > now - 3600})
             events = self._events[key]
             while events and events[0] <= threshold:
                 events.popleft()
@@ -112,6 +114,7 @@ RATE_RULES = {
     "/auth/register": RateRule(3, 3600),
     "/auth/refresh": RateRule(20, 60),
     "/chat/": RateRule(10, 60),
+    "/transactions/text": RateRule(10, 60),
 }
 
 
@@ -120,7 +123,34 @@ def enforce_rate_limit(request: Request) -> None:
     if not rule:
         return
     client_ip = request.client.host if request.client else "unknown"
-    RATE_LIMITER.check(f"{request.url.path}:{client_ip}", rule)
+    key = f"{request.url.path}:{client_ip}"
+    if SETTINGS.environment == "production":
+        _shared_rate_limit(key, rule)
+    else:
+        RATE_LIMITER.check(key, rule)
+
+
+def _shared_rate_limit(key: str, rule: RateRule) -> None:
+    from datetime import UTC, datetime
+    from sqlalchemy.dialects.postgresql import insert
+    from app.core.database import SessionLocal
+    from app.models.request_limit import RequestLimit
+    now = time.time()
+    window = int(now // rule.window_seconds)
+    digest = hmac.new(SETTINGS.jwt_secret_key.encode(), f"{key}:{window}".encode(), hashlib.sha256).hexdigest()
+    expires = (window + 1) * rule.window_seconds
+    try:
+        with SessionLocal() as db:
+            claim = insert(RequestLimit).values(key=digest, requests=1, expires_at=datetime.fromtimestamp(expires, UTC).replace(tzinfo=None))
+            claim = claim.on_conflict_do_update(index_elements=[RequestLimit.key],
+                set_={"requests": RequestLimit.requests + 1}, where=RequestLimit.requests < rule.requests)
+            claimed = db.execute(claim.returning(RequestLimit.requests)).scalar_one_or_none()
+            db.commit()
+    except Exception as error:
+        raise HTTPException(503, "Proteção de acesso temporariamente indisponível.") from error
+    if claimed is None:
+        raise HTTPException(429, "Muitas tentativas. Aguarde antes de tentar novamente.",
+                            headers={"Retry-After": str(max(1, int(expires - now) + 1))})
 
 
 def add_security_headers(response) -> None:

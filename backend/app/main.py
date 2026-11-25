@@ -6,6 +6,7 @@ from pathlib import Path
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.concurrency import run_in_threadpool
 
 from app.core.config import CORS_ORIGINS
 from app.core.dependencies import get_password_compliant_user
@@ -100,7 +101,7 @@ async def application_security(request: Request, call_next):
         add_security_headers(response)
         return response
     try:
-        enforce_rate_limit(request)
+        await run_in_threadpool(enforce_rate_limit, request)
         validate_csrf_request(request)
     except HTTPException as error:
         response = JSONResponse(

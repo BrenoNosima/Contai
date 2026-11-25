@@ -80,7 +80,7 @@ def search_transactions(
             category=category,
             status=status,
             start_date=parsed_start,
-            end_date=parsed_end,
+            end_date=parsed_end, limit=100,
         )
         return redact_for_ai([
             {
