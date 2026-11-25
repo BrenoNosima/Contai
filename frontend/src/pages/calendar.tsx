@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import {
   addMonths,
   eachDayOfInterval,
@@ -16,7 +16,7 @@ import {
 import { ptBR } from "date-fns/locale"
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react"
 import { transactionsApi } from "@/lib/api"
-import { qk } from "@/lib/query"
+import { qk, useFinanceInvalidation } from "@/lib/query"
 import { useTransactionMutations } from "@/lib/hooks"
 import type { Transaction } from "@/lib/types"
 import { Button, Card, Money } from "@/components/ui/primitives"
@@ -62,17 +62,15 @@ export async function loadCalendarTransactions({
   generateOccurrences: boolean
   api?: CalendarTransactionsApi
 }): Promise<Transaction[]> {
-  if (generateOccurrences) {
-    try {
-      await api.generateOccurrences(monthsAhead)
-    } catch {
-      // A falha na geração não deve esconder lançamentos já existentes.
-    }
-  }
   return api.list({ start_date: startISO, end_date: endISO })
 }
 
 export default function CalendarPage() {
+  const { transactions: invalidateTransactions } = useFinanceInvalidation()
+  const recurring = useMutation({
+    mutationFn: () => transactionsApi.generateOccurrences(12),
+    onSuccess: () => invalidateTransactions(),
+  })
   const [cursor, setCursor] = useState(() => new Date())
   const [selected, setSelected] = useState<Date | null>(null)
   const [addFor, setAddFor] = useState<string | null>(null)
@@ -99,7 +97,7 @@ export default function CalendarPage() {
       startISO,
       endISO,
       monthsAhead,
-      generateOccurrences: monthDistance >= 0,
+      generateOccurrences: false,
     }),
   })
 
@@ -178,6 +176,14 @@ export default function CalendarPage() {
         </div>
       </div>
 
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <Button size="sm" variant="outline" disabled={recurring.isPending} onClick={() => recurring.mutate()}>
+          {recurring.isPending ? "Atualizando..." : "Atualizar recorrencias"}
+        </Button>
+        <p className="text-xs text-muted">Gera os vencimentos recorrentes dos proximos 12 meses.</p>
+        {recurring.isError && <p role="alert" className="w-full text-sm text-expense">Nao foi possivel gerar as recorrencias. Tente novamente.</p>}
+        {recurring.isSuccess && <p role="status" className="w-full text-sm text-income">Recorrencias atualizadas.</p>}
+      </div>
       <Card elevated className="calendar-panel overflow-hidden border-[color:var(--color-calendar-border)] bg-[color:var(--color-calendar-surface)] p-0 shadow-[0_20px_50px_-32px_rgba(17,28,35,0.75)]">
         {calendarLoading ? (
           <LoadingState label="Carregando o mês…" />

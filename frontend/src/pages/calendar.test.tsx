@@ -41,7 +41,7 @@ describe("Calendário", () => {
       generateOccurrences: true,
       api,
     })).resolves.toBe(transactions)
-    expect(api.generateOccurrences).toHaveBeenCalledWith(1)
+    expect(api.generateOccurrences).not.toHaveBeenCalled()
     expect(api.list).toHaveBeenCalledWith({
       start_date: "2026-09-01",
       end_date: "2026-09-30",
