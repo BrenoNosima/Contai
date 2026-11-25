@@ -27,6 +27,8 @@ class Settings:
     cors_origins: tuple[str, ...]
     ai_timeout_seconds: int
     ai_max_retries: int
+    ai_request_timeout_seconds: int
+    ai_max_model_calls: int
     jwt_secret_key: str
     jwt_previous_secret_key: str
     jwt_next_secret_key: str
@@ -123,6 +125,14 @@ class Settings:
             groq_api_key=groq_api_key,
             groq_model=groq_model,
             cors_origins=cors_origins,
+            ai_request_timeout_seconds=_parse_int(
+                values.get("AI_REQUEST_TIMEOUT_SECONDS"), default=45,
+                name="AI_REQUEST_TIMEOUT_SECONDS", minimum=5, maximum=120,
+            ),
+            ai_max_model_calls=_parse_int(
+                values.get("AI_MAX_MODEL_CALLS"), default=6,
+                name="AI_MAX_MODEL_CALLS", minimum=1, maximum=12,
+            ),
             ai_timeout_seconds=ai_timeout_seconds,
             ai_max_retries=ai_max_retries,
             jwt_secret_key=jwt_secret_key,

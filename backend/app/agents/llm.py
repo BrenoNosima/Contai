@@ -11,5 +11,6 @@ def create_chat_model() -> ChatGroq:
         api_key=SETTINGS.groq_api_key,
         temperature=0,
         request_timeout=SETTINGS.ai_timeout_seconds,
-        max_retries=SETTINGS.ai_max_retries,
+        # Retries are controlled by ExecutionLimits within a shared request budget.
+        max_retries=0,
     )

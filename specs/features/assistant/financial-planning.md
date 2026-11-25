@@ -201,8 +201,10 @@ dados do cenário, pedir esclarecimento; não inventar IDs nem delegar nesta eta
 O histórico user/assistant fornecido pelo chamador permite “E em 5x?” retomar
 uma compra anterior, sem armazenamento e sem aceitar roles privilegiados.
 
-Reutilizar create_chat_model (Groq, timeout e retries compartilhados), create_agent
-e retry único para ValueError/ValidationError. Falhas persistentes de tool/provider
+Reutilizar create_chat_model (Groq), create_agent e ExecutionLimits com orçamento
+de tempo, chamadas e retries compartilhado com o supervisor. Não repetir o grafo
+por ValueError/ValidationError; retry ocorre somente na chamada transitória ao modelo.
+Falhas persistentes de tool/provider
 propagam ao chamador; erros estruturados não se tornam valores. Resposta vazia
 gera erro explícito. Não criar cache com memória de conversa.
 

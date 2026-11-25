@@ -42,6 +42,7 @@ from app.api.routes.metadata import router as metadata_router
 from app.api.routes.assistant_actions import router as assistant_actions_router
 from app.api.routes.privacy import router as privacy_router
 
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
 SPA_INDEX = STATIC_DIR / "index.html"

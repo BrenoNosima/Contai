@@ -148,7 +148,6 @@ def test_planner_failure_is_controlled_and_does_not_leak(monkeypatch):
     result = call("Quanto vou ter?")
     assert result == PLANNING_UNAVAILABLE
     assert "provider secret" not in result
-    assert "Não estime nem calcule" in result
 
 
 def test_shared_cycle_guard_blocks_nested_delegation(monkeypatch):

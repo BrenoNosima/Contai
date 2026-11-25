@@ -7,6 +7,7 @@ from langchain_core.language_models.fake_chat_models import FakeMessagesListChat
 from langchain_core.messages import AIMessage, ToolMessage
 from sqlalchemy import event
 
+from app.agents.runtime import AgentUnavailableError
 import app.agents.planning_agent as module
 import app.tools.planning_tools as tool_module
 from app.core.exceptions import DomainValidationError
@@ -53,6 +54,7 @@ def test_exact_read_simulation_capabilities(monkeypatch):
     monkeypatch.setattr(module, "create_chat_model", lambda: model)
     monkeypatch.setattr(module, "create_agent", lambda **kw: captured.update(kw))
     agent = module.PlanningAgent()
+    assert isinstance(captured.pop("middleware")[0], module.ExecutionLimits)
     assert captured == dict(model=model, tools=agent.tools, system_prompt=module.PLANNING_SYSTEM_PROMPT)
     assert [t.name for t in agent.tools] == [row[1] for row in CASES]
     for tool in agent.tools:
@@ -159,11 +161,11 @@ def test_parsing_error_is_redacted():
     assert "error" in result and "pessoa@example.com" not in str(result)
 
 
-def test_retry_once_for_invalid_arguments():
-    agent = bare(ValueError("arguments"), "Resultado")
-    assert agent.ask("E em 5x?") == "Resultado"
-    assert len(agent.agent.calls) == 2
-    assert agent.agent.calls[1][0]["messages"][-1]["role"] == "system"
+def test_invalid_arguments_do_not_replay_graph():
+    agent = bare(ValueError("arguments"), "unused")
+    with pytest.raises(AgentUnavailableError):
+        agent.ask("E em 5x?")
+    assert len(agent.agent.calls) == 1
 
 
 @pytest.mark.parametrize("error", [RuntimeError("provider"), DomainValidationError("meta sem prazo")])
@@ -174,14 +176,14 @@ def test_tool_and_provider_errors_propagate(error):
 
 def test_persistent_argument_failure_propagates():
     agent = bare(ValueError("invalid"), ValueError("invalid"))
-    with pytest.raises(ValueError):
+    with pytest.raises(AgentUnavailableError):
         agent.ask("E em 5x?")
-    assert len(agent.agent.calls) == 2
+    assert len(agent.agent.calls) == 1
 
 
 @pytest.mark.parametrize("content", ["", "   ", None, []])
 def test_empty_output_rejected(content):
-    with pytest.raises(ValueError, match="resposta vazia"):
+    with pytest.raises(AgentUnavailableError, match="resposta vazia"):
         bare(content).ask("E em 5x?")
 
 

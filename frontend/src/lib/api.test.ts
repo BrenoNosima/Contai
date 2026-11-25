@@ -31,6 +31,32 @@ beforeEach(() => {
 })
 
 describe("API client contracts", () => {
+  it("times out stalled chat requests and aborts the fetch", async () => {
+    vi.useFakeTimers()
+    let signal: AbortSignal | undefined
+    fetchMock.mockImplementation((url: string, init?: RequestInit) => {
+      if (url.endsWith("/auth/csrf")) return Promise.resolve(jsonResponse({ csrf_token: "test-csrf" }))
+      signal = init?.signal ?? undefined
+      return new Promise(() => {})
+    })
+    try {
+      const result = expect(chatApi.send("Compare os meses")).rejects.toMatchObject({ status: 504 })
+      await vi.advanceTimersByTimeAsync(130_000)
+      await result
+      expect(signal?.aborted).toBe(true)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it("limits chat context without cutting individual messages", async () => {
+    mockMutationResponse({ response: "ok" })
+    const history = Array.from({ length: 30 }, (_, i) => ({ role: "user" as const, content: `${i}`.padEnd(1000, "x") }))
+    await chatApi.send("Compare os meses", history)
+    const call = fetchMock.mock.calls.find(([url]) => url.endsWith("/chat/"))
+    expect(JSON.parse(call![1].body).chat_history).toEqual(history.slice(-16))
+  })
+
   it("serializes transaction filters expected by the backend", async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse([]))
 

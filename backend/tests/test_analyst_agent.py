@@ -59,6 +59,7 @@ def test_analyst_agent_builds_shared_model_with_exact_read_tools(monkeypatch):
     agent = AnalystAgent()
 
     assert agent.llm is shared_model
+    assert isinstance(captured.pop("middleware")[0], analyst_module.ExecutionLimits)
     assert captured == {
         "model": shared_model,
         "tools": ANALYST_TOOLS,
@@ -241,15 +242,12 @@ def test_prompt_injection_in_history_is_rejected():
     assert graph.calls == []
 
 
-def test_tool_argument_error_retries_once_with_safe_instruction():
-    graph = FakeGraph(ValueError("invalid tool arguments"), "Resultado vazio.")
-    agent = bare_agent(graph)
-
-    assert agent.ask("Quanto gastei em agosto?") == "Resultado vazio."
-    assert len(graph.calls) == 2
-    retry_messages = graph.calls[1][0]["messages"]
-    assert retry_messages[-1]["role"] == "system"
-    assert "argumentos de tool" in retry_messages[-1]["content"]
+def test_tool_argument_error_does_not_replay_graph():
+    from app.agents.runtime import AgentUnavailableError
+    graph = FakeGraph(ValueError("invalid tool arguments"), "unused")
+    with pytest.raises(AgentUnavailableError):
+        bare_agent(graph).ask("Compare os periodos.")
+    assert len(graph.calls) == 1
 
 
 def test_provider_error_is_propagated_to_future_caller():

@@ -230,12 +230,44 @@ export const reportsApi = {
 }
 
 // ---------- Chat ----------
+// The API allows up to 120s of model execution. Also cover CSRF, refresh,
+// response-body reads and stalled connections; never retry a chat POST here.
+const CHAT_REQUEST_TIMEOUT_MS = 130_000
+
+function recentChatHistory(history: { role: "user" | "assistant"; content: string }[]) {
+  const selected: typeof history = []
+  let characters = 0
+  for (const item of history.slice(-20).reverse()) {
+    if (characters + item.content.length > 16_000) break
+    selected.unshift(item)
+    characters += item.content.length
+  }
+  return selected
+}
+
 export const chatApi = {
-  send: (message: string, chatHistory: { role: "user" | "assistant"; content: string }[] = []) =>
-    request<ChatResponse>(`/chat/`, {
-      method: "POST",
-      body: JSON.stringify({ message, chat_history: chatHistory }),
-    }),
+  send: async (message: string, chatHistory: { role: "user" | "assistant"; content: string }[] = []) => {
+    const controller = new AbortController()
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const timeout = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => {
+        controller.abort()
+        reject(new ApiError("O assistente demorou mais que o esperado. Tente novamente em instantes.", 504))
+      }, CHAT_REQUEST_TIMEOUT_MS)
+    })
+    try {
+      return await Promise.race([
+        request<ChatResponse>(`/chat/`, {
+          method: "POST",
+          signal: controller.signal,
+          body: JSON.stringify({ message, chat_history: recentChatHistory(chatHistory) }),
+        }),
+        timeout,
+      ])
+    } finally {
+      clearTimeout(timer)
+    }
+  },
 }
 
 export const assistantActionsApi = {
