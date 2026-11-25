@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react"
 import { Download, Save, ShieldCheck, Trash2 } from "lucide-react"
-import { useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { PageHeader } from "@/components/page-header"
 import { Button, Card, Input, Label } from "@/components/ui/primitives"
 import { ApiError, authApi } from "@/lib/api"
@@ -45,6 +45,7 @@ export default function AccountPrivacyPage() {
     {error && <div role="alert" className="mb-5 rounded-xl border border-expense/30 bg-expense-soft px-4 py-3 text-sm text-expense">{error}</div>}
     <div className="grid gap-5 lg:grid-cols-2">
       <Card><div className="mb-5 flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-primary" aria-hidden /><h2 className="text-lg font-semibold">Dados cadastrais</h2></div>
+        <Link to="/alterar-senha" className="mb-5 inline-flex min-h-11 items-center text-sm text-primary underline underline-offset-4">Alterar minha senha</Link>
         <form className="space-y-4" onSubmit={save}>
           <div><Label htmlFor="profile-name">Nome</Label><Input id="profile-name" autoComplete="name" required minLength={2} value={name} onChange={e => setName(e.target.value)} /></div>
           <div><Label htmlFor="profile-email">E-mail</Label><Input id="profile-email" type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} /></div>

@@ -24,6 +24,7 @@ import { DEMO_MODE, demoRequest } from "./demo-api"
 const RAW_BASE = import.meta.env.VITE_API_URL as string | undefined
 const BASE = RAW_BASE ? RAW_BASE.replace(/\/$/, "") : import.meta.env.DEV ? "/api" : ""
 let csrfToken: string | null = null
+let refreshPromise: Promise<AuthUser> | null = null
 
 async function getCsrfToken(): Promise<string> {
   if (csrfToken) return csrfToken
@@ -69,7 +70,8 @@ async function request<T>(path: string, init?: RequestInit, retryAuthentication 
   if (!res.ok) {
     if (res.status === 401 && retryAuthentication && (path === "/auth/me" || !path.startsWith("/auth/"))) {
       try {
-        await request<AuthUser>("/auth/refresh", { method: "POST", body: "{}" }, false)
+        await (refreshPromise ??= request<AuthUser>("/auth/refresh", { method: "POST", body: "{}" }, false)
+          .finally(() => { refreshPromise = null }))
         return request<T>(path, init, false)
       } catch {
         // The auth provider will move the user back to login below.
