@@ -1,3 +1,4 @@
+from app.schemas.money import PositiveMoney, NonnegativeMoney
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -6,14 +7,14 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 class FixedExpenseCreate(BaseModel):
     name: str = Field(min_length=1, max_length=150)
     category: str = Field(min_length=1, max_length=100)
-    amount: float = Field(gt=0)
+    amount: PositiveMoney
     billing_day: int = Field(ge=1, le=31)
 
 
 class FixedExpenseUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=150)
     category: str | None = Field(default=None, min_length=1, max_length=100)
-    amount: float | None = Field(default=None, gt=0)
+    amount: PositiveMoney | None = None
     billing_day: int | None = Field(default=None, ge=1, le=31)
     active: bool | None = None
 

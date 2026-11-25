@@ -1,3 +1,4 @@
+from app.schemas.money import PositiveMoney, NonnegativeMoney
 from datetime import date
 from datetime import datetime
 from typing import Literal
@@ -13,7 +14,7 @@ class TransactionCreate(BaseModel):
     type: Literal["income", "expense"]
     description: str = Field(min_length=1, max_length=255)
     category: str = Field(min_length=1, max_length=100)
-    amount: float = Field(gt=0)
+    amount: PositiveMoney
     priority: Literal["essential", "desirable", "superfluous"] | None = None
     source: Literal["manual", "ai", "recurring"] = "manual"
 
@@ -36,7 +37,7 @@ class TransactionUpdate(BaseModel):
     type: Literal["income", "expense"] | None = None
     description: str | None = Field(default=None, min_length=1, max_length=255)
     category: str | None = Field(default=None, min_length=1, max_length=100)
-    amount: float | None = Field(default=None, gt=0)
+    amount: PositiveMoney | None = None
     priority: Literal["essential", "desirable", "superfluous"] | None = None
     due_date: date | None = None
     status: TransactionStatus | None = None
@@ -86,7 +87,7 @@ class TransactionResponse(BaseModel):
 class InstallmentCreate(BaseModel):
     description: str = Field(min_length=1, max_length=255)
     category: str = Field(min_length=1, max_length=100)
-    total_amount: float = Field(gt=0)
+    total_amount: PositiveMoney
     installment_count: int = Field(ge=2, le=120)
     first_due_date: date
     priority: Literal["essential", "desirable", "superfluous"] | None = None

@@ -1,3 +1,4 @@
+from app.schemas.money import PositiveMoney, NonnegativeMoney
 from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
@@ -11,7 +12,7 @@ class NaturalLanguageResponse(BaseModel):
     type: Literal["income", "expense"]
     description: str = Field(min_length=1, max_length=255)
     category: str = Field(min_length=1, max_length=100)
-    amount: float = Field(gt=0)
+    amount: PositiveMoney
     priority: Literal["essential", "desirable", "superfluous"] | None = None
 
     @model_validator(mode="after")

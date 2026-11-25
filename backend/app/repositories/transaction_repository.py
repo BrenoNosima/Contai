@@ -1,3 +1,4 @@
+from app.core.clock import business_today
 from calendar import monthrange
 from datetime import date
 from datetime import UTC, datetime
@@ -12,7 +13,7 @@ from app.models.transaction import Transaction
 
 
 def _period_start(months: int) -> date:
-    today = date.today()
+    today = business_today()
     month_index = today.year * 12 + today.month - months
     year, zero_month = divmod(month_index, 12)
     return date(year, zero_month + 1, 1)
@@ -527,6 +528,7 @@ class TransactionRepository:
             .filter(
                 Transaction.status == "paid",
                 Transaction.due_date >= _period_start(months),
+                Transaction.due_date <= business_today().replace(day=monthrange(business_today().year, business_today().month)[1]),
             )
             .group_by(
                 extract("year", Transaction.due_date),
@@ -558,6 +560,7 @@ class TransactionRepository:
                 Transaction.type == "expense",
                 Transaction.status == "paid",
                 Transaction.due_date >= _period_start(months),
+                Transaction.due_date <= business_today().replace(day=monthrange(business_today().year, business_today().month)[1]),
             )
             .group_by(Transaction.category)
             .order_by(func.sum(Transaction.amount).desc())
