@@ -1,6 +1,8 @@
 # app/models/goal.py
 
 from datetime import UTC, datetime
+from decimal import Decimal
+from app.core.clock import business_today
 
 from sqlalchemy import (
     Column,
@@ -99,7 +101,7 @@ class Goal(Base):
         """
 
         return round(
-            self.target_amount - self.current_amount,
+            max(Decimal("0"), self.target_amount - self.current_amount),
             2,
         )
 
@@ -116,7 +118,9 @@ class Goal(Base):
         if self.current_amount >= self.target_amount:
             return "completed"
 
-        if self.deadline and utc_now() > self.deadline:
+        # The UI and planning service use calendar-day deadlines. A goal due
+        # today remains active through the end of the business day.
+        if self.deadline and business_today() > self.deadline.date():
             return "overdue"
 
         return "active"
