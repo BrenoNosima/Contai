@@ -116,6 +116,7 @@ async function performRequest<T>(path: string, init?: RequestInit, retryAuthenti
 }
 
 export interface AuthUser {
+  avatar_id?: string
   id: number
   name: string
   email: string
@@ -124,6 +125,7 @@ export interface AuthUser {
 }
 
 export const authApi = {
+  updateAvatar: (avatar_id: string) => request<AuthUser>("/auth/me/avatar", { method: "PATCH", body: JSON.stringify({ avatar_id }) }),
   me: () => request<AuthUser>("/auth/me"),
   login: (email: string, password: string) =>
     request<AuthUser>("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),

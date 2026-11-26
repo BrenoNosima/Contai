@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from app.core.password_policy import validate_password_strength
 
@@ -37,6 +38,15 @@ class ProfileUpdateRequest(BaseModel):
 
     _valid_email = field_validator("email")(RegisterRequest.valid_email.__func__)
 
+
+AvatarId = Literal["person", "cat", "dog", "rabbit", "bird", "fish", "bot", "rocket",
+                   "flower", "leaf", "sun", "moon", "star", "heart", "coffee", "music"]
+
+
+class AvatarUpdateRequest(BaseModel):
+    avatar_id: AvatarId
+    model_config = ConfigDict(extra="forbid")
+
 class DeleteAccountRequest(BaseModel):
     password: str = Field(min_length=1, max_length=128)
     confirmation: str
@@ -70,4 +80,5 @@ class UserResponse(BaseModel):
     email: str
     created_at: datetime
     must_change_password: bool
+    avatar_id: str = "person"
     model_config = ConfigDict(from_attributes=True)

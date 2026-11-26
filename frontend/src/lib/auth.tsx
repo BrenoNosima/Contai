@@ -10,6 +10,7 @@ interface AuthContextValue {
   register: (name: string, email: string, password: string, confirmation: string) => Promise<void>
   logout: () => Promise<void>
   updateProfile: (name: string, email: string, password: string) => Promise<void>
+  updateAvatar: (id: string) => Promise<void>
   clearSession: () => void
 }
 
@@ -47,6 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     updateProfile: async (name, email, password) => {
       setUser(await authApi.update(name, email, password))
     },
+    updateAvatar: async (id) => { setUser(await authApi.updateAvatar(id)) },
     clearSession: () => {
       setUser(null)
       queryClient.clear()

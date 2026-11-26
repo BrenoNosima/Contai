@@ -85,12 +85,16 @@ class AuthService:
         user.email = normalized_email
         return self.repository.save(db, user)
 
+    def update_avatar(self, db: Session, user: User, avatar_id: str) -> User:
+        user.avatar_id = avatar_id
+        return self.repository.save(db, user)
+
     def export_user_data(self, db: Session, user: User) -> dict:
         def values(items, fields):
             return [{field: getattr(item, field) for field in fields} for item in items]
         return {
             "exported_at": datetime.now(UTC),
-            "user": {"id": user.id, "name": user.name, "email": user.email, "created_at": user.created_at},
+            "user": {"id": user.id, "name": user.name, "email": user.email, "created_at": user.created_at, "avatar_id": user.avatar_id},
             "transactions": values(db.query(Transaction).all(), (
                 "id", "type", "description", "category", "amount", "priority", "source",
                 "due_date", "status", "settled_at", "is_recurring", "recurrence", "created_at", "updated_at",

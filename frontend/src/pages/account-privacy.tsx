@@ -6,9 +6,10 @@ import { Button, Card, Input, Label } from "@/components/ui/primitives"
 import { ApiError, authApi } from "@/lib/api"
 import { useAuth } from "@/lib/auth"
 import { useToast } from "@/components/ui/toast"
+import { AvatarPicker } from "@/components/avatar-picker"
 
 export default function AccountPrivacyPage() {
-  const { user, updateProfile, clearSession } = useAuth()
+  const { user, updateProfile, updateAvatar, clearSession } = useAuth()
   const toast = useToast()
   const navigate = useNavigate()
   const [name, setName] = useState(user?.name ?? "")
@@ -43,6 +44,7 @@ export default function AccountPrivacyPage() {
   return <>
     <PageHeader title="Conta e privacidade" subtitle="Controle seus dados cadastrais e exerça seus direitos de acesso, correção e eliminação." />
     {error && <div role="alert" className="mb-5 rounded-xl border border-expense/30 bg-expense-soft px-4 py-3 text-sm text-expense">{error}</div>}
+    <AvatarPicker value={user?.avatar_id} onSave={updateAvatar} />
     <div className="grid gap-5 lg:grid-cols-2">
       <Card><div className="mb-5 flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-primary" aria-hidden /><h2 className="text-lg font-semibold">Dados cadastrais</h2></div>
         <Link to="/alterar-senha" className="mb-5 inline-flex min-h-11 items-center text-sm text-primary underline underline-offset-4">Alterar minha senha</Link>

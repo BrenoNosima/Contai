@@ -10,7 +10,7 @@ const now = new Date().toISOString()
 
 export const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === "true"
 
-const demoUser: AuthUser = { id: 1, name: "Marina Demo", email: "marina@demo.contai", created_at: now, must_change_password: false }
+const demoUser: AuthUser = { id: 1, name: "Marina Demo", email: "marina@demo.contai", created_at: now, must_change_password: false, avatar_id: "person" }
 let transactions: Transaction[] = [
   { id: 1, type: "income", description: "Salário", category: "Salário", amount: 6200, priority: null, source: "manual", due_date: iso(-4), status: "paid", settled_at: iso(-4), is_recurring: true, recurrence: "monthly", parent_id: null, fixed_expense_id: null, installment_group_id: null, installment_number: null, installment_count: null, user_id: 1, created_at: now, updated_at: now },
   { id: 2, type: "expense", description: "Aluguel", category: "Moradia", amount: 1850, priority: "essential", source: "manual", due_date: iso(-2), status: "paid", settled_at: iso(-2), is_recurring: true, recurrence: "monthly", parent_id: null, fixed_expense_id: 1, installment_group_id: null, installment_number: null, installment_count: null, user_id: 1, created_at: now, updated_at: now },
@@ -38,6 +38,7 @@ export async function demoRequest<T>(path: string, init?: RequestInit): Promise<
   const method = (init?.method ?? "GET").toUpperCase()
   const data = body(init)
 
+  if (url.pathname === "/auth/me/avatar" && method === "PATCH") demoUser.avatar_id = String(data.avatar_id)
   if (url.pathname.startsWith("/auth/")) return (method === "DELETE" ? undefined : demoUser) as T
   if (url.pathname === "/privacy") return ({ controller: "Contaí", contact: "privacidade@contai.app", country: "Brasil", ai_provider: "Groq", ai_destination: "Estados Unidos", policy_version: "demo" } satisfies PrivacyInformation) as T
   if (url.pathname === "/metadata/finance") return ({ categories: ["Alimentação", "Assinaturas", "Educação", "Lazer", "Moradia", "Salário", "Saúde", "Transporte"], transaction_types: [{ value: "income", label: "Receita" }, { value: "expense", label: "Despesa" }], statuses: [{ value: "paid", label: "Concluído" }, { value: "pending", label: "Pendente" }], priorities: [{ value: "essential", label: "Essencial" }, { value: "desirable", label: "Desejável" }, { value: "superfluous", label: "Supérflua" }], recurrences: [{ value: "weekly", label: "Semanal" }, { value: "monthly", label: "Mensal" }] }) as T

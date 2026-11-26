@@ -6,6 +6,7 @@ from app.core.security import create_access_token, decode_access_token
 from app.models.user import User
 from app.schemas.auth import ChangePasswordRequest, DeleteAccountRequest, LoginRequest, ProfileUpdateRequest, RegisterRequest, UserResponse
 from app.services.auth_service import AuthService
+from app.schemas.auth import AvatarUpdateRequest
 from app.core.web_security import CSRF_COOKIE_NAME, create_csrf_token
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
@@ -87,6 +88,11 @@ def update_me(payload: ProfileUpdateRequest, current_user: User = Depends(get_cu
 @router.get("/me/export")
 def export_me(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     return service.export_user_data(db, current_user)
+
+
+@router.patch("/me/avatar", response_model=UserResponse)
+def update_avatar(payload: AvatarUpdateRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return service.update_avatar(db, current_user, payload.avatar_id)
 
 @router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
 def delete_me(payload: DeleteAccountRequest, response: Response, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
