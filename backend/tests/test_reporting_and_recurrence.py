@@ -1,3 +1,4 @@
+from app.core.clock import business_today
 from datetime import date
 
 import pytest
@@ -15,7 +16,7 @@ def create_transaction(db, **overrides):
         "description": "Conta",
         "category": "Moradia",
         "amount": 100,
-        "due_date": date.today(),
+        "due_date": business_today(),
         "status": "paid",
     }
     values.update(overrides)
@@ -46,7 +47,7 @@ def test_dashboard_and_reports_ignore_pending_transactions(client, db_session):
 
     breakdown = client.get(
         "/reports/category-breakdown",
-        params={"month": date.today().month, "year": date.today().year},
+        params={"month": business_today().month, "year": business_today().year},
     )
     assert breakdown.status_code == 200
     assert breakdown.json()["expenses"] == [{"category": "Moradia", "amount": 250.0}]
@@ -56,7 +57,7 @@ def test_dashboard_and_reports_ignore_pending_transactions(client, db_session):
         description="Despesa antiga",
         category="Outros",
         amount=5000,
-        due_date=date(date.today().year - 1, date.today().month, 1),
+        due_date=date(business_today().year - 1, business_today().month, 1),
     )
 
     summary_response = client.get("/reports/summary", params={"months": 1})
@@ -98,7 +99,7 @@ def test_recurring_batch_rolls_back_on_duplicate(db_session):
         is_recurring=True,
         recurrence="monthly",
     )
-    occurrence_date = date(date.today().year + 1, 1, 10)
+    occurrence_date = date(business_today().year + 1, 1, 10)
     duplicates = [
         Transaction(
             type="expense",

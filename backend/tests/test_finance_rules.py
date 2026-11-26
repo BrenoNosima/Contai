@@ -1,3 +1,4 @@
+from app.core.clock import business_today
 from datetime import date
 
 import pytest
@@ -75,7 +76,7 @@ def test_recurring_projection_covers_the_entire_horizon_month(monkeypatch):
 
 
 def test_recurring_projection_does_not_duplicate_template_date():
-    start = date.today().replace(day=min(date.today().day, 28))
+    start = business_today().replace(day=min(business_today().day, 28))
     dates = TransactionService._project_dates(start, "monthly", months_ahead=3)
     assert start not in dates
     assert dates
@@ -89,7 +90,7 @@ def test_balance_and_reports_ignore_pending_transactions(db):
             db,
             TransactionCreate(
                 type="income", description=status, category="Salário",
-                amount=amount, status=status, due_date=date.today(),
+                amount=amount, status=status, due_date=business_today(),
             ),
         )
 
@@ -109,7 +110,7 @@ def test_transaction_service_exposes_queries_used_by_agent_tools(db):
             category="Alimentação",
             amount=75,
             status="paid",
-            due_date=date.today(),
+            due_date=business_today(),
         ),
     )
 

@@ -1,3 +1,4 @@
+from app.core.clock import business_today
 from calendar import monthrange
 from contextlib import contextmanager
 from datetime import date, datetime
@@ -72,7 +73,7 @@ def add_goal(db, *, deadline=None, user_id=1, **overrides):
 
 
 def test_committed_amount_empty_period(db_session):
-    day = add_months(date.today(), 1)
+    day = add_months(business_today(), 1)
     result = service.get_committed_amount(db_session, day, day)
     assert result["committed_amount"] == Decimal("0.00")
     assert result["pending_transactions"] == Decimal("0.00")
@@ -80,7 +81,7 @@ def test_committed_amount_empty_period(db_session):
 
 
 def test_committed_amount_counts_only_pending_expenses_in_period(db_session):
-    day = add_months(date.today(), 1)
+    day = add_months(business_today(), 1)
     add_transaction(db_session, due_date=day, amount=Decimal("300.00"))
     add_transaction(
         db_session,
@@ -105,7 +106,7 @@ def test_committed_amount_counts_only_pending_expenses_in_period(db_session):
 
 
 def test_committed_amount_counts_installments_as_pending_transactions(db_session):
-    day = add_months(date.today(), 1)
+    day = add_months(business_today(), 1)
     for number, amount in enumerate(("100.00", "100.00", "100.01"), start=1):
         add_transaction(
             db_session,
@@ -120,7 +121,7 @@ def test_committed_amount_counts_installments_as_pending_transactions(db_session
 
 
 def test_fixed_expense_projection_does_not_duplicate_materialized_occurrence(db_session):
-    month = add_months(date.today().replace(day=1), 1)
+    month = add_months(business_today().replace(day=1), 1)
     expense = FixedExpense(
         user_id=1,
         name="Academia",
@@ -148,7 +149,7 @@ def test_fixed_expense_projection_does_not_duplicate_materialized_occurrence(db_
 
 
 def test_committed_amount_projects_unmaterialized_fixed_expense(db_session):
-    month = add_months(date.today().replace(day=1), 1)
+    month = add_months(business_today().replace(day=1), 1)
     db_session.add(FixedExpense(
         user_id=1,
         name="Internet",
@@ -167,7 +168,7 @@ def test_committed_amount_projects_unmaterialized_fixed_expense(db_session):
 
 
 def test_recurring_projection_does_not_duplicate_materialized_occurrence(db_session):
-    template_date = add_months(date.today(), -1)
+    template_date = add_months(business_today(), -1)
     due = add_months(template_date, 2)
     template = add_transaction(
         db_session,
@@ -191,7 +192,7 @@ def test_recurring_projection_does_not_duplicate_materialized_occurrence(db_sess
 
 
 def test_committed_amount_projects_unmaterialized_recurring_expense(db_session):
-    template_date = add_months(date.today(), -1)
+    template_date = add_months(business_today(), -1)
     due = add_months(template_date, 1)
     add_transaction(
         db_session,
@@ -206,7 +207,7 @@ def test_committed_amount_projects_unmaterialized_recurring_expense(db_session):
 
 
 def test_committed_amount_is_isolated_by_user(db_session):
-    day = add_months(date.today(), 1)
+    day = add_months(business_today(), 1)
     add_transaction(db_session, due_date=day, user_id=1, amount=Decimal("100.00"))
     add_transaction(db_session, due_date=day, user_id=2, amount=Decimal("9000.00"))
     token = set_current_user_id(1)
@@ -218,23 +219,23 @@ def test_committed_amount_is_isolated_by_user(db_session):
 
 
 def test_committed_amount_rejects_inverted_period(db_session):
-    day = date.today()
+    day = business_today()
     with pytest.raises(DomainValidationError, match="data inicial"):
         service.get_committed_amount(db_session, day, add_months(day, -1))
 
 
 def test_cash_flow_uses_current_balance_and_future_income_expense(db_session):
-    future = add_months(date.today(), 1)
+    future = add_months(business_today(), 1)
     add_transaction(
         db_session,
-        due_date=date.today(),
+        due_date=business_today(),
         type="income",
         status="paid",
         amount=Decimal("1000.00"),
     )
     add_transaction(
         db_session,
-        due_date=date.today(),
+        due_date=business_today(),
         status="paid",
         amount=Decimal("200.00"),
     )
@@ -259,10 +260,10 @@ def test_cash_flow_uses_current_balance_and_future_income_expense(db_session):
 
 
 def test_cash_flow_empty_period_and_negative_balance(db_session):
-    future = add_months(date.today(), 1)
+    future = add_months(business_today(), 1)
     add_transaction(
         db_session,
-        due_date=date.today(),
+        due_date=business_today(),
         status="paid",
         amount=Decimal("200.00"),
     )
@@ -273,7 +274,7 @@ def test_cash_flow_empty_period_and_negative_balance(db_session):
 
 
 def test_cash_flow_is_isolated_by_user(db_session):
-    future = add_months(date.today(), 1)
+    future = add_months(business_today(), 1)
     add_transaction(
         db_session,
         user_id=1,
@@ -322,7 +323,7 @@ def test_installment_split_rejects_invalid_values(amount, installments):
 
 def test_installment_simulation_does_not_persist(db_session):
     before = db_session.query(Transaction).count()
-    start = add_months(date.today(), 1)
+    start = add_months(business_today(), 1)
     result = service.simulate_installment_purchase(
         db_session,
         Decimal("100.01"),
@@ -335,7 +336,7 @@ def test_installment_simulation_does_not_persist(db_session):
 
 
 def test_goal_contribution_normal_override_and_near_deadline(db_session):
-    today = date.today()
+    today = business_today()
     goal = add_goal(
         db_session,
         deadline=datetime.combine(add_months(today, 11), datetime.min.time()),
@@ -367,7 +368,7 @@ def test_goal_contribution_completed_without_deadline(db_session):
 
 
 def test_goal_contribution_rejects_missing_or_past_deadline(db_session):
-    today = date.today()
+    today = business_today()
     no_deadline = add_goal(db_session)
     with pytest.raises(DomainValidationError, match="não possui prazo"):
         service.calculate_goal_contribution(db_session, no_deadline.id, as_of=today)
@@ -380,7 +381,7 @@ def test_goal_contribution_rejects_missing_or_past_deadline(db_session):
 
 
 def test_goal_contribution_isolated_and_other_goal_is_not_found(db_session):
-    future = add_months(date.today(), 3)
+    future = add_months(business_today(), 3)
     own = add_goal(
         db_session,
         user_id=1,
@@ -416,7 +417,7 @@ def test_goal_impact_reports_sufficient_reduced_and_deficit_margin(
     pending_expense,
     expected_after,
 ):
-    start = add_months(date.today(), 1)
+    start = add_months(business_today(), 1)
     deadline = add_months(start, 9)
     goal = add_goal(
         db_session,
@@ -448,7 +449,7 @@ def test_goal_impact_reports_sufficient_reduced_and_deficit_margin(
 
 
 def test_goal_impact_completed_and_does_not_persist(db_session):
-    start = add_months(date.today(), 1)
+    start = add_months(business_today(), 1)
     goal = add_goal(
         db_session,
         target_amount=Decimal("100.00"),
@@ -470,7 +471,7 @@ def test_goal_impact_completed_and_does_not_persist(db_session):
 
 
 def test_goal_impact_cannot_access_another_users_goal(db_session):
-    start = add_months(date.today(), 1)
+    start = add_months(business_today(), 1)
     other = add_goal(
         db_session,
         user_id=2,

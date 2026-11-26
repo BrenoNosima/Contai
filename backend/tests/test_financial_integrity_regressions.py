@@ -1,3 +1,4 @@
+from app.core.clock import business_today
 from datetime import date
 from decimal import Decimal
 
@@ -18,7 +19,7 @@ def test_invalid_money_is_rejected_before_persistence(amount):
 
 
 def test_categories_and_monthly_totals_exclude_future_months(db_session):
-    today = date.today()
+    today = business_today()
     for due, amount in [(today, 10), (date(today.year + 1, 1, 1), 50)]:
         db_session.add(Transaction(type="expense", description="Synthetic", category="Outros",
                                    amount=amount, status="paid", due_date=due))

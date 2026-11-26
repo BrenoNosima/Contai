@@ -49,3 +49,17 @@ def test_direct_routing_preserves_compound_requests_for_supervisor():
     assert specialist_for("Quanto vai sobrar no fim deste mês?") == "planning"
     assert specialist_for("Compare este mês com o mês passado.") == "analysis"
     assert specialist_for("Quanto vai sobrar no fim deste mês? Crie uma meta.") is None
+
+
+def test_goal_deadline_is_inclusive_for_business_day(monkeypatch):
+    from datetime import datetime
+    from decimal import Decimal
+    import app.models.goal as module
+    monkeypatch.setattr(module, "business_today", lambda: date(2026, 11, 25))
+    goal = module.Goal(target_amount=Decimal("100"), current_amount=Decimal("10"), deadline=datetime(2026, 11, 25))
+    assert goal.status == "active"
+    monkeypatch.setattr(module, "business_today", lambda: date(2026, 11, 26))
+    assert goal.status == "overdue"
+    goal.current_amount = Decimal("110")
+    assert goal.status == "completed"
+    assert goal.remaining_amount == 0

@@ -1,3 +1,4 @@
+from app.core.clock import business_today
 from datetime import date
 
 
@@ -7,7 +8,7 @@ def transaction_payload(**overrides):
         "description": "Mercado",
         "category": "Alimentação",
         "amount": 125.50,
-        "due_date": date.today().isoformat(),
+        "due_date": business_today().isoformat(),
         "status": "paid",
     }
     payload.update(overrides)
