@@ -67,7 +67,7 @@ describe("API client contracts", () => {
     })
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/transactions/?type=expense&category=Casa+%26+Jardim&is_recurring=false",
+      "/api/transactions/?type=expense&category=Casa+%26+Jardim&is_recurring=false&limit=200&offset=0",
       expect.objectContaining({
         headers: { "Content-Type": "application/json" },
       }),

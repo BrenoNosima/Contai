@@ -1,3 +1,4 @@
+from typing import Literal
 from datetime import date
 from functools import lru_cache
 import logging
@@ -28,6 +29,8 @@ from app.services.transaction_service import (
 from app.agents.extractor_agent import (
     ExtractorAgent,
 )
+from app.agents.runtime import ai_slot, AgentBusyError, execution_scope
+from groq import RateLimitError, APITimeoutError
 
 from app.schemas.natural_language import (
     NaturalLanguageRequest,
@@ -93,6 +96,9 @@ def get_all_transactions(
         description="Filtra apenas modelos recorrentes (true) ou não (false).",
     ),
     installment: bool | None = Query(default=None),
+    order: Literal["asc", "desc"] = Query(default="desc"),
+    limit: int = Query(default=200, ge=1, le=1000),
+    offset: int = Query(default=0, ge=0, le=1000000),
 ):
     """
     Lista transações. Sem parâmetros, retorna tudo (comportamento
@@ -107,7 +113,7 @@ def get_all_transactions(
         start_date=start_date,
         end_date=end_date,
         is_recurring=is_recurring,
-        installment=installment,
+        installment=installment, limit=limit, offset=offset, order=order,
     )
 
 
@@ -268,15 +274,23 @@ def create_transaction_from_text(
     """
 
     try:
-        extracted = get_extractor().extract(payload.text)
+        db.rollback()
+        with ai_slot(), execution_scope():
+            extracted = get_extractor().extract(payload.text)
 
+    except AgentBusyError as error:
+        raise HTTPException(503, "O assistente está ocupado.", headers={"Retry-After": "3"}) from error
+    except RateLimitError as error:
+        raise HTTPException(429, "Limite temporário do assistente. Aguarde um minuto.", headers={"Retry-After": "60"}) from error
+    except APITimeoutError as error:
+        raise HTTPException(504, "O assistente demorou mais que o esperado.") from error
     except (ValueError, ValidationError) as error:
         raise HTTPException(
             status_code=422,
             detail="Não foi possível interpretar o texto informado.",
         ) from error
     except Exception as error:
-        logger.exception("Erro inesperado ao extrair uma transação do texto")
+        logger.error("extraction_failed error_type=%s", type(error).__name__)
         raise HTTPException(
             status_code=502,
             detail=(

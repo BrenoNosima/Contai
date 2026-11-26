@@ -6,7 +6,7 @@ import { ApiError, authApi } from "@/lib/api"
 import { useAuth } from "@/lib/auth"
 
 export default function ChangePasswordPage() {
-  const { clearSession, logout } = useAuth()
+  const { clearSession, logout, user } = useAuth()
   const [current, setCurrent] = useState("")
   const [next, setNext] = useState("")
   const [confirmation, setConfirmation] = useState("")
@@ -35,10 +35,10 @@ export default function ChangePasswordPage() {
     }
   }
 
-  return <AuthLayout title="Atualize sua senha" subtitle="Para proteger seus dados financeiros, você precisa criar uma senha mais forte antes de continuar." titleIcon={KeyRound}>
-    <div className="mb-5 rounded-xl border border-warning/25 bg-warning-soft/65 px-4 py-3 text-sm leading-6 text-warning" role="status">
+  return <AuthLayout title={user?.must_change_password ? "Atualize sua senha" : "Alterar senha"} subtitle="Use sua senha atual para definir uma nova senha segura." titleIcon={KeyRound}>
+    {user?.must_change_password && <div className="mb-5 rounded-xl border border-warning/25 bg-warning-soft/65 px-4 py-3 text-sm leading-6 text-warning" role="status">
       Sua senha foi criada antes da política atual. Não sabemos se ela é fraca porque armazenamos somente seu hash; por segurança, a troca é obrigatória.
-    </div>
+    </div>}
     <form className="space-y-4" onSubmit={submit} aria-describedby={error ? "change-password-error" : undefined}>
       {error && <div id="change-password-error" role="alert" className="rounded-xl border border-expense/25 bg-expense-soft/70 px-4 py-3 text-sm text-expense">{error}</div>}
       <div><Label htmlFor="current-password" className="mb-2 text-auth-label">Senha atual</Label><Input id="current-password" type={show ? "text" : "password"} autoComplete="current-password" required value={current} onChange={e => setCurrent(e.target.value)} className="h-12 border-white/[0.09] bg-auth-field text-auth-text" /></div>

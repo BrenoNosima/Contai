@@ -1,9 +1,17 @@
 import logging
+import os
+from sqlalchemy import text
+from app.core.config import SETTINGS
+from app.core.database import SessionLocal
+from app.maintenance.lifecycle import maintenance_lifespan
+from uuid import uuid4
+from app.core.request_context import request_id
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.concurrency import run_in_threadpool
 
 from app.core.config import CORS_ORIGINS
 from app.core.dependencies import get_password_compliant_user
@@ -55,6 +63,8 @@ API_ROUTE_PREFIXES = {
     "fixed-expenses",
     "goals",
     "health",
+    "ready",
+    "version",
     "metadata",
     "openapi.json",
     "privacy",
@@ -67,7 +77,22 @@ app = FastAPI(
     title="Contaí",
     description="Sistema financeiro pessoal com IA",
     version="0.1.0",
+    lifespan=maintenance_lifespan,
+    docs_url=None if SETTINGS.environment == "production" else "/docs",
+    redoc_url=None if SETTINGS.environment == "production" else "/redoc",
+    openapi_url=None if SETTINGS.environment == "production" else "/openapi.json",
 )
+
+
+async def correlate_request(request: Request, call_next):
+    identifier = uuid4().hex
+    token = request_id.set(identifier)
+    try:
+        response = await call_next(request)
+        response.headers["X-Request-ID"] = identifier
+        return response
+    finally:
+        request_id.reset(token)
 
 app.add_middleware(
     CORSMiddleware,
@@ -75,6 +100,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Accept", "Content-Type", "X-Requested-With", "X-CSRF-Token"],
+    expose_headers=["X-Request-ID", "Retry-After"],
 )
 
 
@@ -86,7 +112,7 @@ async def application_security(request: Request, call_next):
         add_security_headers(response)
         return response
     try:
-        enforce_rate_limit(request)
+        await run_in_threadpool(enforce_rate_limit, request)
         validate_csrf_request(request)
     except HTTPException as error:
         response = JSONResponse(
@@ -98,7 +124,16 @@ async def application_security(request: Request, call_next):
         return response
     response = await call_next(request)
     add_security_headers(response)
+    if response.status_code == 200 and request.url.path.startswith("/assets/"):
+        response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+    elif response.headers.get("content-type", "").startswith("text/html"):
+        response.headers["Cache-Control"] = "no-cache"
+    else:
+        response.headers["Cache-Control"] = "no-store"
     return response
+
+# Keep correlation outside security middleware, including early 429/403 responses.
+app.middleware("http")(correlate_request)
 
 # Rotas
 app.include_router(auth_router)
@@ -175,6 +210,22 @@ def health_check():
     }
 
 
+@app.get("/ready")
+def readiness():
+    try:
+        with SessionLocal() as db:
+            db.execute(text("SELECT 1"))
+        return {"status": "ready"}
+    except Exception as error:
+        logger.warning("readiness_failed error_type=%s", type(error).__name__)
+        raise HTTPException(503, "Serviço temporariamente indisponível.") from error
+
+
+@app.get("/version")
+def deployed_version():
+    return {"commit": os.environ.get("RENDER_GIT_COMMIT", "unknown")[:12]}
+
+
 @app.get("/{path:path}", include_in_schema=False)
 def serve_spa(path: str):
     """Serve Vite assets and let React Router handle client-side routes."""
@@ -184,7 +235,9 @@ def serve_spa(path: str):
 
     requested_file = (STATIC_DIR / path).resolve()
     if STATIC_DIR.resolve() in requested_file.parents and requested_file.is_file():
-        return FileResponse(requested_file)
+        return FileResponse(requested_file, media_type="application/manifest+json" if requested_file.suffix == ".webmanifest" else None)
+    if requested_file.suffix in {".js", ".css", ".png", ".svg", ".ico", ".woff2", ".webmanifest"}:
+        raise HTTPException(404, "Arquivo não encontrado.")
     if SPA_INDEX.is_file():
         return FileResponse(SPA_INDEX)
     raise HTTPException(status_code=404, detail="Frontend nao compilado.")

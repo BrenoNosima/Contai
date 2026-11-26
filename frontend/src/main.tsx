@@ -28,6 +28,14 @@ function RouteHydrateFallback() {
   )
 }
 
+function RouteError() {
+  return <main className="flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
+    <h1 className="text-xl font-semibold">Não foi possível abrir esta página</h1>
+    <p className="text-sm text-muted">Atualize a página para tentar novamente. Seus dados salvos continuam na conta.</p>
+    <button className="min-h-11 rounded-xl bg-primary px-5 text-primary-foreground" onClick={() => window.location.reload()}>Tentar novamente</button>
+  </main>
+}
+
 const router = createBrowserRouter([
   {
     path: "/privacidade",
@@ -70,7 +78,7 @@ const router = createBrowserRouter([
       },
     ],
   },
-])
+].map((route) => ({ ...route, errorElement: <RouteError /> })))
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

@@ -1,3 +1,4 @@
+from app.core.clock import business_today
 from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
 
@@ -165,7 +166,7 @@ class ReportService:
 
         buckets: dict[str, dict] = {}
 
-        today = date.today()
+        today = business_today()
         for offset in range(months - 1, -1, -1):
             month_index = today.year * 12 + today.month - 1 - offset
             year, zero_month = divmod(month_index, 12)
@@ -244,7 +245,7 @@ class ReportService:
         separado por receitas e despesas.
         """
 
-        today = date.today()
+        today = business_today()
         month = month or today.month
         year = year or today.year
 

@@ -12,7 +12,7 @@ from app.tools.common import parse_iso_date, tool_db
 service = TransactionService()
 
 
-@tool
+@tool(return_direct=True)
 def create_transaction(
     type: Literal["income", "expense"],
     description: Annotated[str, Field(min_length=1, max_length=255)],
@@ -43,7 +43,7 @@ def create_transaction(
         "is_recurring": is_recurring, "recurrence": recurrence})
 
 
-@tool
+@tool(return_direct=True)
 def mark_transaction_status(
     transaction_id: Annotated[int, Field(ge=1)],
     status: Literal["paid", "pending"],
@@ -80,7 +80,7 @@ def search_transactions(
             category=category,
             status=status,
             start_date=parsed_start,
-            end_date=parsed_end,
+            end_date=parsed_end, limit=100,
         )
         return redact_for_ai([
             {
@@ -96,7 +96,7 @@ def search_transactions(
         ])
 
 
-@tool
+@tool(return_direct=True)
 def generate_recurring_occurrences(
     months_ahead: Annotated[int, Field(ge=1, le=12)] = 3,
 ) -> list:

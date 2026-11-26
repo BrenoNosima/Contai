@@ -7,7 +7,7 @@ from typing import Annotated
 from langchain.tools import ToolRuntime
 from langchain_core.tools import tool
 from pydantic import Field
-from groq import APITimeoutError, PermissionDeniedError
+from groq import APITimeoutError, PermissionDeniedError, RateLimitError
 
 from app.agents.runtime import AgentBudgetExceeded
 from app.agents.analyst_agent import AnalystAgent
@@ -81,7 +81,7 @@ def analyze_finances(
     try:
         history = _conversation_history(runtime)
         return redact_for_ai(get_analyst_agent().ask(question, history))
-    except (AgentBudgetExceeded, APITimeoutError, PermissionDeniedError):
+    except (AgentBudgetExceeded, APITimeoutError, PermissionDeniedError, RateLimitError):
         raise
     except Exception as error:
         logger.warning("ai_specialist_failed specialist=analysis error_type=%s", type(error).__name__)
@@ -109,7 +109,7 @@ def plan_finances(
     try:
         history = _conversation_history(runtime)
         return redact_for_ai(get_planning_agent().ask(question, history))
-    except (AgentBudgetExceeded, APITimeoutError, PermissionDeniedError):
+    except (AgentBudgetExceeded, APITimeoutError, PermissionDeniedError, RateLimitError):
         raise
     except Exception as error:
         logger.warning("ai_specialist_failed specialist=planning error_type=%s", type(error).__name__)

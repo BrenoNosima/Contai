@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from sqlalchemy.orm import Session
+from sqlalchemy import case, update
 
 from app.models.goal import Goal
 from app.core.persistence import commit
@@ -64,9 +65,8 @@ class GoalRepository:
         amount: float,
     ):
 
-        goal.current_amount = min(
-            goal.target_amount,
-            goal.current_amount + Decimal(str(amount)),
-        )
-
+        new_amount = Goal.current_amount + Decimal(str(amount))
+        db.execute(update(Goal).where(Goal.id == goal.id).values(
+            current_amount=case((new_amount > Goal.target_amount, Goal.target_amount), else_=new_amount)
+        ).execution_options(synchronize_session=False))
         return commit(db, goal)

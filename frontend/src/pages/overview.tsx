@@ -32,7 +32,7 @@ export default function OverviewPage() {
   })
   const pending = useQuery({
     queryKey: qk.transactions({ scope: "overview-upcoming" }),
-    queryFn: () => transactionsApi.list({ type: "expense", status: "pending" }),
+    queryFn: () => transactionsApi.list({ type: "expense", status: "pending", limit: 3, order: "asc" }),
   })
   const selected = useQuery({
     queryKey: ["transaction", selectedId],

@@ -102,7 +102,7 @@ const GUIDES: HelpItem[] = [
     id: "gastos-fixos",
     title: "Gastos fixos",
     searchText: "gastos fixos mensal cobrança ocorrências editar excluir pendentes histórico concluídas aluguel assinatura",
-    content: <><p>Use para despesas mensais habituais, como aluguel ou academia. Alguns lançamentos futuros podem ser gerados automaticamente a partir desses cadastros.</p><p>Ao editar, as ocorrências pendentes vinculadas podem receber o novo nome, valor, categoria e dia. Ao excluir, as pendentes vinculadas podem ser removidas; as concluídas permanecem no histórico.</p></>,
+    content: <><p>Use para despesas mensais habituais, como aluguel ou academia. No calendário, use “Atualizar recorrências” para gerar os vencimentos dos próximos 12 meses a partir desses cadastros.</p><p>Ao editar, as ocorrências pendentes vinculadas podem receber o novo nome, valor, categoria e dia. Ao excluir, as pendentes vinculadas podem ser removidas; as concluídas permanecem no histórico.</p></>,
   },
   {
     id: "metas",

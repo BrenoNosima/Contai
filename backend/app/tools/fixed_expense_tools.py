@@ -12,7 +12,7 @@ from app.tools.common import tool_db
 service = FixedExpenseService()
 
 
-@tool
+@tool(return_direct=True)
 def create_fixed_expense(
     name: Annotated[str, Field(min_length=1, max_length=150)],
     category: Annotated[str, Field(min_length=1, max_length=100)],

@@ -1,4 +1,5 @@
 from datetime import date
+from app.core.clock import business_today
 
 from langchain.agents import create_agent
 from app.agents.runtime import ExecutionLimits, execution_scope, final_text, recent_history, invoke_once
@@ -78,7 +79,7 @@ class AnalystAgent:
         messages.append(
             {
                 "role": "system",
-                "content": build_analysis_time_context(date.today()),
+                "content": build_analysis_time_context(business_today()),
             }
         )
         messages.append(

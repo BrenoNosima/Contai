@@ -30,7 +30,8 @@ class AuthService:
         return self.sessions.create(db, session), refresh_token
 
     def rotate_session(self, db: Session, refresh_token: str) -> tuple[User, AuthSession, str] | None:
-        session = self.sessions.get_by_refresh_hash(db, hash_refresh_token(refresh_token))
+        old_hash = hash_refresh_token(refresh_token)
+        session = self.sessions.get_by_refresh_hash(db, old_hash)
         now = datetime.now(UTC).replace(tzinfo=None)
         if not session or session.revoked or session.expires_at <= now:
             return None
@@ -38,9 +39,16 @@ class AuthService:
         if not user or not user.is_active:
             return None
         new_token = create_refresh_token()
-        session.refresh_token_hash = hash_refresh_token(new_token)
-        session.last_used_at = now
-        self.sessions.save(db, session)
+        claimed = db.execute(update(AuthSession).where(
+            AuthSession.id == session.id,
+            AuthSession.refresh_token_hash == old_hash,
+            AuthSession.revoked.is_(False), AuthSession.expires_at > now,
+        ).values(refresh_token_hash=hash_refresh_token(new_token), last_used_at=now)
+          .execution_options(synchronize_session=False))
+        if claimed.rowcount != 1:
+            db.rollback()
+            return None
+        commit(db, session)
         return user, session, new_token
 
     def revoke_session(self, db: Session, session_id: str) -> None:
@@ -86,6 +94,7 @@ class AuthService:
             "transactions": values(db.query(Transaction).all(), (
                 "id", "type", "description", "category", "amount", "priority", "source",
                 "due_date", "status", "settled_at", "is_recurring", "recurrence", "created_at", "updated_at",
+                "parent_id", "fixed_expense_id", "installment_group_id", "installment_number", "installment_count",
             )),
             "goals": values(db.query(Goal).all(), (
                 "id", "name", "description", "target_amount", "current_amount", "deadline", "created_at", "updated_at",

@@ -1,10 +1,11 @@
 """Request-scoped execution limits shared by the supervisor and specialists."""
 
 import logging
+import json
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass, field
-from threading import Lock
+from threading import Lock, BoundedSemaphore
 from time import monotonic
 from uuid import uuid4
 
@@ -13,6 +14,7 @@ from langchain.agents.middleware import AgentMiddleware
 from pydantic import ValidationError
 
 from app.core.config import SETTINGS
+from app.core.request_context import request_id
 
 logger = logging.getLogger(__name__)
 
@@ -25,10 +27,27 @@ class AgentBudgetExceeded(TimeoutError):
     """The request exhausted its shared time or model-call budget."""
 
 
+class AgentBusyError(RuntimeError):
+    pass
+
+
+_slots = BoundedSemaphore(3)
+
+
+@contextmanager
+def ai_slot():
+    if not _slots.acquire(blocking=False):
+        raise AgentBusyError("Assistente ocupado.")
+    try:
+        yield
+    finally:
+        _slots.release()
+
+
 @dataclass
 class ExecutionBudget:
     deadline: float
-    request_id: str = field(default_factory=lambda: uuid4().hex)
+    request_id: str = field(default_factory=lambda: request_id.get() or uuid4().hex)
     calls: int = 0
     retries: int = 0
     lock: Lock = field(default_factory=Lock)
@@ -107,6 +126,15 @@ def final_text(result):
     content = getattr(messages[-1], "content", None) if messages else None
     if not isinstance(content, str) or not content.strip():
         raise AgentUnavailableError("O assistente retornou resposta vazia ou inválida.")
+    if getattr(messages[-1], "type", None) == "tool":
+        try:
+            data = json.loads(content)
+        except (ValueError, TypeError):
+            data = None
+        if isinstance(data, dict) and data.get("requires_confirmation") is True:
+            return "Preparei a proposta. Revise os dados e confirme abaixo para aplicar a alteração."
+        if isinstance(data, dict) and isinstance(data.get("error"), str):
+            return data["error"]
     return content
 
 

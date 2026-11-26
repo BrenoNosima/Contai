@@ -1,5 +1,6 @@
+import { loadChat, saveChat } from "@/lib/chat-storage"
 import { useEffect, useRef, useState } from "react"
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { ArrowUp, Check, LoaderCircle, MessageCircle, ReceiptText, X } from "lucide-react"
 import { assistantActionsApi, chatApi } from "@/lib/api"
 import type { AssistantAction } from "@/lib/types"
@@ -24,10 +25,23 @@ const SUGGESTIONS = [
 ]
 
 export default function ChatPage() {
-  const [messages, setMessages] = useState<Message[]>([])
-  const [input, setInput] = useState("")
   const { user } = useAuth()
+  const [messages, setMessages] = useState<Message[]>(() => loadChat(user?.id))
+  const [input, setInput] = useState("")
   const { allFinance: invalidateFinance } = useFinanceInvalidation()
+  const queryClient = useQueryClient()
+  const pendingKey = ["assistant-actions", user?.id]
+  const pending = useQuery({ queryKey: pendingKey, queryFn: assistantActionsApi.pending })
+  useEffect(() => { saveChat(user?.id, messages) }, [user?.id, messages])
+  const resolveAction = useMutation({
+    mutationFn: ({ id, confirm }: { id: string; confirm: boolean }) => confirm ? assistantActionsApi.confirm(id) : assistantActionsApi.reject(id),
+    onSuccess: (action) => {
+      queryClient.invalidateQueries({ queryKey: pendingKey })
+      if (action.status === "confirmed") invalidateFinance()
+      setMessages((items) => [...items, { id: crypto.randomUUID(), role: "assistant", content: action.status === "confirmed" ? confirmedActionMessage(action) : cancelledActionMessage(action) }])
+    },
+    onError: () => { queryClient.invalidateQueries({ queryKey: pendingKey }) },
+  })
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const shouldAutoScrollRef = useRef(true)
@@ -43,10 +57,10 @@ export default function ChatPage() {
     onSuccess: (data) => {
       setMessages((prev) => [
         ...prev,
-        { id: crypto.randomUUID(), role: "assistant", content: data.response, actions: data.pending_actions },
+        { id: crypto.randomUUID(), role: "assistant", content: data.response },
       ])
       // The assistant may have changed any financial domain through its tools.
-      invalidateFinance()
+      queryClient.setQueryData(pendingKey, data.pending_actions ?? [])
     },
     onError: (err: Error) => {
       setMessages((prev) => [
@@ -89,7 +103,7 @@ export default function ChatPage() {
     shouldAutoScrollRef.current = container.scrollHeight - container.scrollTop - container.clientHeight < 120
   }
 
-  const hasMessages = messages.length > 0
+  const hasMessages = messages.length > 0 || Boolean(pending.data?.length)
 
   return (
     <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
@@ -117,6 +131,8 @@ export default function ChatPage() {
                   }}
                 />
               ))}
+              {(pending.data ?? []).map((action) => <ActionConfirmationCard key={action.id} action={action} isPending={resolveAction.isPending} error={resolveAction.error instanceof Error ? resolveAction.error.message : null} onConfirm={() => resolveAction.mutate({ id: action.id, confirm: true })} onReject={() => resolveAction.mutate({ id: action.id, confirm: false })} />)}
+              {pending.isError && <p role="alert" className="text-sm text-expense">Não foi possível consultar propostas pendentes. <button className="underline" onClick={() => pending.refetch()}>Tentar novamente</button></p>}
               {mutation.isPending && <TypingIndicator />}
             </>
           )}

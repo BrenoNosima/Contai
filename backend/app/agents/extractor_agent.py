@@ -1,3 +1,4 @@
+from app.agents.runtime import execution_scope
 from langchain_core.prompts import ChatPromptTemplate
 
 from app.agents.llm import create_chat_model
@@ -27,8 +28,11 @@ class ExtractorAgent:
 
     def extract(self, text: str) -> NaturalLanguageResponse:
         validate_prompt(text)
-        with sensitive_redaction_scope():
+        with execution_scope() as budget, sensitive_redaction_scope():
+            budget.remaining()
+            budget.calls += 1
             result: NaturalLanguageResponse = self.chain.invoke({"text": redact_sensitive_input(text)})
+            budget.remaining()
             data = restore_sensitive_data(result.model_dump())
             return NaturalLanguageResponse.model_validate({
                 key: sanitize_model_output(value) if isinstance(value, str) else value

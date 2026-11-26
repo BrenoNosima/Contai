@@ -12,7 +12,7 @@ from app.tools.common import parse_iso_date, tool_db
 service = GoalService()
 
 
-@tool
+@tool(return_direct=True)
 def create_goal(
     name: Annotated[str, Field(min_length=1, max_length=150)],
     target_amount: Annotated[float, Field(gt=0)],
@@ -51,7 +51,7 @@ def list_goals() -> list:
         ])
 
 
-@tool
+@tool(return_direct=True)
 def add_goal_progress(
     goal_id: Annotated[int, Field(ge=1)],
     amount: Annotated[float, Field(gt=0)],

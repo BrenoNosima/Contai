@@ -41,6 +41,9 @@ export interface Transaction {
 }
 
 export interface TransactionFilters {
+  order?: "asc" | "desc"
+  limit?: number
+  offset?: number
   type?: TransactionType
   category?: string
   status?: TransactionStatus

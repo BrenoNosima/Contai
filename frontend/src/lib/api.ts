@@ -24,6 +24,7 @@ import { DEMO_MODE, demoRequest } from "./demo-api"
 const RAW_BASE = import.meta.env.VITE_API_URL as string | undefined
 const BASE = RAW_BASE ? RAW_BASE.replace(/\/$/, "") : import.meta.env.DEV ? "/api" : ""
 let csrfToken: string | null = null
+let refreshPromise: Promise<AuthUser> | null = null
 
 async function getCsrfToken(): Promise<string> {
   if (csrfToken) return csrfToken
@@ -44,6 +45,26 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit, retryAuthentication = true): Promise<T> {
+  const controller = new AbortController()
+  const abort = () => controller.abort()
+  init?.signal?.addEventListener("abort", abort, { once: true })
+  if (init?.signal?.aborted) controller.abort()
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const deadline = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      reject(new ApiError("O servidor demorou mais que o esperado. Tente novamente.", 504))
+      controller.abort()
+    }, path === "/chat/" ? 130_000 : 30_000)
+  })
+  try {
+    return await Promise.race([performRequest<T>(path, { ...init, signal: controller.signal }, retryAuthentication), deadline])
+  } finally {
+    clearTimeout(timer)
+    init?.signal?.removeEventListener("abort", abort)
+  }
+}
+
+async function performRequest<T>(path: string, init?: RequestInit, retryAuthentication = true): Promise<T> {
   if (DEMO_MODE) return demoRequest<T>(path, init)
   let res: Response
   try {
@@ -69,7 +90,8 @@ async function request<T>(path: string, init?: RequestInit, retryAuthentication 
   if (!res.ok) {
     if (res.status === 401 && retryAuthentication && (path === "/auth/me" || !path.startsWith("/auth/"))) {
       try {
-        await request<AuthUser>("/auth/refresh", { method: "POST", body: "{}" }, false)
+        await (refreshPromise ??= request<AuthUser>("/auth/refresh", { method: "POST", body: "{}" }, false)
+          .finally(() => { refreshPromise = null }))
         return request<T>(path, init, false)
       } catch {
         // The auth provider will move the user back to login below.
@@ -149,8 +171,16 @@ function toQuery(params: Record<string, unknown>): string {
 
 // ---------- Transactions ----------
 export const transactionsApi = {
-  list: (filters: TransactionFilters = {}) =>
-    request<Transaction[]>(`/transactions/${toQuery(filters as Record<string, unknown>)}`),
+  list: async (filters: TransactionFilters = {}) => {
+    if (filters.limit !== undefined) return request<Transaction[]>(`/transactions/${toQuery(filters as Record<string, unknown>)}`)
+    const items: Transaction[] = []
+    for (let offset = 0; offset <= 100_000; offset += 200) {
+      const batch = await request<Transaction[]>(`/transactions/${toQuery({ ...filters, limit: 200, offset })}`)
+      items.push(...batch)
+      if (batch.length < 200) return items
+    }
+    throw new ApiError("Há muitos lançamentos. Use um período menor para consultar.", 422)
+  },
   get: (id: number) => request<Transaction>(`/transactions/${id}`),
   create: (data: TransactionCreate) =>
     request<Transaction>(`/transactions/`, {
@@ -271,6 +301,7 @@ export const chatApi = {
 }
 
 export const assistantActionsApi = {
+  pending: () => request<import("./types").AssistantAction[]>("/assistant-actions/"),
   confirm: (id: string) => request<import("./types").AssistantAction>(`/assistant-actions/${id}/confirm`, { method: "POST", body: "{}" }),
   reject: (id: string) => request<import("./types").AssistantAction>(`/assistant-actions/${id}`, { method: "DELETE" }),
 }

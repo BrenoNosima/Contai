@@ -4,6 +4,7 @@ from datetime import UTC, datetime, timedelta
 from app.core.database import SessionLocal
 from app.models.assistant_action import AssistantAction
 from app.models.auth_session import AuthSession
+from app.models.request_limit import RequestLimit
 
 RETENTION_DAYS = 30
 
@@ -14,11 +15,14 @@ def purge(*, apply: bool = False) -> dict[str, int | bool]:
         db.info["allow_unscoped_financial_access"] = True
         actions = db.query(AssistantAction).filter(AssistantAction.expires_at < cutoff).count()
         sessions = db.query(AuthSession).filter(AuthSession.expires_at < cutoff).count()
+        limits_cutoff = datetime.now(UTC).replace(tzinfo=None) - timedelta(days=1)
+        limits = db.query(RequestLimit).filter(RequestLimit.expires_at < limits_cutoff).count()
         if apply:
             db.query(AssistantAction).filter(AssistantAction.expires_at < cutoff).delete(synchronize_session=False)
             db.query(AuthSession).filter(AuthSession.expires_at < cutoff).delete(synchronize_session=False)
+            db.query(RequestLimit).filter(RequestLimit.expires_at < limits_cutoff).delete(synchronize_session=False)
             db.commit()
-        return {"applied": apply, "assistant_actions": actions, "auth_sessions": sessions}
+        return {"applied": apply, "assistant_actions": actions, "auth_sessions": sessions, "request_limits": limits}
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Aplica a retenção de sessões e ações expiradas.")

@@ -1,3 +1,4 @@
+from app.core.clock import business_today
 from calendar import monthrange
 from datetime import date, datetime, timedelta
 from decimal import Decimal, ROUND_HALF_UP, ROUND_UP
@@ -61,7 +62,7 @@ class PlanningService:
         installments: int,
         start_date: date | None = None,
     ) -> dict:
-        first_due_date = start_date or date.today()
+        first_due_date = start_date or business_today()
         amounts = self.transaction_service.split_installment_amounts(
             amount,
             installments,
@@ -127,7 +128,7 @@ class PlanningService:
         goal = self.goal_service.get_goal(db, goal_id)
         if not goal:
             raise DomainValidationError("Meta não encontrada.")
-        today = as_of or date.today()
+        today = as_of or business_today()
         deadline = target_date or self._as_date(goal.deadline)
         remaining = self._money(max(
             Decimal(str(goal.target_amount)) - Decimal(str(goal.current_amount)),
@@ -181,7 +182,7 @@ class PlanningService:
                 "goal_period_impacts": impacts,
             }
         end_date = date.fromisoformat(deadline)
-        month = (as_of or date.today()).replace(day=1)
+        month = (as_of or business_today()).replace(day=1)
         forecast = self._monthly_forecast(db, month, end_date)
         income, expenses = self.transaction_service.get_totals(db)
         current_balance = self._money(income - expenses)
@@ -272,7 +273,7 @@ class PlanningService:
             key = "income" if transaction_type == "income" else "expenses"
             bucket[key] += Decimal(str(total))
 
-        projection_start = max(start_date, date.today())
+        projection_start = max(start_date, business_today())
         if projection_start <= end_date:
             materialized = self.transaction_repository.get_materialized_commitment_keys(
                 db,
