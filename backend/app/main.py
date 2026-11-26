@@ -1,4 +1,9 @@
 import logging
+import os
+from sqlalchemy import text
+from app.core.config import SETTINGS
+from app.core.database import SessionLocal
+from app.maintenance.lifecycle import maintenance_lifespan
 from uuid import uuid4
 from app.core.request_context import request_id
 from pathlib import Path
@@ -70,10 +75,13 @@ app = FastAPI(
     title="Contaí",
     description="Sistema financeiro pessoal com IA",
     version="0.1.0",
+    lifespan=maintenance_lifespan,
+    docs_url=None if SETTINGS.environment == "production" else "/docs",
+    redoc_url=None if SETTINGS.environment == "production" else "/redoc",
+    openapi_url=None if SETTINGS.environment == "production" else "/openapi.json",
 )
 
 
-@app.middleware("http")
 async def correlate_request(request: Request, call_next):
     identifier = uuid4().hex
     token = request_id.set(identifier)
@@ -113,7 +121,16 @@ async def application_security(request: Request, call_next):
         return response
     response = await call_next(request)
     add_security_headers(response)
+    if request.url.path.startswith("/assets/"):
+        response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+    elif response.headers.get("content-type", "").startswith("text/html"):
+        response.headers["Cache-Control"] = "no-cache"
+    else:
+        response.headers["Cache-Control"] = "no-store"
     return response
+
+# Keep correlation outside security middleware, including early 429/403 responses.
+app.middleware("http")(correlate_request)
 
 # Rotas
 app.include_router(auth_router)
@@ -190,6 +207,22 @@ def health_check():
     }
 
 
+@app.get("/ready")
+def readiness():
+    try:
+        with SessionLocal() as db:
+            db.execute(text("SELECT 1"))
+        return {"status": "ready"}
+    except Exception as error:
+        logger.warning("readiness_failed error_type=%s", type(error).__name__)
+        raise HTTPException(503, "Serviço temporariamente indisponível.") from error
+
+
+@app.get("/version")
+def deployed_version():
+    return {"commit": os.environ.get("RENDER_GIT_COMMIT", "unknown")[:12]}
+
+
 @app.get("/{path:path}", include_in_schema=False)
 def serve_spa(path: str):
     """Serve Vite assets and let React Router handle client-side routes."""
@@ -199,7 +232,7 @@ def serve_spa(path: str):
 
     requested_file = (STATIC_DIR / path).resolve()
     if STATIC_DIR.resolve() in requested_file.parents and requested_file.is_file():
-        return FileResponse(requested_file)
+        return FileResponse(requested_file, media_type="application/manifest+json" if requested_file.suffix == ".webmanifest" else None)
     if SPA_INDEX.is_file():
         return FileResponse(SPA_INDEX)
     raise HTTPException(status_code=404, detail="Frontend nao compilado.")
