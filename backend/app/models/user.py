@@ -13,4 +13,5 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     is_active = Column(Boolean, nullable=False, default=True)
     must_change_password = Column(Boolean, nullable=False, default=False)
+    avatar_id = Column(String(24), nullable=False, default="person", server_default="person")
     created_at = Column(DateTime, nullable=False, default=utc_now)

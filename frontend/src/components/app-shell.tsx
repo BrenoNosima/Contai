@@ -10,7 +10,6 @@ import {
   MessageCircle,
   MoreHorizontal,
   LogOut,
-  UserRound,
   ShieldCheck,
   CircleHelp,
 } from "lucide-react"
@@ -18,6 +17,7 @@ import type { LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/lib/auth"
 import { BrandLogo } from "@/components/brand-logo"
+import { UserAvatar } from "@/components/user-avatar"
 import { Dialog } from "@/components/ui/dialog"
 import { DEMO_MODE } from "@/lib/demo-api"
 
@@ -85,7 +85,6 @@ export function AppShell() {
     return () => window.clearTimeout(moveTimer)
   }, [desiredGlowIndex, glowIndex])
   const firstName = user?.name.trim().split(/\s+/)[0] || "Usuário"
-  const userInitial = firstName.charAt(0).toLocaleUpperCase("pt-BR")
   const ActiveIcon = active?.icon
 
   return (
@@ -132,7 +131,7 @@ export function AppShell() {
           <ShieldCheck className="h-[18px] w-[18px]" aria-hidden /> Conta e privacidade
         </NavLink>
         <div className="mb-3 flex items-center gap-3 rounded-xl border border-border bg-surface-2 p-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-surface-3 text-muted"><UserRound className="h-4 w-4" aria-hidden /></div>
+          <UserAvatar id={user?.avatar_id} className="h-9 w-9" />
           <div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold text-foreground">{user?.name}</p><p className="truncate text-[11px] text-subtle">{user?.email}</p></div>
           <button type="button" onClick={handleLogout} disabled={loggingOut} aria-label="Sair da conta" title="Sair" className="flex h-11 w-11 items-center justify-center rounded-xl text-muted hover:bg-expense-soft hover:text-expense disabled:opacity-50"><LogOut className="h-4 w-4" aria-hidden /></button>
         </div>
@@ -141,9 +140,7 @@ export function AppShell() {
       {/* Mobile top bar */}
       <header className="app-sidebar sticky top-0 z-20 flex items-center justify-between border-b border-border bg-surface/95 px-4 py-3 shadow-sm backdrop-blur-xl lg:hidden">
         <div className="flex min-w-0 items-center gap-2.5" aria-label={`Usuário conectado: ${firstName}`}>
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-primary text-sm font-bold text-primary-foreground shadow-[0_10px_28px_-12px_var(--color-primary)]" aria-hidden>
-            {userInitial}
-          </div>
+          <NavLink to="/conta-e-privacidade" aria-label="Alterar avatar e acessar sua conta" className="rounded-2xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"><UserAvatar id={user?.avatar_id} /></NavLink>
           <div className="min-w-0 leading-tight">
             <p className="text-[11px] text-subtle">Olá,</p>
             <p className="max-w-32 truncate text-sm font-semibold text-foreground">{firstName}</p>
