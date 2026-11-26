@@ -1,3 +1,4 @@
+from app.core.clock import business_today
 from contextlib import contextmanager
 from datetime import date
 from types import SimpleNamespace
@@ -87,7 +88,7 @@ def test_real_graph_executes_only_read_simulation_without_dml(monkeypatch, db_se
     monkeypatch.setattr(tool_module, "tool_db", session)
     # Keep scenario short while exercising the real deterministic service.
     if name == "simulate_goal_impact":
-        db_session.get(Goal, 1).deadline = date.today()
+        db_session.get(Goal, 1).deadline = business_today()
         db_session.commit()
     event.listen(db_session.bind, "before_cursor_execute", record)
     monkeypatch.setattr(db_session, "commit", lambda: pytest.fail("unexpected commit"))

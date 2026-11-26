@@ -1,3 +1,4 @@
+from app.core.clock import business_today
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from datetime import date, datetime, timedelta
@@ -153,7 +154,7 @@ def test_installment_exact_total(amount, count, expected):
 
 def test_goal_override_status_and_full_horizon(db_session):
     service = PlanningService()
-    today = date.today()
+    today = business_today()
     deadline = service._add_months(today.replace(day=1), 2).replace(day=10)
     goal = Goal(user_id=1, name="Carro", target_amount=Decimal("1000"), current_amount=0,
                 deadline=datetime.combine(today - timedelta(days=1), datetime.min.time()))
@@ -176,7 +177,7 @@ def test_goal_override_status_and_full_horizon(db_session):
 
 def test_goal_impact_excludes_cash_after_deadline_and_preserves_snapshot(db_session):
     service = PlanningService()
-    month = service._add_months(date.today().replace(day=1), 1)
+    month = service._add_months(business_today().replace(day=1), 1)
     deadline = month.replace(day=10)
     goal = Goal(user_id=1, name="Goal", target_amount=100, current_amount=0,
                 deadline=datetime.combine(deadline, datetime.min.time()))
@@ -198,8 +199,8 @@ def test_goal_impact_excludes_cash_after_deadline_and_preserves_snapshot(db_sess
 
 def test_reports_use_decimal_and_tools_use_exact_strings(db_session, monkeypatch):
     db_session.add_all([
-        Transaction(user_id=1, type="income", description="one", category="Outros", amount=Decimal("0.10"), due_date=date.today(), status="paid"),
-        Transaction(user_id=1, type="income", description="two", category="Outros", amount=Decimal("0.20"), due_date=date.today(), status="paid"),
+        Transaction(user_id=1, type="income", description="one", category="Outros", amount=Decimal("0.10"), due_date=business_today(), status="paid"),
+        Transaction(user_id=1, type="income", description="two", category="Outros", amount=Decimal("0.20"), due_date=business_today(), status="paid"),
     ])
     db_session.commit()
     result = ReportService().monthly_balance_table(db_session, 1)

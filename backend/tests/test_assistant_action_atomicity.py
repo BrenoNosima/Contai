@@ -1,3 +1,4 @@
+from app.core.clock import business_today
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta, UTC
 from threading import Barrier
@@ -69,7 +70,7 @@ def test_every_write_action_rolls_back_its_effects(db_session, monkeypatch, acti
     db_session.info["user_id"] = 1
     goal = Goal(name="Initial", target_amount=1000, current_amount=10)
     transaction = Transaction(type="income", description="Recurring", category="Outros",
-                              amount=100, due_date=date.today(), status="paid",
+                              amount=100, due_date=business_today(), status="paid",
                               is_recurring=True, recurrence="monthly")
     db_session.add_all([goal, transaction])
     db_session.commit()
