@@ -5,7 +5,7 @@ import json
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass, field
-from threading import Lock
+from threading import Lock, BoundedSemaphore
 from time import monotonic
 from uuid import uuid4
 
@@ -25,6 +25,23 @@ class AgentUnavailableError(RuntimeError):
 
 class AgentBudgetExceeded(TimeoutError):
     """The request exhausted its shared time or model-call budget."""
+
+
+class AgentBusyError(RuntimeError):
+    pass
+
+
+_slots = BoundedSemaphore(3)
+
+
+@contextmanager
+def ai_slot():
+    if not _slots.acquire(blocking=False):
+        raise AgentBusyError("Assistente ocupado.")
+    try:
+        yield
+    finally:
+        _slots.release()
 
 
 @dataclass

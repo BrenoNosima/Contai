@@ -1,5 +1,6 @@
 from app.core.clock import business_today
-from app.prompts.analyst_prompt import build_analysis_time_context
+from app.agents.routing import specialist_for
+from app.prompts.time_context import build_request_time_context
 from langchain.agents import create_agent
 
 from app.agents.runtime import ExecutionLimits, execution_scope, final_text, recent_history, invoke_once
@@ -179,6 +180,12 @@ class FinancialAgent:
             if item.get("role") == "user":
                 validate_prompt(str(item.get("content", "")))
 
+        specialist = specialist_for(message)
+        if specialist:
+            from app.tools.delegation_tools import get_analyst_agent, get_planning_agent
+            agent = get_planning_agent() if specialist == "planning" else get_analyst_agent()
+            return agent.ask(message, recent_history(chat_history))
+
         messages = [
             {"role": item["role"], "content": redact_sensitive_input(str(item.get("content", "")))}
             for item in recent_history(chat_history)
@@ -191,7 +198,7 @@ class FinancialAgent:
             }
         )
 
-        messages.insert(len(messages) - 1, {"role": "system", "content": build_analysis_time_context(business_today())})
+        messages.insert(len(messages) - 1, {"role": "system", "content": build_request_time_context(business_today())})
         result = invoke_once(self.agent,
             {
                 "messages": messages,

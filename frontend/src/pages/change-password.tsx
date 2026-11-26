@@ -35,7 +35,7 @@ export default function ChangePasswordPage() {
     }
   }
 
-  return <AuthLayout title="Atualize sua senha" subtitle="Para proteger seus dados financeiros, você precisa criar uma senha mais forte antes de continuar." titleIcon={KeyRound}>
+  return <AuthLayout title={user?.must_change_password ? "Atualize sua senha" : "Alterar senha"} subtitle="Use sua senha atual para definir uma nova senha segura." titleIcon={KeyRound}>
     {user?.must_change_password && <div className="mb-5 rounded-xl border border-warning/25 bg-warning-soft/65 px-4 py-3 text-sm leading-6 text-warning" role="status">
       Sua senha foi criada antes da política atual. Não sabemos se ela é fraca porque armazenamos somente seu hash; por segurança, a troca é obrigatória.
     </div>}

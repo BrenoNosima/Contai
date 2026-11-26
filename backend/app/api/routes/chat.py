@@ -18,7 +18,7 @@ from app.schemas.chat import (
 )
 
 from app.agents.financial_agent import FinancialAgent
-from app.agents.runtime import AgentUnavailableError, execution_scope
+from app.agents.runtime import AgentUnavailableError, AgentBusyError, ai_slot, execution_scope
 from app.core.ai_guardrails import validate_prompt
 from app.services.quick_chat_service import quick_answer
 from app.services.assistant_action_service import AssistantActionService
@@ -54,12 +54,14 @@ def chat(payload: ChatRequest, current_user: User = Depends(get_current_user), d
             # Authentication only reads. Release its connection while the model
             # runs; tools use their own short-lived, user-scoped sessions.
             db.rollback()
-            with execution_scope():
+            with ai_slot(), execution_scope():
                 response = get_agent().ask(payload.message, history)
         if not isinstance(response, str) or not response.strip():
             raise AgentUnavailableError("Resposta vazia do assistente.")
         pending_actions = AssistantActionService().pending(db)
 
+    except AgentBusyError as error:
+        raise HTTPException(503, "O assistente está ocupado. Tente novamente em instantes.", headers={"Retry-After": "3"}) from error
     except RateLimitError as error:
         logger.warning("ai_rate_limit request_id=%s", request_id.get())
         raise HTTPException(status_code=429, detail="O assistente atingiu o limite temporário de uso. Aguarde um minuto e tente novamente.", headers={"Retry-After": "60"}) from error

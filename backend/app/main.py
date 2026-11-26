@@ -63,6 +63,8 @@ API_ROUTE_PREFIXES = {
     "fixed-expenses",
     "goals",
     "health",
+    "ready",
+    "version",
     "metadata",
     "openapi.json",
     "privacy",
@@ -98,6 +100,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Accept", "Content-Type", "X-Requested-With", "X-CSRF-Token"],
+    expose_headers=["X-Request-ID", "Retry-After"],
 )
 
 
@@ -121,7 +124,7 @@ async def application_security(request: Request, call_next):
         return response
     response = await call_next(request)
     add_security_headers(response)
-    if request.url.path.startswith("/assets/"):
+    if response.status_code == 200 and request.url.path.startswith("/assets/"):
         response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
     elif response.headers.get("content-type", "").startswith("text/html"):
         response.headers["Cache-Control"] = "no-cache"
@@ -233,6 +236,8 @@ def serve_spa(path: str):
     requested_file = (STATIC_DIR / path).resolve()
     if STATIC_DIR.resolve() in requested_file.parents and requested_file.is_file():
         return FileResponse(requested_file, media_type="application/manifest+json" if requested_file.suffix == ".webmanifest" else None)
+    if requested_file.suffix in {".js", ".css", ".png", ".svg", ".ico", ".woff2", ".webmanifest"}:
+        raise HTTPException(404, "Arquivo não encontrado.")
     if SPA_INDEX.is_file():
         return FileResponse(SPA_INDEX)
     raise HTTPException(status_code=404, detail="Frontend nao compilado.")

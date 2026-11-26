@@ -132,7 +132,7 @@ export default function ChatPage() {
                 />
               ))}
               {(pending.data ?? []).map((action) => <ActionConfirmationCard key={action.id} action={action} isPending={resolveAction.isPending} error={resolveAction.error instanceof Error ? resolveAction.error.message : null} onConfirm={() => resolveAction.mutate({ id: action.id, confirm: true })} onReject={() => resolveAction.mutate({ id: action.id, confirm: false })} />)}
-              {pending.isError && <p role="alert" className="text-sm text-expense">Nao foi possivel consultar propostas pendentes. <button className="underline" onClick={() => pending.refetch()}>Tentar novamente</button></p>}
+              {pending.isError && <p role="alert" className="text-sm text-expense">Não foi possível consultar propostas pendentes. <button className="underline" onClick={() => pending.refetch()}>Tentar novamente</button></p>}
               {mutation.isPending && <TypingIndicator />}
             </>
           )}

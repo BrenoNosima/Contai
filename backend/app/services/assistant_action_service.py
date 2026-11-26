@@ -9,6 +9,7 @@ from app.core.user_context import get_current_user_id
 from app.models.assistant_action import AssistantAction
 from app.schemas.fixed_expense import FixedExpenseCreate
 from app.schemas.goal import GoalCreate
+from app.schemas.goal import GoalProgress
 from app.schemas.transaction import TransactionCreate
 from app.services.fixed_expense_service import FixedExpenseService
 from app.services.goal_service import GoalService
@@ -25,6 +26,10 @@ class AssistantActionService:
         user_id = db.info.get("user_id") or get_current_user_id()
         if user_id is None or action not in self.allowed_actions:
             raise ValueError("Ação do assistente inválida.")
+        schema = {"create_transaction": TransactionCreate, "create_goal": GoalCreate,
+                  "create_fixed_expense": FixedExpenseCreate, "add_goal_progress": GoalProgress}.get(action)
+        if schema:
+            schema.model_validate(payload)
         item = AssistantAction(
             id=secrets.token_urlsafe(24), user_id=user_id, action=action, payload=payload,
             expires_at=(datetime.now(UTC) + timedelta(minutes=10)).replace(tzinfo=None),

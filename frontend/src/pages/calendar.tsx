@@ -176,11 +176,11 @@ export default function CalendarPage() {
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <Button size="sm" variant="outline" disabled={recurring.isPending} onClick={() => recurring.mutate()}>
-          {recurring.isPending ? "Atualizando..." : "Atualizar recorrencias"}
+          {recurring.isPending ? "Atualizando..." : "Atualizar recorrências"}
         </Button>
-        <p className="text-xs text-muted">Gera os vencimentos recorrentes dos proximos 12 meses.</p>
-        {recurring.isError && <p role="alert" className="w-full text-sm text-expense">Nao foi possivel gerar as recorrencias. Tente novamente.</p>}
-        {recurring.isSuccess && <p role="status" className="w-full text-sm text-income">Recorrencias atualizadas.</p>}
+        <p className="text-xs text-muted">Gera os vencimentos recorrentes dos próximos 12 meses.</p>
+        {recurring.isError && <p role="alert" className="w-full text-sm text-expense">Não foi possível gerar as recorrências. Tente novamente.</p>}
+        {recurring.isSuccess && <p role="status" className="w-full text-sm text-income">Recorrências atualizadas.</p>}
       </div>
       <Card elevated className="calendar-panel overflow-hidden border-[color:var(--color-calendar-border)] bg-[color:var(--color-calendar-surface)] p-0 shadow-[0_20px_50px_-32px_rgba(17,28,35,0.75)]">
         {calendarLoading ? (

@@ -63,7 +63,7 @@ def test_recurring_projection_covers_the_entire_horizon_month(monkeypatch):
         def today(cls):
             return cls(2026, 9, 8)
 
-    monkeypatch.setattr(transaction_service_module, "date", FixedDate)
+    monkeypatch.setattr(transaction_service_module, "business_today", FixedDate.today)
 
     dates = TransactionService._project_dates(
         date(2026, 9, 24),

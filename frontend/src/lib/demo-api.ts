@@ -48,7 +48,10 @@ export async function demoRequest<T>(path: string, init?: RequestInit): Promise<
     const start = url.searchParams.get("start_date"); const end = url.searchParams.get("end_date")
     if (start) result = result.filter((item) => item.due_date >= start)
     if (end) result = result.filter((item) => item.due_date <= end)
-    return result as T
+    result.sort((a, b) => url.searchParams.get("order") === "asc" ? a.due_date.localeCompare(b.due_date) : b.due_date.localeCompare(a.due_date))
+    const offset = Number(url.searchParams.get("offset") ?? 0)
+    const limit = Number(url.searchParams.get("limit") ?? result.length)
+    return result.slice(offset, offset + limit) as T
   }
   if (url.pathname === "/transactions/" && method === "POST") {
     const item = { ...data, id: nextId(transactions), source: "manual", due_date: data.due_date || iso(0), status: data.status || "pending", settled_at: null, is_recurring: Boolean(data.is_recurring), recurrence: data.recurrence || null, parent_id: null, fixed_expense_id: null, installment_group_id: null, installment_number: null, installment_count: null, user_id: 1, created_at: now, updated_at: now } as Transaction
@@ -89,6 +92,7 @@ export async function demoRequest<T>(path: string, init?: RequestInit): Promise<
     }
     return ({ response: "No modo demonstração, esta resposta usa somente os dados fictícios exibidos no aplicativo.", pending_actions: [] }) as T
   }
+  if (url.pathname === "/assistant-actions/" && method === "GET") return [...demoActions.values()] as T
   const actionMatch = url.pathname.match(/^\/assistant-actions\/([^/]+)(?:\/confirm)?$/)
   if (actionMatch) {
     const action = demoActions.get(actionMatch[1])!

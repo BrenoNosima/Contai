@@ -4,7 +4,7 @@ from datetime import date
 from datetime import UTC, datetime
 from decimal import Decimal
 
-from sqlalchemy import case, extract, func, or_
+from sqlalchemy import case, extract, func, or_, inspect
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import PersistenceConflictError
@@ -216,9 +216,8 @@ class TransactionRepository:
             # entre a consulta de existência e o commit do lote.
             return []
 
-        for transaction in transactions:
-            db.refresh(transaction)
-
+        identifiers = [inspect(item).identity[0] for item in transactions]
+        db.query(Transaction).filter(Transaction.id.in_(identifiers)).populate_existing().all()
         return transactions
 
     def get_by_id(
@@ -256,7 +255,7 @@ class TransactionRepository:
         end_date: date | None = None,
         is_recurring: bool | None = None,
         installment: bool | None = None,
-        limit: int | None = None, offset: int = 0,
+        limit: int | None = None, offset: int = 0, order: str = "desc",
     ):
         """
         Lista transações com filtros opcionais — usada pela tela de
@@ -288,7 +287,7 @@ class TransactionRepository:
         elif installment is False:
             query = query.filter(Transaction.installment_group_id.is_(None))
 
-        return query.order_by(Transaction.due_date.desc(), Transaction.id.desc()).offset(offset).limit(limit).all()
+        return query.order_by(Transaction.due_date.asc() if order == "asc" else Transaction.due_date.desc(), Transaction.id.desc()).offset(offset).limit(limit).all()
 
     def get_installments(self, db: Session, group_id: str):
         return (

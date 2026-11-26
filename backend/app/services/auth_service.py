@@ -94,6 +94,7 @@ class AuthService:
             "transactions": values(db.query(Transaction).all(), (
                 "id", "type", "description", "category", "amount", "priority", "source",
                 "due_date", "status", "settled_at", "is_recurring", "recurrence", "created_at", "updated_at",
+                "parent_id", "fixed_expense_id", "installment_group_id", "installment_number", "installment_count",
             )),
             "goals": values(db.query(Goal).all(), (
                 "id", "name", "description", "target_amount", "current_amount", "deadline", "created_at", "updated_at",

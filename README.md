@@ -55,7 +55,7 @@ Em seguida, crie o ambiente virtual e instale as dependências:
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+pip install --require-hashes -r requirements.lock
 ```
 
 No Linux ou macOS, ative o ambiente com `source .venv/bin/activate`.

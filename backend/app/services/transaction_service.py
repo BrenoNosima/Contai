@@ -1,3 +1,4 @@
+from app.core.clock import business_today
 from calendar import monthrange
 from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal, ROUND_DOWN
@@ -32,13 +33,13 @@ class TransactionService:
         transaction_data: TransactionCreate,
     ) -> Transaction:
 
-        due_date = transaction_data.due_date or date.today()
+        due_date = transaction_data.due_date or business_today()
 
         status = transaction_data.status
         if status is None:
             # Lançamentos futuros começam pendentes; os demais entram
             # como pagos quando nenhum status é informado.
-            status = "pending" if due_date > date.today() else "paid"
+            status = "pending" if due_date > business_today() else "paid"
 
         transaction = Transaction(
             type=transaction_data.type,
@@ -92,12 +93,12 @@ class TransactionService:
         end_date: date | None = None,
         is_recurring: bool | None = None,
         installment: bool | None = None,
-        limit: int | None = None, offset: int = 0,
+        limit: int | None = None, offset: int = 0, order: str = "desc",
     ):
         """Lista com filtros — usada pela tela de Lançamentos e pelo agente."""
 
         if not any(
-            [type, category, status, start_date, end_date, is_recurring is not None, installment is not None]
+            [type, category, status, start_date, end_date, is_recurring is not None, installment is not None, order == "asc"]
         ):
             return self.repository.get_all(db, limit=limit, offset=offset)
 
@@ -109,7 +110,7 @@ class TransactionService:
             start_date=start_date,
             end_date=end_date,
             is_recurring=is_recurring,
-            installment=installment, limit=limit, offset=offset,
+            installment=installment, limit=limit, offset=offset, order=order,
         )
 
     def create_installments(self, db: Session, data: InstallmentCreate) -> list[Transaction]:
@@ -129,10 +130,10 @@ class TransactionService:
                 priority=data.priority,
                 source="manual",
                 due_date=due_date,
-                status="pending" if due_date > date.today() else "paid",
+                status="pending" if due_date > business_today() else "paid",
                 settled_at=(
                     None
-                    if due_date > date.today()
+                    if due_date > business_today()
                     else datetime.combine(due_date, time.min)
                 ),
                 is_recurring=False,
@@ -314,6 +315,12 @@ class TransactionService:
         ocorrências novas criadas nesta chamada (idempotente).
         """
 
+        today = business_today()
+        horizon_month = _add_months(today.replace(day=1), months_ahead)
+        horizon = horizon_month.replace(day=monthrange(horizon_month.year, horizon_month.month)[1])
+        existing = self.repository.get_materialized_commitment_keys(db, today, horizon)
+        recurring_keys = {(parent_id, due) for parent_id, _, due in existing if parent_id is not None}
+        fixed_keys = {(expense_id, due) for _, expense_id, due in existing if expense_id is not None}
         templates = self.repository.get_recurring_templates(db)
         created: list[Transaction] = []
 
@@ -323,11 +330,7 @@ class TransactionService:
                 template.recurrence,
                 months_ahead,
             ):
-                if self.repository.occurrence_exists(
-                    db,
-                    template.id,
-                    occurrence_date,
-                ):
+                if (template.id, occurrence_date) in recurring_keys:
                     continue
 
                 occurrence = Transaction(
@@ -351,11 +354,7 @@ class TransactionService:
                 expense.billing_day,
                 months_ahead,
             ):
-                if self.repository.fixed_expense_occurrence_exists(
-                    db,
-                    expense.id,
-                    occurrence_date,
-                ):
+                if (expense.id, occurrence_date) in fixed_keys:
                     continue
 
                 created.append(
@@ -381,7 +380,7 @@ class TransactionService:
         billing_day: int,
         months_ahead: int,
     ) -> list[date]:
-        today = date.today()
+        today = business_today()
         dates = []
 
         for offset in range(months_ahead + 1):
@@ -398,7 +397,7 @@ class TransactionService:
         months_ahead: int,
     ) -> list[date]:
 
-        horizon_month = _add_months(date.today().replace(day=1), months_ahead)
+        horizon_month = _add_months(business_today().replace(day=1), months_ahead)
         horizon = horizon_month.replace(
             day=monthrange(horizon_month.year, horizon_month.month)[1]
         )
@@ -414,7 +413,7 @@ class TransactionService:
         current = start + step if step else _add_months(start, month_offset)
 
         while current <= horizon:
-            if current > date.today():
+            if current > business_today():
                 dates.append(current)
 
             if step:
